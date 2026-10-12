@@ -79,7 +79,9 @@ class Decision(Base):
     stakeholders = relationship("Stakeholder", back_populates="decision", cascade="all, delete-orphan")
     scenarios = relationship("Scenario", back_populates="decision", cascade="all, delete-orphan")
     risks = relationship("Risk", back_populates="decision", cascade="all, delete-orphan")
-    recommendation = relationship("Recommendation", back_populates="decision", uselist=False, cascade="all, delete-orphan")
+    recommendation = relationship(
+        "Recommendation", back_populates="decision", uselist=False, cascade="all, delete-orphan"
+    )
     reports = relationship("Report", back_populates="decision", cascade="all, delete-orphan")
 
 
@@ -87,7 +89,9 @@ class ContextData(Base):
     __tablename__ = "context_data"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    decision_id = Column(Integer, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    decision_id = Column(
+        Integer, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
 
     student_population = Column(Integer, nullable=True)
     faculty_count = Column(Integer, nullable=True)
@@ -167,7 +171,9 @@ class Recommendation(Base):
     __tablename__ = "recommendations"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    decision_id = Column(Integer, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    decision_id = Column(
+        Integer, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
 
     selected_scenario_number = Column(Integer, nullable=False)
     title = Column(String(255), nullable=False)

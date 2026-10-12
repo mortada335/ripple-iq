@@ -73,7 +73,9 @@ class SimulationResultData:
     decision_title: str
     is_estimate: bool = True
     human_review_required: bool = True
-    confidence: ConfidenceData = field(default_factory=lambda: ConfidenceData(0.82, "HIGH", "Determined via baseline rules"))
+    confidence: ConfidenceData = field(
+        default_factory=lambda: ConfidenceData(0.82, "HIGH", "Determined via baseline rules")
+    )
     stakeholders: list[StakeholderData] = field(default_factory=list)
     scenarios: list[ScenarioData] = field(default_factory=list)
     impacts: list[ImpactData] = field(default_factory=list)

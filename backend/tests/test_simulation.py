@@ -2,6 +2,7 @@
 Tests for Decision Simulation Flow and Simulation Result Retrieval
 """
 
+
 def test_full_simulation_flow_for_demo_decision(client):
     # 1. Create the canonical demo decision
     decision_payload = {

@@ -172,7 +172,9 @@ class SimulationService:
             raise KeyError(f"Simulation has not yet been executed for decision {decision_id}. Call /simulate first.")
 
         stakeholders_db = db.query(Stakeholder).filter(Stakeholder.decision_id == decision_id).all()
-        scenarios_db = db.query(Scenario).filter(Scenario.decision_id == decision_id).order_by(Scenario.scenario_number).all()
+        scenarios_db = (
+            db.query(Scenario).filter(Scenario.decision_id == decision_id).order_by(Scenario.scenario_number).all()
+        )
         risks_db = db.query(Risk).filter(Risk.decision_id == decision_id).all()
 
         scenario_ids = [s.id for s in scenarios_db]

@@ -42,6 +42,7 @@ router = APIRouter()
 # Health Check Endpoints
 # ==========================================
 
+
 @router.get(
     "/health",
     response_model=RootHealthResponse,
@@ -83,6 +84,7 @@ def api_v1_health(db: Session = Depends(get_db)):
 # ==========================================
 # Decision Management Endpoints
 # ==========================================
+
 
 @router.post(
     "/api/v1/decisions",
@@ -146,6 +148,7 @@ def get_decision(id: int, db: Session = Depends(get_db)):
 # Context Data Endpoints
 # ==========================================
 
+
 @router.post(
     "/api/v1/decisions/{id}/context",
     response_model=ContextDataResponse,
@@ -167,6 +170,7 @@ def attach_context(id: int, data: ContextDataCreate, db: Session = Depends(get_d
 # ==========================================
 # Simulation Endpoints
 # ==========================================
+
 
 @router.post(
     "/api/v1/decisions/{id}/simulate",
@@ -216,6 +220,7 @@ def get_simulation_result(id: int, db: Session = Depends(get_db)):
 # ==========================================
 # Report Generation Endpoints
 # ==========================================
+
 
 @router.get(
     "/api/v1/decisions/{id}/report",

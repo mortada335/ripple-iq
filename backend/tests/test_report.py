@@ -2,6 +2,7 @@
 Tests for Markdown Report Generation Endpoint
 """
 
+
 def test_generate_and_retrieve_markdown_report(client):
     # 1. Create demo decision
     decision_payload = {

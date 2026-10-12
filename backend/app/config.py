@@ -4,7 +4,6 @@ RippleIQ Application Configuration
 Loads settings from environment variables using Pydantic Settings.
 """
 
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

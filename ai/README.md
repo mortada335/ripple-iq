@@ -60,7 +60,8 @@ When migrating beyond the MVP to real LLM engines (e.g. Gemini, Claude, GPT), ad
    ```python
    class BaseAnalyzer(ABC):
        @abstractmethod
-       def analyze(self, title: str, description: Optional[str] = None, context: Optional[dict] = None) -> SimulationResultData:
-           ...
+       def analyze(
+           self, title: str, description: Optional[str] = None, context: Optional[dict] = None
+       ) -> SimulationResultData: ...
    ```
 3. Control the active analyzer via the `ANALYZER_BACKEND` environment variable (`mock_deterministic` vs `gemini` vs `claude`).

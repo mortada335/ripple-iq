@@ -52,6 +52,7 @@ app.add_middleware(
 # Standardized Error Envelopes
 # ==========================================
 
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     detail = exc.detail
@@ -81,8 +82,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     errors = exc.errors()
     formatted_errors = [
-        {"field": ".".join(str(loc) for loc in err.get("loc", [])), "message": err.get("msg")}
-        for err in errors
+        {"field": ".".join(str(loc) for loc in err.get("loc", [])), "message": err.get("msg")} for err in errors
     ]
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

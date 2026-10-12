@@ -2,6 +2,7 @@
 Tests for Health Check & Swagger Endpoints
 """
 
+
 def test_root_health(client):
     response = client.get("/health")
     assert response.status_code == 200

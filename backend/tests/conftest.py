@@ -60,6 +60,7 @@ def db_session():
 @pytest.fixture
 def client(db_session):
     """Provides a TestClient wired to the isolated test database session."""
+
     def override_get_db():
         try:
             yield db_session

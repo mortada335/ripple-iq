@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # Health Check Schemas
 # ==========================================
 
+
 class RootHealthResponse(BaseModel):
     status: str = "healthy"
     app_name: str = "RippleIQ"
@@ -32,6 +33,7 @@ class ApiV1HealthResponse(BaseModel):
 # Error Response Schemas
 # ==========================================
 
+
 class ErrorBody(BaseModel):
     code: str
     message: str
@@ -46,6 +48,7 @@ class ErrorEnvelope(BaseModel):
 # ==========================================
 # Decision Schemas
 # ==========================================
+
 
 class DecisionCreate(BaseModel):
     title: str = Field(..., min_length=5, max_length=500, description="Concise university policy proposal")
@@ -75,6 +78,7 @@ class DecisionResponse(BaseModel):
 # Context Data Schemas
 # ==========================================
 
+
 class ContextDataCreate(BaseModel):
     student_population: int | None = Field(None, ge=1, description="Total enrolled student body")
     faculty_count: int | None = Field(None, ge=1, description="Total faculty members")
@@ -103,6 +107,7 @@ class ContextDataResponse(BaseModel):
 # ==========================================
 # Simulation & Result Schemas
 # ==========================================
+
 
 class SimulateResponse(BaseModel):
     decision_id: int
@@ -186,6 +191,7 @@ class SimulationResultResponse(BaseModel):
 # ==========================================
 # Report Schemas
 # ==========================================
+
 
 class ReportResponse(BaseModel):
     decision_id: int

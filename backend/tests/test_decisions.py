@@ -2,6 +2,7 @@
 Tests for Decision CRUD and Context Attachment Endpoints
 """
 
+
 def test_create_decision_success(client):
     payload = {
         "title": "Reduce in-person university attendance from five days to four days per week",
