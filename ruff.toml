@@ -1,0 +1,14 @@
+# Ruff configuration
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "B008",  # Allow Depends() in FastAPI function parameter defaults
+    "E501",  # Line length handled gracefully
+    "E402",  # Module level import not at top of file (needed for sys.path insertions)
+]
+
+[lint.per-file-ignores]
+"**/tests/*" = ["B008", "E402", "E501"]

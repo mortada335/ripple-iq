@@ -1,0 +1,200 @@
+# RippleIQ — Backend Requirements Specification (MVP)
+
+> **Document Version:** 1.0.0 (MVP)  
+> **Status:** Approved for Implementation  
+> **Target Audience:** Backend Engineers, System Architects, API Consumers  
+
+---
+
+## 1. System Overview & Architecture
+
+RippleIQ backend is a high-reliability, deterministic decision intelligence service designed to model the cascading effects of strategic university administrative policies. 
+
+### 1.1 Architectural Principles
+- **Layered Clean Architecture:** Strict separation of API presentation (`app/api`), business logic and orchestration (`app/services`), data validation (`app/schemas`), database persistence (`app/models`), and the AI simulation engine (`ai/`).
+- **Deterministic by Default:** In the MVP stage, simulations run through a reproducible, testable rule-based mock analyzer (`ai/mock_analyzer.py`), eliminating external API rate limits, non-determinism, and network failures.
+- **Fail-Safe & Non-Destructive:** Missing or partial context gracefully falls back to sensible institutional baseline parameters.
+- **Human-in-the-Loop Governance:** Every simulation result and generated report explicitly flags `human_review_required: true`.
+
+```text
+       ┌───────────────────────────────┐
+       │     FastAPI Presentation      │
+       │    (/api/v1/*, Swagger UI)    │
+       └──────────────┬────────────────┘
+                      │
+       ┌──────────────▼────────────────┐
+       │     Pydantic Schemas Layer    │
+       │   (Strict I/O Validation)     │
+       └──────────────┬────────────────┘
+                      │
+       ┌──────────────▼────────────────┐
+       │        Services Layer         │
+       │ (Decision, Sim, Report Svcs)  │
+       └──────┬─────────────────┬──────┘
+              │                 │
+    ┌─────────▼────────┐   ┌────▼───────────────────────┐
+    │  SQLAlchemy ORM  │   │  Deterministic AI Analyzer │
+    │   Data Models    │   │     (ai/mock_analyzer.py)  │
+    └─────────┬────────┘   └────────────────────────────┘
+              │
+    ┌─────────▼────────┐
+    │  PostgreSQL /    │
+    │  SQLite Engine   │
+    └──────────────────┘
+```
+
+---
+
+## 2. Core Domain Specifications
+
+### 2.1 Decisions
+- **Purpose:** Represents the core institutional policy or administrative decision under evaluation.
+- **Key Attributes:**
+  - `id`: UUID or Auto-increment Integer primary key.
+  - `title`: Concise policy statement (e.g., *"Reduce in-person university attendance from five days to four days per week"*).
+  - `description`: Detailed description of the proposed operational shift.
+  - `status`: Enum (`DRAFT`, `CONTEXT_ATTACHED`, `SIMULATED`, `ARCHIVED`).
+  - `department`: Originating governing unit (e.g., *"Office of the Provost"*).
+  - `time_horizon`: Evaluation horizon (e.g., *"1 Academic Year"*).
+  - `created_at`, `updated_at`: UTC timestamps.
+- **Requirements:**
+  - Must support idempotent creation via `POST /api/v1/decisions`.
+  - Must reject empty or whitespace-only titles.
+  - Must prevent duplicate re-simulation collisions.
+
+---
+
+### 2.2 Context Data
+- **Purpose:** Anchors the simulation in specific institutional reality (e.g., student population, laboratory density, transit habits).
+- **Key Attributes:**
+  - `id`: Primary key.
+  - `decision_id`: Foreign key reference to `Decision`.
+  - `student_population`: Total enrolled student body count.
+  - `faculty_count`: Total academic and adjunct faculty count.
+  - `active_laboratories`: Number of wet/dry continuous research facilities.
+  - `transit_dependency_rate`: Estimated percentage of students/staff dependent on transit/commuting.
+  - `key_assumptions`: Array of explicit initial administrative assumptions.
+  - `constraints`: Specific accreditation, legal, or physical bounds.
+  - `raw_metadata`: Flexible JSON field for custom institutional indicators.
+- **Requirements:**
+  - Attachable via `POST /api/v1/decisions/{id}/context`.
+  - Merges into the simulation pipeline to inform stakeholder impact magnitudes.
+
+---
+
+### 2.3 Stakeholders
+- **Purpose:** Institutional groups impacted directly or indirectly by the decision.
+- **Key Attributes:**
+  - `id`: Primary key.
+  - `decision_id`: Foreign key reference to `Decision`.
+  - `key`: Normalized slug (e.g., `students`, `faculty`, `laboratories`, `administration`, `transportation`).
+  - `name`: Human-readable name (e.g., *"Laboratory Researchers & PIs"*).
+  - `category`: Classification (`ACADEMIC`, `OPERATIONAL`, `COMMUNITY`, `GOVERNANCE`).
+  - `influence_level`: Estimated institutional influence (`HIGH`, `MEDIUM`, `LOW`).
+  - `vulnerability_score`: Vulnerability to schedule disruption (Scale: 1-10).
+- **Demo Decision Stakeholders:**
+  For the demo decision, the engine must identify at minimum:
+  1. **Students**
+  2. **Faculty**
+  3. **Laboratories**
+  4. **Administration**
+  5. **Transportation**
+
+---
+
+### 2.4 Scenarios
+- **Purpose:** Alternative policy execution pathways generated by the simulation engine to provide comparative trade-offs.
+- **Requirements:** The system must generate exactly **three alternative scenarios** for the decision:
+  1. **Scenario 1 — Apply As Written:** Direct implementation of the 4-day compression across all university operations.
+  2. **Scenario 2 — Protect Laboratories:** Modified implementation maintaining continuous laboratory and clinical operations while compressing standard classroom lectures.
+  3. **Scenario 3 — Limited Pilot:** A bounded, single-semester pilot implemented in one or two selected faculties prior to campus-wide rollout.
+- **Key Attributes:**
+  - `id`: Primary key.
+  - `decision_id`: Foreign key reference to `Decision`.
+  - `scenario_number`: Sequence (1, 2, 3).
+  - `title`: Short scenario name.
+  - `description`: Detailed description of the operational path.
+  - `feasibility_score`: Estimated implementation viability (0.00 to 1.00).
+  - `is_recommended`: Boolean indicating whether this scenario was chosen as the primary recommendation.
+
+---
+
+### 2.5 Impacts
+- **Purpose:** Quantified or qualified ripples caused by a specific scenario on a stakeholder group.
+- **Key Attributes:**
+  - `id`: Primary key.
+  - `scenario_id`: Foreign key reference to `Scenario`.
+  - `stakeholder_key`: Identifier of affected group.
+  - `category`: Domain (`FINANCIAL`, `ACADEMIC`, `WELLBEING`, `LOGISTICS`, `FACILITIES`).
+  - `direction`: Enum (`POSITIVE`, `NEGATIVE`, `NEUTRAL`).
+  - `magnitude`: Magnitude scale (`LOW`, `MEDIUM`, `HIGH`).
+  - `description`: Detailed narrative of the consequence.
+  - `metric_estimate`: Optional numerical estimate (e.g., *"20% reduction in campus carbon emissions"*).
+
+---
+
+### 2.6 Risks
+- **Purpose:** Potential failure modes, compliance breaches, or severe unintended consequences.
+- **Key Attributes:**
+  - `id`: Primary key.
+  - `decision_id`: Foreign key reference to `Decision`.
+  - `scenario_id`: Foreign key to `Scenario` (optional or cross-scenario).
+  - `title`: Risk summary.
+  - `severity`: (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`).
+  - `likelihood`: (`HIGH`, `MEDIUM`, `LOW`).
+  - `affected_stakeholders`: List of vulnerable groups.
+  - `mitigation_strategy`: Recommended proactive countermeasure.
+- **Requirements:**
+  - High and Critical risks must always include actionable mitigation strategies.
+
+---
+
+### 2.7 Recommendations
+- **Purpose:** Synthesized decision advisory directing leadership to the optimal pathway with transparent rationale.
+- **Key Attributes:**
+  - `id`: Primary key.
+  - `decision_id`: Foreign key reference to `Decision`.
+  - `selected_scenario_number`: Integer indicating recommended scenario.
+  - `summary`: High-level executive recommendation.
+  - `rationale`: Detailed logical justification explaining trade-offs.
+  - `confidence_score`: Float between 0.00 and 1.00 (e.g., 0.85).
+  - `assumptions`: Array of foundational assumptions.
+  - `limitations`: Array of blind spots or unmodeled factors.
+  - `human_review_required`: Boolean, strictly set to `true`.
+- **Requirements:**
+  - Must never present certainty when assumptions are unresolved.
+
+---
+
+### 2.8 Reports
+- **Purpose:** Compile an audit-ready, executive-grade Markdown document summarizing the entire decision dossier.
+- **Key Attributes:**
+  - `id`: Primary key.
+  - `decision_id`: Foreign key reference to `Decision`.
+  - `content_markdown`: Full UTF-8 Markdown text.
+  - `generated_at`: Timestamp.
+  - `checksum`: SHA-256 hash for document auditability.
+- **Requirements:**
+  - Accessible via `GET /api/v1/decisions/{id}/report`.
+  - Formatted with structured Markdown headers, callout alert blocks, summary tables, and human review notices.
+
+---
+
+## 3. Error Handling and Resilience
+
+### 3.1 Standard Error Format
+All 4xx and 5xx API responses must adhere to a standardized JSON error envelope:
+```json
+{
+  "error": {
+    "code": "ENTITY_NOT_FOUND",
+    "message": "Decision with ID 42 was not found.",
+    "details": null,
+    "timestamp": "2026-10-12T18:15:00Z"
+  }
+}
+```
+
+### 3.2 Sanity & Security Constraints
+- Internal SQLAlchemy database errors or driver connection failures must be caught by custom exception handlers and wrapped in generic HTTP 500 error envelopes without exposing database connection strings, passwords, or raw stack traces.
+- All request parameters validated using Pydantic v2 with custom descriptive error messages.

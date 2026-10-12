@@ -1,0 +1,173 @@
+{
+  "decision": {
+    "title": "Reduce in-person university attendance from five days to four days per week",
+    "description": "Evaluate institutional shift from traditional 5-day on-campus instruction to a 4-day condensed week (Monday through Thursday) with Friday designated for asynchronous digital learning, grading, and faculty research.",
+    "department": "Office of the Provost & Vice Chancellor for Academic Affairs",
+    "time_horizon": "1 Academic Year",
+    "priority": "HIGH"
+  },
+  "context": {
+    "student_population": 28000,
+    "faculty_count": 1400,
+    "active_laboratories": 85,
+    "transit_dependency_rate": 68.5,
+    "key_assumptions": [
+      "Fridays designated as asynchronous remote learning day",
+      "Campus dining and auxiliary services operate on a reduced footprint on remote days",
+      "Total accreditation contact hours per course remain unchanged via 15% longer class periods"
+    ],
+    "constraints": "Wet laboratories, live animal research facilities, and biosafety level 2/3 labs require continuous daily temperature controls, monitoring, and researcher physical access.",
+    "raw_metadata": {
+      "campus_acres": 420,
+      "commuter_parking_spaces": 12000,
+      "annual_facilities_energy_budget_usd": 18500000
+    }
+  },
+  "expected_simulation_result": {
+    "is_estimate": true,
+    "human_review_required": true,
+    "confidence": {
+      "score": 0.82,
+      "level": "HIGH",
+      "rationale": "High confidence based on structured operational context and verified university scheduling precedents."
+    },
+    "stakeholders": [
+      {
+        "key": "students",
+        "name": "Students",
+        "category": "ACADEMIC",
+        "summary": "Impacted by compressed class schedules, reduced commuting costs, and altered study rhythms."
+      },
+      {
+        "key": "faculty",
+        "name": "Faculty & Instructors",
+        "category": "ACADEMIC",
+        "summary": "Impacted by intensive 4-day instructional load, revised office hours, and consolidated research time."
+      },
+      {
+        "key": "laboratories",
+        "name": "Laboratories & Research Teams",
+        "category": "OPERATIONAL",
+        "summary": "Severely vulnerable to multi-day laboratory shutdowns, cell culture upkeep, and specialized equipment maintenance."
+      },
+      {
+        "key": "administration",
+        "name": "Administration & Facilities",
+        "category": "OPERATIONAL",
+        "summary": "Impacted by campus energy savings, classroom reassignment complexity, and service contract renegotiations."
+      },
+      {
+        "key": "transportation",
+        "name": "Transportation & Parking",
+        "category": "COMMUNITY",
+        "summary": "Impacted by reduced daily peak-hour congestion, shuttle route rescheduling, and lost parking revenue."
+      }
+    ],
+    "scenarios": [
+      {
+        "scenario_number": 1,
+        "title": "Apply the decision as written",
+        "description": "Full compression of campus operations into Monday through Thursday. Campus facilities closed Friday through Sunday.",
+        "feasibility_score": 0.65,
+        "is_recommended": false,
+        "tradeoff_summary": "Maximizes energy and commute savings but creates acute operational jeopardy for continuous scientific research laboratories."
+      },
+      {
+        "scenario_number": 2,
+        "title": "Apply a modified version that protects laboratories",
+        "description": "Compress classroom instruction to 4 days while keeping wet laboratories, scientific research, and specialized clinical facilities open 5-7 days with dedicated support staffing.",
+        "feasibility_score": 0.88,
+        "is_recommended": true,
+        "tradeoff_summary": "Balances 80% of energy and commuting gains while safeguarding multimillion-dollar sponsored research grants and continuous biological cultures."
+      },
+      {
+        "scenario_number": 3,
+        "title": "Run a limited pilot first",
+        "description": "Pilot the 4-day schedule within the Faculty of Humanities and Social Sciences for one full academic semester before institution-wide expansion.",
+        "feasibility_score": 0.78,
+        "is_recommended": false,
+        "tradeoff_summary": "Lowest operational disruption and provides empirical empirical data, but creates inter-departmental scheduling friction during the trial period."
+      }
+    ],
+    "impacts": [
+      {
+        "stakeholder_key": "students",
+        "scenario_number": 1,
+        "category": "FINANCIAL",
+        "direction": "POSITIVE",
+        "magnitude": "HIGH",
+        "description": "Estimated 20% reduction in weekly commuting and transit expenses for commuter students."
+      },
+      {
+        "stakeholder_key": "laboratories",
+        "scenario_number": 1,
+        "category": "OPERATIONAL",
+        "direction": "NEGATIVE",
+        "magnitude": "HIGH",
+        "description": "Risk of continuous biological culture degradation due to restricted Friday facility access."
+      },
+      {
+        "stakeholder_key": "laboratories",
+        "scenario_number": 2,
+        "category": "OPERATIONAL",
+        "direction": "POSITIVE",
+        "magnitude": "HIGH",
+        "description": "Continuous lab continuity maintained via exemption protocol while non-lab classes condense."
+      },
+      {
+        "stakeholder_key": "administration",
+        "scenario_number": 2,
+        "category": "FINANCIAL",
+        "direction": "POSITIVE",
+        "magnitude": "MEDIUM",
+        "description": "Campus HVAC and lighting energy savings of approximately 14-17% overall."
+      },
+      {
+        "stakeholder_key": "transportation",
+        "scenario_number": 2,
+        "category": "LOGISTICS",
+        "direction": "POSITIVE",
+        "magnitude": "HIGH",
+        "description": "20% drop in Friday peak vehicular congestion and reduced demand on shuttle fleets."
+      }
+    ],
+    "risks": [
+      {
+        "title": "Continuous Research Experiment Interruption",
+        "severity": "CRITICAL",
+        "likelihood": "HIGH",
+        "affected_stakeholders": ["laboratories", "faculty"],
+        "mitigation_strategy": "Establish explicit laboratory access exemptions and essential research personnel building credentials."
+      },
+      {
+        "title": "Instructional Schedule Overcrowding",
+        "severity": "MEDIUM",
+        "likelihood": "HIGH",
+        "affected_stakeholders": ["students", "faculty"],
+        "mitigation_strategy": "Extend daily instructional bands by 45 minutes and implement block scheduling algorithms."
+      },
+      {
+        "title": "Student Auxiliary Service Worker Wage Loss",
+        "severity": "HIGH",
+        "likelihood": "MEDIUM",
+        "affected_stakeholders": ["students", "administration"],
+        "mitigation_strategy": "Reallocate hourly campus student workers to asynchronous administrative or peer tutoring roles on Fridays."
+      }
+    ],
+    "assumptions": [
+      "Instructional accreditation requirements permit lengthened daily class sessions.",
+      "Public transit agencies will maintain adequate Monday-Thursday peak dispatch frequencies.",
+      "Digital infrastructure and LMS can absorb Friday peak concurrent online usage without degradation."
+    ],
+    "limitations": [
+      "Simulation does not model individual faculty collective bargaining agreements.",
+      "Local municipal road construction schedules not accounted for in transit ripple projections."
+    ],
+    "recommendation": {
+      "selected_scenario_number": 2,
+      "title": "Adopt Modified 4-Day Model with Laboratory and Clinical Exemptions (Scenario 2)",
+      "summary": "Proceed with Scenario 2: Compress general lecture courses into a 4-day block (Mon-Thu) while designating Friday as dedicated asynchronous study, while granting full operational exemption and dedicated staffing for wet research laboratories and clinical facilities.",
+      "rationale": "Scenario 2 achieves 88% of intended energy, commuting, and student satisfaction benefits while completely mitigating the critical risk of research grant disruption and experiment spoilage."
+    }
+  }
+}
