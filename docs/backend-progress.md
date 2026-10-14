@@ -12,7 +12,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 |---|---|---|---|---|
 | 0 — Repository inspection and backend plan | Complete | `e821f1f` | `git diff --check` passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 1 — FastAPI foundation and configuration | Complete | `17b9f01` | 15 tests passed; Ruff check/format passed; Uvicorn smoke checks all 200; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
-| 2 — Database, migrations, and base models | In progress — verification passed, commit pending | Pending | 16 tests passed; Ruff passed; clean PostgreSQL and SQLite Alembic upgrade/check passed; Neon API health reports connected | Not committed or pushed |
+| 2 — Database, migrations, and base models | Complete | `97ad6b2` | 16 tests passed; Ruff passed; PostgreSQL and SQLite migrations/schema checks passed; Neon API health reports connected | Pushed to `origin/backend/full-mvp-implementation` |
 | 3 — Authentication and organization access | Not started | — | — | — |
 | 4 — Decision and context management | Not started | — | — | — |
 | 5 — Mock simulation engine | Not started | — | — | — |
@@ -78,6 +78,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 - The Neon URL was supplied as a process environment variable only. No
   JavaScript client or frontend build was used. The app can later target the VPC
   PostgreSQL service by changing the deployment `DATABASE_URL`.
-- Phase 2 verification is complete; its commit and push are pending. Phase 3
-  has not started.
+- Phase 2 commit: `97ad6b2` (`feat(backend): complete phase 2 - database models and migrations`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
+- Phase 3 has not started.
 - Frontend paths remain unchanged.
