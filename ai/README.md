@@ -53,9 +53,21 @@ pytest ai/tests/ -v
 
 ## Architecture for Future Real LLM Integration
 
+The provider boundary is defined by `DecisionAnalyzer` in `ai/provider.py`.
+The default `DeterministicMockProvider` returns the versioned Pydantic contract
+in `ai/schemas.py` (`schema_version: 0.1.0`). Provider output is validated before
+the application can persist or return it. No API key is needed.
+
+Scenario scores expose implementation-feasibility, stakeholder-protection, and
+reversibility components. The heuristic is `0.60 × feasibility + 0.30 ×
+protection + 0.10 × reversibility`; these are qualitative estimates, not
+measured outcomes. The schema also includes assumptions, limitations,
+stakeholder impacts, risk probability/severity/mitigation, fairness review
+questions, confidence, and the mandatory human-review flag.
+
 When migrating beyond the MVP to real LLM engines (e.g. Gemini, Claude, GPT), adhere to the following adapter pattern:
 
-1. Maintain the exact return contract (`SimulationResultData` or corresponding Pydantic schema in `backend/app/schemas/simulation.py`).
+1. Implement the `DecisionAnalyzer` protocol and return the validated `AnalysisResult` contract.
 2. Implement an `LLMAnalyzer` conforming to the same interface:
    ```python
    class BaseAnalyzer(ABC):

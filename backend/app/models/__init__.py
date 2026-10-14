@@ -1,9 +1,13 @@
 from app.models.models import (
+    AnalysisRun,
+    AuditLog,
     ContextData,
     Decision,
     Impact,
     Organization,
+    OrganizationMember,
     Recommendation,
+    RecommendationRefinement,
     Report,
     Risk,
     Scenario,
@@ -12,11 +16,15 @@ from app.models.models import (
 )
 
 __all__ = [
+    "AnalysisRun",
     "ContextData",
     "Decision",
+    "AuditLog",
     "Impact",
     "Organization",
+    "OrganizationMember",
     "Recommendation",
+    "RecommendationRefinement",
     "Report",
     "Risk",
     "Scenario",

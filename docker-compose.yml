@@ -32,6 +32,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-rippleiq_user}:${POSTGRES_PASSWORD:-rippleiq_password}@db:5432/${POSTGRES_DB:-rippleiq_db}
       - ENVIRONMENT=production
       - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env before starting Docker Compose}
       - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
     ports:
       - "8000:8000"

@@ -7,6 +7,35 @@
 
 ---
 
+## Implemented relational schema
+
+The ORM uses SQLAlchemy 2-compatible declarative models with integer primary
+keys, UTC timestamps, JSON fields for structured details, and explicit foreign
+key delete behavior. The existing `backend/alembic/` layout is retained. The
+original repository revision was empty; the next migration creates the complete
+current base schema on a clean database. PostgreSQL is the application default,
+while tests use an isolated in-memory SQLite database.
+
+Implemented entities are `organizations`, `users`, `organization_members`,
+`decisions`, `context_data`, `stakeholders`, `scenarios`, `impacts`, `risks`,
+`recommendations`, `reports`, and `audit_logs`. Membership rows are unique per
+organization/user pair and constrain role values to `owner`, `admin`,
+`decision_maker`, `reviewer`, or `viewer`. Audit logs retain the organization,
+actor, and decision references when available, plus an action, resource, JSON
+details, and creation timestamp.
+The `users.password_hash` column stores Argon2 hashes only; it is nullable to
+leave any legacy account without a credential unable to authenticate.
+
+Run `alembic upgrade head` against a new PostgreSQL database before starting the
+API. The app no longer creates database tables implicitly during startup.
+Databases previously created by the old development `create_all` startup path
+have no Alembic revision marker; do not run the clean-database migration against
+those databases without first backing them up and planning a schema baseline.
+The current Neon PostgreSQL branch is at Alembic revision `ec7bfb230dc3`; its
+connection string is supplied at runtime through `DATABASE_URL`, never stored
+in the repository. The same setting can later point at a private PostgreSQL
+endpoint in the VPC when the backend moves to a local server.
+
 ## 1. Entity Relationship Diagram (ERD)
 
 ```mermaid
@@ -191,6 +220,25 @@ Persisted Markdown memoranda generated from completed decision simulations.
 ---
 
 ## 3. Database Indexes
+
+Phase 4 adds `decisions.decision_type` (default `other`) and
+`context_data.updated_at`. The `decision_type` values supported by the API are
+`academic_policy`, `attendance`, `budget`, `staffing`, `facilities`,
+`student_services`, `technology`, and `other`. Revision
+`36393c8e6d04` applies these additions to existing databases.
+
+Phase 6 adds `analysis_runs`, linked to each decision with cascade deletion.
+Each run records `pending`, `running`, `completed`, or `failed`, the result
+schema version and JSON payload on success, a safe error code on failure, and
+start/finish timestamps. The JSON preserves the complete validated provider
+result; normalized stakeholders, scenarios, impacts, risks, and recommendation
+remain available through their existing tables. Revision `0f73b9f3edf4` adds
+the table and indexes.
+
+Phase 7 adds `recommendation_refinements`, linked to an analysis run and the
+reviewing user. It stores feedback and the human-selected scenario and rationale
+as a separate record, preserving the original run JSON. Revision
+`2f3e05c71afe` adds the table and indexes.
 
 - `ix_decisions_status` ON `decisions(status)`
 - `ix_context_data_decision_id` ON `context_data(decision_id)`

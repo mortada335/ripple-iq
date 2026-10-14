@@ -2,8 +2,13 @@
 Tests for Decision Simulation Flow and Simulation Result Retrieval
 """
 
+from app.models import AnalysisRun, Organization, OrganizationMember, Scenario, User
+from app.security.tokens import create_access_token
 
-def test_full_simulation_flow_for_demo_decision(client):
+from ai.provider import DeterministicMockProvider
+
+
+def test_full_simulation_flow_for_demo_decision(client, db_session):
     # 1. Create the canonical demo decision
     decision_payload = {
         "title": "Reduce in-person university attendance from five days to four days per week",
@@ -77,3 +82,83 @@ def test_full_simulation_flow_for_demo_decision(client):
     assert res["recommendation"] is not None
     assert res["recommendation"]["selected_scenario_number"] == 2
     assert res["confidence"]["score"] >= 0.7
+    assert res["schema_version"] == "0.1.0"
+    assert res["analysis_status"] == "completed"
+    assert res["fairness"]["potential_concerns"]
+    assert all(scenario["score_components"] for scenario in res["scenarios"])
+
+    # Analysis and result reads use the persisted run, not a second analyzer call.
+    analysis_status = client.get(f"/api/v1/decisions/{decision_id}/analysis")
+    assert analysis_status.status_code == 200
+    assert analysis_status.json()["analysis_status"] == "completed"
+    assert analysis_status.json()["human_review_required"] is True
+    assert client.get(f"/api/v1/decisions/{decision_id}/result").json() == res
+
+    scenario_id = db_session.query(Scenario).filter_by(decision_id=decision_id).first().id
+    scenario = client.get(f"/api/v1/scenarios/{scenario_id}")
+    assert scenario.status_code == 200
+    assert scenario.json()["score_method"]
+    assert client.get(f"/api/v1/scenarios/{scenario.json()['id']}/impacts").json()
+    assert client.get(f"/api/v1/scenarios/{scenario.json()['id']}/risks").json()
+
+
+def test_failed_analysis_can_be_safely_retried(client, monkeypatch, db_session):
+    created = client.post(
+        "/api/v1/decisions",
+        json={"title": "Review student support services", "description": "Assess service capacity and access."},
+    )
+    decision_id = created.json()["id"]
+
+    class FailingAnalyzer:
+        def analyze(self, title, description, context):
+            raise RuntimeError("private provider failure detail")
+
+    import app.services.simulation_service as simulation_service
+
+    monkeypatch.setattr(simulation_service, "default_analyzer", FailingAnalyzer())
+    failed = client.post(f"/api/v1/decisions/{decision_id}/simulate")
+    assert failed.status_code == 500
+    assert "private provider failure detail" not in failed.text
+    status_response = client.get(f"/api/v1/decisions/{decision_id}/analysis")
+    assert status_response.status_code == 200, status_response.text
+    assert status_response.json()["analysis_status"] == "failed"
+    assert status_response.json()["error_code"] == "ANALYSIS_FAILED"
+    assert client.get(f"/api/v1/decisions/{decision_id}/result").status_code == 409
+    assert db_session.query(AnalysisRun).filter_by(decision_id=decision_id).one().result_json is None
+
+    monkeypatch.setattr(simulation_service, "default_analyzer", DeterministicMockProvider())
+    retried = client.post(f"/api/v1/decisions/{decision_id}/analysis/retry")
+    assert retried.status_code == 200
+    assert retried.json()["analysis_status"] == "completed"
+    assert client.get(f"/api/v1/decisions/{decision_id}/result").status_code == 200
+
+
+def test_retry_only_accepts_failed_analysis(client):
+    created = client.post(
+        "/api/v1/decisions",
+        json={"title": "Review student advising", "description": "Consider advising access and capacity."},
+    )
+    response = client.post(f"/api/v1/decisions/{created.json()['id']}/analysis/retry")
+    assert response.status_code == 409
+
+
+def test_scenario_routes_enforce_organization_access(client, db_session):
+    created = client.post(
+        "/api/v1/decisions",
+        json={"title": "Review student advising", "description": "Consider advising access and capacity."},
+    )
+    decision_id = created.json()["id"]
+    client.post(f"/api/v1/decisions/{decision_id}/simulate")
+    scenario = db_session.query(Scenario).filter_by(decision_id=decision_id).first()
+
+    foreign_org = Organization(name="Different University", slug="different-university")
+    foreign_user = User(email="foreign@example.edu", full_name="Foreign User", password_hash="unused")
+    db_session.add_all([foreign_org, foreign_user])
+    db_session.flush()
+    db_session.add(OrganizationMember(organization_id=foreign_org.id, user_id=foreign_user.id, role="owner"))
+    db_session.commit()
+
+    client.headers["Authorization"] = f"Bearer {create_access_token(foreign_user.id)}"
+    assert client.get(f"/api/v1/scenarios/{scenario.id}").status_code == 404
+    assert client.get(f"/api/v1/scenarios/{scenario.id}/impacts").status_code == 404
+    assert client.get(f"/api/v1/scenarios/{scenario.id}/risks").status_code == 404

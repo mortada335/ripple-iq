@@ -1,5 +1,84 @@
 # RippleIQ — Backend Requirements Specification (MVP)
 
+## Implementation plan (2026-10-14)
+
+### Repository baseline
+
+- The existing frontend is in `frontend/` (identified from the root repository
+  documentation and directory presence). It is outside the scope of backend
+  changes; frontend files and configuration are not to be edited.
+- Backend code is in `backend/app/`, with an existing SQLAlchemy model module,
+  FastAPI endpoints, services, Alembic setup, and tests. The deterministic mock
+  analyzer is in `ai/mock_analyzer.py`.
+- The current implementation includes basic health, decision/context creation,
+  simulation, result, and report flows. It does not yet provide registration,
+  JWT authentication, organization memberships/roles, full decision/context
+  CRUD, or persisted analysis lifecycle records.
+- The current database helper creates tables at application startup and defaults
+  to SQLite. The target is PostgreSQL with Alembic migrations; any SQLite use
+  will be limited to isolated tests/development where appropriate.
+- The repository already has `backend/full-mvp-implementation` checked out and
+  a configured `origin` remote at `https://github.com/mortada335/ripple-iq`.
+
+### Planned module structure
+
+Preserve existing conventions and evolve the current modules instead of
+duplicating them. Add only the modules needed to keep responsibilities clear:
+
+```text
+backend/app/
+  main.py, config.py, database.py, dependencies.py
+  api/v1/                 versioned routers (migrate existing endpoints safely)
+  models/                 existing entities plus membership, audit, analysis
+  schemas/                request/response and validated analysis schemas
+  repositories/           organization-scoped persistence queries as needed
+  services/               auth, organizations, decisions, simulation, reports
+  ai/                     analyzer provider interface/adapter
+  reports/                Markdown rendering helpers
+  security/               password hashing and JWT helpers
+backend/migrations/       retain existing Alembic layout unless migration
+                          configuration requires a compatibility-safe move
+backend/tests/            API, service, auth, isolation, and integration tests
+ai/                       deterministic analyzer and its schemas/tests
+docs/                     requirements, API, database, security, testing, progress
+```
+
+### Delivery phases
+
+Implement in the requested sequence, with focused verification, documentation,
+one phase commit, and a push before starting the next phase:
+
+0. Record repository baseline and plan (documentation only).
+1. Harden the FastAPI foundation, environment configuration, logging, CORS,
+   common errors, and local setup instructions.
+2. Complete PostgreSQL SQLAlchemy models and Alembic migrations.
+3. Add registration/login, JWT, organization membership, roles, and access
+   enforcement.
+4. Add scoped decision/context CRUD and audit records.
+5. Define versioned analysis schemas and deterministic provider interface.
+6. Persist analysis lifecycle/results and expose scoped simulation endpoints.
+7. Add recommendation/refinement and downloadable Markdown reports.
+8. Review authorization, validation, errors, logging, and production basics.
+9. Complete tests and API/setup documentation.
+10. Perform clean-environment final verification and record its outcome.
+
+### Decisions and known conflicts
+
+- The target specification requires PostgreSQL, while current root/backend
+  documentation describes SQLite as the default local runtime. PostgreSQL will
+  become the documented runtime default; a test-only SQLite option may remain
+  if it provides equivalent isolated test coverage.
+- The current integer identifiers can remain if applied consistently; Phase 2
+  will avoid an unnecessary ID migration unless existing relationships require
+  one. Organization membership must become explicit, and data access must be
+  scoped through that membership.
+- Existing endpoint paths should be retained where compatible. New routes will
+  follow the requested `/api/v1` paths and use common validation/error shapes.
+- The configured GitHub remote is known, but authentication and remote write
+  access must be verified by the first push. If unavailable, stop after the
+  local phase commit and report the exact push command; do not change remotes.
+- No product-scope decision is currently blocking Phase 0 or the planned MVP.
+
 > **Document Version:** 1.0.0 (MVP)  
 > **Status:** Approved for Implementation  
 > **Target Audience:** Backend Engineers, System Architects, API Consumers  

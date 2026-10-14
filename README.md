@@ -108,7 +108,7 @@ ripple-iq/
 
 ---
 
-## Quickstart Guide
+## Backend Quickstart
 
 ### 1. Local Python Setup
 
@@ -139,18 +139,28 @@ ripple-iq/
    # Copy sample environment configuration
    cp .env.example .env
    ```
-   *(By default, `DATABASE_URL` defaults to `sqlite:///./ripple_iq.db` for instant zero-dependency local running).*
+   Set `DATABASE_URL` to a PostgreSQL connection URI and `SECRET_KEY` to a
+   private random value. SQLite is used only by the isolated test suite. Keep
+   `.env` local and out of Git. For Neon, pass its connection URI through the
+   backend process environment; to deploy later inside a VPC, point the same
+   `DATABASE_URL` setting at the private PostgreSQL endpoint.
 
-5. **Start the FastAPI server:**
+5. **Run database migrations and start the FastAPI server** (from `backend/`):
    ```bash
+   alembic upgrade head
    uvicorn app.main:app --reload --port 8000
    ```
 
 6. **Verify the server:**
    - Interactive Swagger Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - Healthcheck: [http://localhost:8000/health](http://localhost:8000/health)
+   - Root health: [http://localhost:8000/health](http://localhost:8000/health)
+   - Database health: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
 
-### 2. Running with Docker Compose
+See [`backend/README.md`](backend/README.md) for complete environment,
+migration, and test instructions. Swagger is at
+[http://localhost:8000/docs](http://localhost:8000/docs).
+
+### Running with Docker Compose
 
 To run RippleIQ with a dedicated PostgreSQL database container:
 ```bash
@@ -166,10 +176,10 @@ Run the backend and AI test suites:
 
 ```bash
 # From the backend directory:
-pytest -v
+python -m pytest tests ../ai/tests
 
 # Run AI mock analyzer tests directly:
-pytest ai/tests/ -v
+python -m pytest ../ai/tests -v
 ```
 
 ---
@@ -182,10 +192,14 @@ pytest ai/tests/ -v
 | `GET` | `/api/v1/health` | API v1 status, environment, and DB readiness |
 | `POST` | `/api/v1/decisions` | Create a new university decision |
 | `GET` | `/api/v1/decisions/{id}` | Retrieve decision details and status |
+| `PATCH/DELETE` | `/api/v1/decisions/{id}` | Update or archive a decision |
 | `POST` | `/api/v1/decisions/{id}/context` | Attach institutional context data |
 | `POST` | `/api/v1/decisions/{id}/simulate` | Run deterministic multi-scenario simulation |
+| `GET` | `/api/v1/decisions/{id}/analysis` | Inspect analysis status |
 | `GET` | `/api/v1/decisions/{id}/result` | Retrieve full simulation result and metrics |
+| `GET/POST` | `/api/v1/decisions/{id}/recommendation`, `/refine` | Review or refine recommendations |
 | `GET` | `/api/v1/decisions/{id}/report` | Generate and retrieve an audit-ready Markdown report |
+| `GET` | `/api/v1/decisions/{id}/report.md` | Download Markdown report |
 
 Detailed contract documentation is available in [`docs/api-contract.md`](docs/api-contract.md).
 

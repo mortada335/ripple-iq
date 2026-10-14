@@ -8,10 +8,13 @@ Ensures document auditability with SHA-256 integrity checksums.
 import hashlib
 from datetime import UTC, datetime
 
+from sqlalchemy.orm import Session
+
+from ai.schemas import AnalysisResult
 from app.models.models import Decision, Report
 from app.schemas.schemas import ReportResponse
+from app.services.recommendation_service import RecommendationService
 from app.services.simulation_service import SimulationService
-from sqlalchemy.orm import Session
 
 
 class ReportService:
@@ -26,6 +29,9 @@ class ReportService:
             SimulationService.run_simulation(db, decision_id)
 
         sim_result = SimulationService.get_simulation_result(db, decision_id)
+        recommendation_view = RecommendationService.get_recommendation(db, decision_id)
+        run = SimulationService.latest_run(db, decision_id)
+        analysis = AnalysisResult.model_validate(run.result_json)
 
         now_utc = datetime.now(UTC)
         timestamp_str = now_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -34,6 +40,9 @@ class ReportService:
         lines = []
         lines.append("# RippleIQ Institutional Decision Memorandum")
         lines.append(f"## {decision.title}")
+        lines.append("")
+        lines.append(f"**Decision type:** `{decision.decision_type}`")
+        lines.append(f"**Proposal:** {decision.description}")
         lines.append("")
         lines.append("> [!WARNING]")
         lines.append("> **DECISION SUPPORT ONLY — MANDATORY HUMAN REVIEW REQUIRED**")
@@ -46,7 +55,9 @@ class ReportService:
         lines.append(f"- **Decision Reference ID:** `D-{decision.id:04d}`")
         lines.append(f"- **Sponsoring Department:** {decision.department or 'General Administration'}")
         lines.append(f"- **Evaluation Time Horizon:** {decision.time_horizon or '1 Academic Year'}")
-        lines.append(f"- **Analysis Status:** `{decision.status}` (Deterministic Estimate)")
+        lines.append(
+            f"- **Analysis Status:** `{run.status}` (Deterministic Estimate, schema {analysis.schema_version})"
+        )
         lines.append(
             f"- **Analytical Confidence:** `{sim_result.confidence.score * 100:.0f}%` ({sim_result.confidence.level})"
         )
@@ -57,13 +68,19 @@ class ReportService:
 
         # 1. Executive Summary & Strategic Recommendation
         lines.append("## 1. Executive Summary & Strategic Recommendation")
-        rec = sim_result.recommendation
+        rec = recommendation_view.current
         if rec:
             lines.append(f"**Recommended Strategic Path: Scenario {rec.selected_scenario_number} — {rec.title}**")
             lines.append("")
             lines.append(f"**Action Summary:**  \n{rec.summary}")
             lines.append("")
             lines.append(f"**Strategic Rationale:**  \n{rec.rationale}")
+            if recommendation_view.refinement is not None:
+                lines.append("")
+                lines.append(
+                    f"**Original recommendation preserved:** Scenario {recommendation_view.original.selected_scenario_number} — {recommendation_view.original.title}"
+                )
+                lines.append(f"**Human review feedback:** {recommendation_view.refinement.feedback}")
         lines.append("")
 
         # 2. Institutional Baseline & Context
@@ -92,6 +109,8 @@ class ReportService:
             )
             if ctx.constraints:
                 lines.append(f"- **Operational Constraints:** {ctx.constraints}")
+            for assumption in ctx.key_assumptions or []:
+                lines.append(f"- **Institutional Assumption:** {assumption}")
         else:
             lines.append("*Standard institutional baseline assumptions applied.*")
         lines.append("")
@@ -110,6 +129,12 @@ class ReportService:
             rec_tag = " ⭐ **[RECOMMENDED]**" if sc.is_recommended else ""
             lines.append(f"### Scenario {sc.scenario_number}: {sc.title}{rec_tag}")
             lines.append(f"- **Feasibility Score:** `{sc.feasibility_score * 100:.0f}%`")
+            if sc.score_method:
+                components = ", ".join(
+                    f"{key.replace('_', ' ')} {value:.2f}" for key, value in sc.score_components.items()
+                )
+                lines.append(f"- **Score components:** {components}")
+                lines.append(f"- **Scoring method:** {sc.score_method}")
             lines.append(f"- **Operational Overview:** {sc.description}")
             if sc.tradeoff_summary:
                 lines.append(f"- **Strategic Trade-offs:** {sc.tradeoff_summary}")
@@ -139,11 +164,19 @@ class ReportService:
                 "🚨 CRITICAL" if r.severity == "CRITICAL" else ("⚠️ HIGH" if r.severity == "HIGH" else r.severity)
             )
             groups = ", ".join(r.affected_stakeholders)
-            lines.append(f"| **{r.title}** | {sev_badge} | `{r.likelihood}` | {groups} | {r.mitigation_strategy} |")
+            lines.append(
+                f"| **{r.title}** | {sev_badge} | `{r.likelihood}` ({r.probability or 0:.0%}) | {groups} | {r.mitigation_strategy} |"
+            )
+        lines.append("")
+
+        lines.append("## 7. Fairness Review Questions")
+        lines.append(analysis.fairness.note)
+        for concern in analysis.fairness.potential_concerns:
+            lines.append(f"- {concern}")
         lines.append("")
 
         # 7. Assumptions and Limitations
-        lines.append("## 7. Foundational Assumptions & Analytical Limitations")
+        lines.append("## 8. Foundational Assumptions & Analytical Limitations")
         lines.append("### Foundational Assumptions")
         for a in sim_result.assumptions:
             lines.append(f"- {a}")
@@ -153,8 +186,8 @@ class ReportService:
             lines.append(f"- {lim}")
         lines.append("")
 
-        # 8. Governance Sign-off
-        lines.append("## 8. Governance Sign-off & Audit Record")
+        # 9. Governance Sign-off
+        lines.append("## 9. Governance Sign-off & Audit Record")
         lines.append("```text")
         lines.append(f"Memorandum Generated: {timestamp_str}")
         lines.append("Simulation Engine: RippleIQ Deterministic Mock v0.1.0")
