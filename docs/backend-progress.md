@@ -16,7 +16,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 3 — Authentication and organization access | Complete | `5364228` | 26 tests passed; Ruff passed; PostgreSQL password-hash migration and API/DB smoke checks passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 4 — Decision and context management | Complete | `4a8ff9a` | 29 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 5 — Mock simulation engine | Complete | `851e475` | 32 tests passed; Ruff passed; provider output validated | Pushed to `origin/backend/full-mvp-implementation` |
-| 6 — Simulation API and result persistence | In progress | — | 35 tests passed; Ruff pending final check; Neon migration pending | Not pushed |
+| 6 — Simulation API and result persistence | Complete | `177d7ea` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 7 — Recommendation refinement and reports | Not started | — | — | — |
 | 8 — Security, validation, and production basics | Not started | — | — | — |
 | 9 — Complete testing and documentation | Not started | — | — | — |
@@ -133,7 +133,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Phase 5 commit: `851e475` (`feat(backend): complete phase 5 - deterministic decision simulation`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
 
-## Phase 6 verification (commit and push pending)
+## Phase 6 verification
 
 - Added persisted analysis runs with `pending`, `running`, `completed`, and
   `failed` statuses, versioned result JSON, timestamps, and safe error codes.
@@ -147,3 +147,5 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Ruff check and format passed for changed Python modules and migration.
 - Local clean SQLite migration upgrade/check passed. Neon applied revision
   `0f73b9f3edf4`; `alembic check` reported no drift. Frontend diff is empty.
+- Phase 6 commit: `177d7ea` (`feat(backend): complete phase 6 - simulation API and persistence`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
