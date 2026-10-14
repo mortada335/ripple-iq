@@ -68,6 +68,13 @@ Interactive Swagger documentation is available at `/docs`.
    cp .env.example .env
    ```
 
+   Set `DATABASE_URL` to a PostgreSQL connection string for shared development
+   and deployment. SQLite remains available for local smoke checks and isolated
+   tests. Set `ALLOWED_ORIGINS` to comma-separated trusted frontend origins; an
+   empty value allows no cross-origin requests. Application logs use JSON lines,
+   and unexpected server errors are logged without exposing exception details
+   in API responses.
+
 4. Run migrations:
    ```bash
    alembic upgrade head

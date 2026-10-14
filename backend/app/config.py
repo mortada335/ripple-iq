@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.1.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+    LOG_LEVEL: str = "INFO"
     PORT: int = 8000
     API_V1_PREFIX: str = "/api/v1"
 
@@ -33,8 +34,6 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        if not self.ALLOWED_ORIGINS:
-            return ["*"]
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
 
