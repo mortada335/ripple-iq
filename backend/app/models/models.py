@@ -11,6 +11,7 @@ from app.database import Base
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     Float,
@@ -18,6 +19,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -37,7 +39,9 @@ class Organization(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     users = relationship("User", back_populates="organization", cascade="all, delete-orphan")
+    memberships = relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
     decisions = relationship("Decision", back_populates="organization", cascade="all, delete-orphan")
+    audit_logs = relationship("AuditLog", back_populates="organization")
 
 
 class User(Base):
@@ -52,7 +56,29 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
     organization = relationship("Organization", back_populates="users")
+    memberships = relationship("OrganizationMember", back_populates="user", cascade="all, delete-orphan")
     decisions = relationship("Decision", back_populates="creator")
+    audit_logs = relationship("AuditLog", back_populates="actor")
+
+
+class OrganizationMember(Base):
+    __tablename__ = "organization_members"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "user_id", name="uq_organization_members_org_user"),
+        CheckConstraint(
+            "role IN ('owner', 'admin', 'decision_maker', 'reviewer', 'viewer')",
+            name="ck_organization_members_role",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(50), nullable=False, default="viewer")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+    organization = relationship("Organization", back_populates="memberships")
+    user = relationship("User", back_populates="memberships")
 
 
 class Decision(Base):
@@ -83,6 +109,7 @@ class Decision(Base):
         "Recommendation", back_populates="decision", uselist=False, cascade="all, delete-orphan"
     )
     reports = relationship("Report", back_populates="decision", cascade="all, delete-orphan")
+    audit_logs = relationship("AuditLog", back_populates="decision")
 
 
 class ContextData(Base):
@@ -200,3 +227,21 @@ class Report(Base):
     generated_at = Column(DateTime(timezone=True), default=utc_now)
 
     decision = relationship("Decision", back_populates="reports")
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True)
+    actor_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    decision_id = Column(Integer, ForeignKey("decisions.id", ondelete="SET NULL"), nullable=True, index=True)
+    action = Column(String(100), nullable=False)
+    resource_type = Column(String(100), nullable=False)
+    resource_id = Column(String(100), nullable=True)
+    details = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, index=True)
+
+    organization = relationship("Organization", back_populates="audit_logs")
+    actor = relationship("User", back_populates="audit_logs")
+    decision = relationship("Decision", back_populates="audit_logs")

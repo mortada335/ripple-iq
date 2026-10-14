@@ -13,7 +13,6 @@ from datetime import UTC, datetime
 
 from app.api.endpoints import router as api_router
 from app.config import settings
-from app.database import init_db
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,8 +46,6 @@ logger = logging.getLogger("rippleiq.api")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database tables on startup (especially useful for SQLite)
-    init_db()
     yield
 
 

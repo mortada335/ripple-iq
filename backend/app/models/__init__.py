@@ -1,8 +1,10 @@
 from app.models.models import (
+    AuditLog,
     ContextData,
     Decision,
     Impact,
     Organization,
+    OrganizationMember,
     Recommendation,
     Report,
     Risk,
@@ -14,8 +16,10 @@ from app.models.models import (
 __all__ = [
     "ContextData",
     "Decision",
+    "AuditLog",
     "Impact",
     "Organization",
+    "OrganizationMember",
     "Recommendation",
     "Report",
     "Risk",

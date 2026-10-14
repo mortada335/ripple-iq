@@ -7,6 +7,33 @@
 
 ---
 
+## Implemented relational schema
+
+The ORM uses SQLAlchemy 2-compatible declarative models with integer primary
+keys, UTC timestamps, JSON fields for structured details, and explicit foreign
+key delete behavior. The existing `backend/alembic/` layout is retained. The
+original repository revision was empty; the next migration creates the complete
+current base schema on a clean database. PostgreSQL is the application default,
+while tests use an isolated in-memory SQLite database.
+
+Implemented entities are `organizations`, `users`, `organization_members`,
+`decisions`, `context_data`, `stakeholders`, `scenarios`, `impacts`, `risks`,
+`recommendations`, `reports`, and `audit_logs`. Membership rows are unique per
+organization/user pair and constrain role values to `owner`, `admin`,
+`decision_maker`, `reviewer`, or `viewer`. Audit logs retain the organization,
+actor, and decision references when available, plus an action, resource, JSON
+details, and creation timestamp.
+
+Run `alembic upgrade head` against a new PostgreSQL database before starting the
+API. The app no longer creates database tables implicitly during startup.
+Databases previously created by the old development `create_all` startup path
+have no Alembic revision marker; do not run the clean-database migration against
+those databases without first backing them up and planning a schema baseline.
+The current Neon PostgreSQL branch is at Alembic revision `b85d83e3c062`; its
+connection string is supplied at runtime through `DATABASE_URL`, never stored
+in the repository. The same setting can later point at a private PostgreSQL
+endpoint in the VPC when the backend moves to a local server.
+
 ## 1. Entity Relationship Diagram (ERD)
 
 ```mermaid

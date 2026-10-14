@@ -17,8 +17,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
 
     # Database
-    # Default to local SQLite for instant zero-config startup; PostgreSQL in production/docker
-    DATABASE_URL: str = "sqlite:///./ripple_iq.db"
+    DATABASE_URL: str = "postgresql+psycopg2://localhost/ripple_iq_db"
 
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"

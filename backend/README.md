@@ -68,14 +68,22 @@ Interactive Swagger documentation is available at `/docs`.
    cp .env.example .env
    ```
 
-   Set `DATABASE_URL` to a PostgreSQL connection string for shared development
-   and deployment. SQLite remains available for local smoke checks and isolated
-   tests. Set `ALLOWED_ORIGINS` to comma-separated trusted frontend origins; an
+   Set `DATABASE_URL` to your PostgreSQL connection string. SQLite is reserved
+   for isolated tests. Set `ALLOWED_ORIGINS` to comma-separated trusted frontend origins; an
    empty value allows no cross-origin requests. Application logs use JSON lines,
    and unexpected server errors are logged without exposing exception details
    in API responses.
 
-4. Run migrations:
+   For Neon, supply its PostgreSQL connection URI through the `DATABASE_URL`
+   environment variable. The app uses the existing SQLAlchemy/psycopg2 stack;
+   no JavaScript database client or frontend build step is involved. Do not add
+   a real connection URI to tracked files. To move this backend to a local
+   server in a VPC later, change the deployment's `DATABASE_URL` to the VPC
+   PostgreSQL endpoint; the application code and Alembic migrations stay the
+   same.
+
+4. Start PostgreSQL (for example, `docker compose up -d db` from the repository
+   root), then run migrations:
    ```bash
    alembic upgrade head
    ```
