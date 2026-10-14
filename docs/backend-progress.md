@@ -17,7 +17,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 4 — Decision and context management | Complete | `4a8ff9a` | 29 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 5 — Mock simulation engine | Complete | `851e475` | 32 tests passed; Ruff passed; provider output validated | Pushed to `origin/backend/full-mvp-implementation` |
 | 6 — Simulation API and result persistence | Complete | `177d7ea` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
-| 7 — Recommendation refinement and reports | Not started | — | — | — |
+| 7 — Recommendation refinement and reports | In progress | — | 35 tests passed; Ruff passed; Neon migration applied and checked | Not pushed |
 | 8 — Security, validation, and production basics | Not started | — | — | — |
 | 9 — Complete testing and documentation | Not started | — | — | — |
 | 10 — Final verification | Not started | — | — | — |
@@ -132,6 +132,20 @@ diff check, documentation update, focused commit, and push have succeeded.
   empty.
 - Phase 5 commit: `851e475` (`feat(backend): complete phase 5 - deterministic decision simulation`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
+
+## Phase 7 verification (commit and push pending)
+
+- Added a separate recommendation refinement record linked to an analysis run
+  and reviewing user. The original versioned analysis stays unchanged.
+- Added recommendation retrieval/refinement endpoints and Markdown download.
+  Reports include proposal/context, assumptions, impacts, scenario score method,
+  risks, fairness notes, confidence, limitations, human feedback when present,
+  and the mandatory human-review notice.
+- Full suite: `backend/.venv/Scripts/python.exe -m pytest backend/tests ai/tests`:
+  35 passed (three upstream Starlette deprecation warnings).
+- Ruff check and format passed for changed Python modules and migration.
+- Local clean SQLite migration upgrade/check passed. Neon applied revision
+  `2f3e05c71afe`; `alembic check` reported no drift. Frontend diff is empty.
 
 ## Phase 6 verification
 

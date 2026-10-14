@@ -250,6 +250,23 @@ class AnalysisRun(Base):
     finished_at = Column(DateTime(timezone=True), nullable=True)
 
     decision = relationship("Decision", back_populates="analysis_runs")
+    refinements = relationship("RecommendationRefinement", back_populates="analysis_run", cascade="all, delete-orphan")
+
+
+class RecommendationRefinement(Base):
+    __tablename__ = "recommendation_refinements"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    analysis_run_id = Column(Integer, ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True)
+    actor_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    selected_scenario_number = Column(Integer, nullable=False)
+    title = Column(String(300), nullable=False)
+    summary = Column(Text, nullable=False)
+    rationale = Column(Text, nullable=False)
+    feedback = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+    analysis_run = relationship("AnalysisRun", back_populates="refinements")
 
 
 class AuditLog(Base):

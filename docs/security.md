@@ -35,6 +35,11 @@ creation requires `X-Organization-ID`; decision reads resolve access from the
 decision's stored organization. An inaccessible decision returns the same 404
 as a missing decision to avoid disclosing its existence.
 
+Human recommendation refinement and report routes use the same decision
+organization boundary. Refinement feedback is stored with its author and
+analysis run, is not written to application logs, and does not overwrite the
+original analysis result.
+
 ## Deployment and remaining work
 
 Set `DATABASE_URL` and `SECRET_KEY` in the backend process environment. The

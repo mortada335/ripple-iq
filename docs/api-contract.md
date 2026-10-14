@@ -101,6 +101,20 @@ decision-maker. If the caller belongs to multiple organizations, include
   selected scenario, its impacts, and decision-level risks. All reads enforce
   organization access.
 
+### Recommendations and reports (Phase 7)
+
+- `GET /api/v1/decisions/{id}/recommendation` returns both the original
+  recommendation and the latest human-reviewed refinement, if present.
+- `POST /api/v1/decisions/{id}/refine` accepts `feedback` (3–4000 characters)
+  and an optional `selected_scenario_number` (1–3). It stores a new refinement
+  linked to the completed analysis and leaves its original result unchanged.
+- `GET /api/v1/decisions/{id}/report` returns report metadata and Markdown in
+  JSON, or raw Markdown when `Accept: text/markdown` is set.
+- `GET /api/v1/decisions/{id}/report.md` downloads the same report as a Markdown
+  attachment. Reports contain decision/context, assumptions, stakeholders,
+  scenarios, impact comparison, risks and mitigations, fairness review,
+  recommendation history, confidence, limitations, and the human-review notice.
+
 ### 2.1 Health Check (Root)
 Provides rapid uptime checks for container orchestrators and load balancers.
 

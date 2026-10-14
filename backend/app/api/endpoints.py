@@ -34,6 +34,8 @@ from app.schemas.schemas import (
     DecisionResponse,
     DecisionUpdate,
     ImpactResponse,
+    RecommendationRefineRequest,
+    RecommendationViewResponse,
     ReportResponse,
     RiskResponse,
     RootHealthResponse,
@@ -42,6 +44,7 @@ from app.schemas.schemas import (
     SimulationResultResponse,
 )
 from app.services.decision_service import DecisionService
+from app.services.recommendation_service import RecommendationService
 from app.services.report_service import ReportService
 from app.services.simulation_service import AnalysisExecutionError, SimulationService
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -431,6 +434,63 @@ def get_simulation_result(id: int, db: Session = Depends(get_db), user: User = D
 # ==========================================
 # Report Generation Endpoints
 # ==========================================
+
+
+@router.get("/api/v1/decisions/{id}/report.md", tags=["Reports"])
+def download_report_markdown(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    require_decision_access(db, user, id)
+    try:
+        report = ReportService.generate_report(db, id)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "REPORT_NOT_AVAILABLE",
+                "message": "A completed analysis is required to generate a report.",
+            },
+        ) from error
+    return PlainTextResponse(
+        content=report.content_markdown,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{report.filename}"'},
+    )
+
+
+@router.get(
+    "/api/v1/decisions/{id}/recommendation",
+    response_model=RecommendationViewResponse,
+    tags=["Recommendations"],
+)
+def get_recommendation(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    require_decision_access(db, user, id)
+    try:
+        return RecommendationService.get_recommendation(db, id)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "RECOMMENDATION_NOT_AVAILABLE", "message": str(error)},
+        ) from error
+
+
+@router.post(
+    "/api/v1/decisions/{id}/refine",
+    response_model=RecommendationViewResponse,
+    tags=["Recommendations"],
+)
+def refine_recommendation(
+    id: int,
+    data: RecommendationRefineRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    decision = require_decision_access(db, user, id, write=True)
+    try:
+        return RecommendationService.refine(db, decision, user.id, data)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INVALID_REFINEMENT", "message": str(error)},
+        ) from error
 
 
 @router.get(

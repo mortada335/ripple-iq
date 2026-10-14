@@ -235,6 +235,11 @@ result; normalized stakeholders, scenarios, impacts, risks, and recommendation
 remain available through their existing tables. Revision `0f73b9f3edf4` adds
 the table and indexes.
 
+Phase 7 adds `recommendation_refinements`, linked to an analysis run and the
+reviewing user. It stores feedback and the human-selected scenario and rationale
+as a separate record, preserving the original run JSON. Revision
+`2f3e05c71afe` adds the table and indexes.
+
 - `ix_decisions_status` ON `decisions(status)`
 - `ix_context_data_decision_id` ON `context_data(decision_id)`
 - `ix_stakeholders_decision_id` ON `stakeholders(decision_id)`

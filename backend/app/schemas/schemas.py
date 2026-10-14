@@ -315,6 +315,30 @@ class RecommendationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RecommendationRefineRequest(BaseModel):
+    feedback: str = Field(min_length=3, max_length=4000)
+    selected_scenario_number: int | None = Field(default=None, ge=1, le=3)
+
+
+class RecommendationRefinementResponse(BaseModel):
+    id: int
+    selected_scenario_number: int
+    title: str
+    summary: str
+    rationale: str
+    feedback: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecommendationViewResponse(BaseModel):
+    decision_id: int
+    original: RecommendationResponse
+    current: RecommendationResponse
+    refinement: RecommendationRefinementResponse | None = None
+
+
 class SimulationResultResponse(BaseModel):
     decision_id: int
     decision_title: str
