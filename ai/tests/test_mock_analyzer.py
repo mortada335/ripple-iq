@@ -2,7 +2,12 @@
 Unit tests for deterministic AI Mock Analyzer
 """
 
+import pytest
+from pydantic import ValidationError
+
 from ai.mock_analyzer import MockAnalyzer
+from ai.provider import DeterministicMockProvider
+from ai.schemas import AnalysisResult
 
 
 def test_analyzer_demo_decision_stakeholders():
@@ -91,3 +96,54 @@ def test_generic_decision_fallback():
     assert result.human_review_required is True
     assert len(result.scenarios) == 3
     assert len(result.stakeholders) >= 4
+
+
+def test_provider_returns_valid_versioned_result_with_explainable_scores():
+    provider = DeterministicMockProvider()
+    result = provider.analyze(
+        "Reduce in-person university attendance from five days to four days per week",
+        context={"transit_dependency_rate": 68.5},
+    )
+
+    assert result.schema_version == "0.1.0"
+    assert result.analysis_status == "completed"
+    assert result.human_review_required is True
+    assert result.interpretation.decision_type == "attendance"
+    assert result.interpretation.change_type == "reduce"
+    assert len(result.scenarios) == 3
+    assert result.recommendation.selected_scenario_number == 2
+    for scenario in result.scenarios:
+        components = scenario.score_components
+        expected = round(
+            components.implementation_feasibility * 0.6
+            + components.stakeholder_protection * 0.3
+            + components.reversibility * 0.1,
+            3,
+        )
+        assert scenario.feasibility_score == expected
+        assert "not measured outcomes" in scenario.score_method
+    assert any("commuter" in note for note in result.fairness.potential_concerns)
+    assert any(impact.direction == "NEGATIVE" for impact in result.impacts)
+    assert result.limitations
+
+
+def test_analysis_schema_rejects_invalid_or_incomplete_provider_output():
+    provider_result = DeterministicMockProvider().analyze("Review university student support services").model_dump()
+    provider_result["confidence"] = 1.5
+
+    with pytest.raises(ValidationError):
+        AnalysisResult.model_validate(provider_result)
+
+    del provider_result["fairness"]
+    with pytest.raises(ValidationError):
+        AnalysisResult.model_validate(provider_result)
+
+
+def test_provider_output_is_deterministic():
+    provider = DeterministicMockProvider()
+    input_data = {
+        "title": "Reduce in-person university attendance from five days to four days per week",
+        "description": "Pilot the change after consulting stakeholders.",
+        "context": {"student_population": 18000, "transit_dependency_rate": 52.0},
+    }
+    assert provider.analyze(**input_data) == provider.analyze(**input_data)
