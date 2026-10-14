@@ -67,6 +67,26 @@ decision-maker. If the caller belongs to multiple organizations, include
 
 ## 2. Endpoints
 
+### Health
+
+`GET /api/v1/health` returns the service state, database connectivity, configured
+database dialect, analyzer mode, environment, and timestamp. Example:
+
+```json
+{
+  "status": "healthy",
+  "environment": "development",
+  "database": "connected",
+  "database_backend": "postgresql",
+  "database_message": null,
+  "analyzer_mode": "mock_deterministic",
+  "timestamp": "2026-10-14T12:00:00Z"
+}
+```
+When the connection check fails, `database` is `disconnected`, `status` is
+`degraded`, and `database_message` provides configuration/network checks without
+exposing driver errors, credentials, or SQL details.
+
 ### Decision and context management (Phase 4)
 
 - `GET /api/v1/decisions?offset=0&limit=50` lists decisions for the caller's

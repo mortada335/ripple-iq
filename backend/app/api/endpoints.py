@@ -102,16 +102,24 @@ def root_health():
 )
 def api_v1_health(db: Session = Depends(get_db)):
     """Verifies API status, environment configuration, and active database connectivity."""
+    database_backend = db.get_bind().dialect.name
     db_status = "connected"
+    database_message = None
     try:
         db.execute(text("SELECT 1"))
     except Exception:  # noqa: BLE001
         db_status = "disconnected"
+        database_message = (
+            "Unable to reach the configured database. Check DATABASE_URL, DNS/network access, "
+            "PostgreSQL SSL settings, and credentials."
+        )
 
     return ApiV1HealthResponse(
         status="healthy" if db_status == "connected" else "degraded",
         environment=settings.ENVIRONMENT,
         database=db_status,
+        database_backend=database_backend,
+        database_message=database_message,
         analyzer_mode=settings.ANALYZER_BACKEND,
         timestamp=datetime.now(UTC),
     )

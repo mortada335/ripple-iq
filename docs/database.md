@@ -248,3 +248,24 @@ as a separate record, preserving the original run JSON. Revision
 - `ix_risks_decision_id` ON `risks(decision_id)`
 - `ix_recommendations_decision_id` ON `recommendations(decision_id)`
 - `ix_reports_decision_id` ON `reports(decision_id)`
+
+## Neon configuration and SQLite import
+
+The backend reads `backend/.env` from its module location, even when Uvicorn or
+Alembic is launched from the repository root. Set `DATABASE_URL` to the Neon
+PostgreSQL URI with `sslmode=require`; keep the file ignored by Git. Production
+settings reject SQLite. `/api/v1/health` reports `database_backend` so the
+configured SQL dialect is visible without exposing connection details.
+
+`backend/scripts/import_sqlite_to_postgres.py` is a guarded one-time import for
+moving local application data into a migrated PostgreSQL database. Back up the
+SQLite source first. The importer compares source and target columns with ORM
+metadata, requires the current Alembic head, refuses any populated target
+application table, inserts all model tables in foreign-key order in one
+transaction, preserves primary keys/relationships/JSON/timestamps, and advances
+PostgreSQL ID sequences. It never truncates or overwrites target data. Run it
+from the repository root with:
+
+```powershell
+backend/.venv/Scripts/python.exe backend/scripts/import_sqlite_to_postgres.py --source backend/rippleiq_demo.db
+```

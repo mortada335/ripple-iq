@@ -4,6 +4,8 @@ RippleIQ Application Configuration
 Loads settings from environment variables using Pydantic Settings.
 """
 
+from pathlib import Path
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -31,7 +33,7 @@ class Settings(BaseSettings):
     ANALYZER_BACKEND: str = "mock_deterministic"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).resolve().parents[1] / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -51,6 +53,10 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_production_secret(self) -> "Settings":
         if self.ENVIRONMENT.lower() in {"production", "prod"}:
+            if self.sqlalchemy_database_url.startswith("sqlite:"):
+                raise ValueError(
+                    "SQLite is available only for development and tests; configure PostgreSQL in DATABASE_URL."
+                )
             secret_is_placeholder = any(marker in self.SECRET_KEY.casefold() for marker in ("change", "replace"))
             if len(self.SECRET_KEY) < 32 or secret_is_placeholder:
                 raise ValueError("Set SECRET_KEY to a private random value of at least 32 characters in production.")

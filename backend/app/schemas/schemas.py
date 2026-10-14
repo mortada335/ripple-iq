@@ -122,6 +122,8 @@ class ApiV1HealthResponse(BaseModel):
     status: str = "healthy"
     environment: str
     database: str
+    database_backend: str
+    database_message: str | None = None
     analyzer_mode: str
     timestamp: datetime
 

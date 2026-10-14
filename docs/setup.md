@@ -9,14 +9,12 @@
 
 - **Python:** 3.11, 3.12, or 3.13
 - **Git:** 2.30+
-- **Database:** PostgreSQL 15+ (Production/Docker) OR SQLite (Zero-config local development, supported out-of-the-box)
+- **Database:** PostgreSQL 15+ (Neon or Docker); SQLite only when explicitly configured for development/tests
 - **Containerization (Optional):** Docker 24+ & Docker Compose v2
 
 ---
 
-## 2. Fast Local Setup (Zero External Dependencies)
-
-By default, RippleIQ supports instant local development with SQLite without requiring an active PostgreSQL daemon.
+## 2. Local Setup
 
 ### Step 1: Navigate to Backend Directory
 Open PowerShell or your preferred terminal:
@@ -50,22 +48,23 @@ pip install -r requirements-dev.txt
 ```bash
 cp .env.example .env
 ```
-Default `.env` values are tuned for local development:
+For local PostgreSQL, configure `DATABASE_URL` with your local server URL. For Neon, put its URI in `backend/.env` and retain `sslmode=require`:
 ```ini
 APP_NAME=RippleIQ
 ENVIRONMENT=development
 DEBUG=True
 PORT=8000
-DATABASE_URL=sqlite:///./ripple_iq.db
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
 ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
+The backend loads `backend/.env` regardless of the shell's current directory. Keep real credentials out of Git and logs. To use SQLite for development, explicitly set `DATABASE_URL=sqlite:///./ripple_iq.db`; production rejects SQLite.
 
 ### Step 5: Initialize Database & Run Migrations
 ```bash
 # Apply Alembic database migrations
 alembic upgrade head
 ```
-*(When using SQLite, `ripple_iq.db` will be initialized automatically).*
+For PostgreSQL, migrations are required before serving requests. Test suites use an isolated in-memory SQLite database.
 
 ### Step 6: Start FastAPI Application Server
 ```bash

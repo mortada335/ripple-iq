@@ -87,15 +87,19 @@ Private API routes require `Authorization: Bearer <access_token>`. See
    cp .env.example .env
    ```
 
-   Set `DATABASE_URL` to your PostgreSQL connection string. SQLite is reserved
-   for isolated tests. Set `ALLOWED_ORIGINS` to comma-separated trusted frontend
+   Set `DATABASE_URL` to your PostgreSQL connection string. SQLite is available
+   only when explicitly configured for development and is used by isolated tests.
+   The backend resolves `backend/.env` from its module path, regardless of the
+   shell working directory. Set `ALLOWED_ORIGINS` to comma-separated trusted frontend
    origins; an empty value allows no cross-origin requests. Production requires
    a private `SECRET_KEY` of at least 32 characters and explicit CORS origins.
    Application logs use JSON lines; error responses omit stack traces and SQL
    details.
 
-   For Neon, supply its PostgreSQL connection URI through the `DATABASE_URL`
-   environment variable. The app uses the existing SQLAlchemy/psycopg2 stack;
+   For Neon, supply its PostgreSQL connection URI through `backend/.env` or the
+   deployment environment's `DATABASE_URL` (include `sslmode=require`). The API
+   health response reports the connected SQL dialect as `database_backend`.
+   The app uses the existing SQLAlchemy/psycopg2 stack;
    no JavaScript database client or frontend build step is involved. Do not add
    a real connection URI to tracked files. To move this backend to a local
    server in a VPC later, change the deployment's `DATABASE_URL` to the VPC

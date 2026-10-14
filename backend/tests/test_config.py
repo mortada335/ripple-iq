@@ -21,3 +21,8 @@ def test_production_accepts_private_length_signing_secret():
 def test_production_rejects_wildcard_cors():
     with pytest.raises(ValidationError):
         Settings(ENVIRONMENT="production", SECRET_KEY="r" * 64, ALLOWED_ORIGINS="*")
+
+
+def test_production_rejects_sqlite_database():
+    with pytest.raises(ValidationError, match="SQLite is available only for development and tests"):
+        Settings(ENVIRONMENT="production", SECRET_KEY="r" * 64, DATABASE_URL="sqlite:///./local.db")
