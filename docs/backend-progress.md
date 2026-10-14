@@ -19,7 +19,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 6 — Simulation API and result persistence | Complete | `177d7ea` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 7 — Recommendation refinement and reports | Complete | `dceb304` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 8 — Security, validation, and production basics | Complete | `179e1cf` | 39 tests passed; Ruff passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
-| 9 — Complete testing and documentation | In progress | — | 40 tests passed; full Ruff check/format passed | Not pushed |
+| 9 — Complete testing and documentation | Complete | `15dc6ae` | 40 tests passed; full Ruff check/format passed | Pushed to `origin/backend/full-mvp-implementation` |
 | 10 — Final verification | Not started | — | — | — |
 
 ## Phase 0 baseline
@@ -168,7 +168,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Phase 8 commit: `179e1cf` (`feat(backend): complete phase 8 - security and production basics`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
 
-## Phase 9 verification (commit and push pending)
+## Phase 9 verification
 
 - Added the registration-to-report end-to-end HTTP test and expanded OpenAPI
   coverage checks for the implemented route groups.
@@ -181,6 +181,8 @@ diff check, documentation update, focused commit, and push have succeeded.
 - `python -m ruff format --check backend ai`: passed (47 files).
 - `git diff --check` passed; frontend diff is empty. No secrets, database
   dumps, or generated credential files are tracked.
+- Phase 9 commit: `15dc6ae` (`test(backend): complete phase 9 - backend test suite and documentation`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
 
 ## Phase 6 verification
 
