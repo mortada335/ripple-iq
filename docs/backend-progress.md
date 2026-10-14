@@ -14,7 +14,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 1 — FastAPI foundation and configuration | Complete | `17b9f01` | 15 tests passed; Ruff check/format passed; Uvicorn smoke checks all 200; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 2 — Database, migrations, and base models | Complete | `97ad6b2` | 16 tests passed; Ruff passed; PostgreSQL and SQLite migrations/schema checks passed; Neon API health reports connected | Pushed to `origin/backend/full-mvp-implementation` |
 | 3 — Authentication and organization access | Complete | `5364228` | 26 tests passed; Ruff passed; PostgreSQL password-hash migration and API/DB smoke checks passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
-| 4 — Decision and context management | In progress | — | 29 tests passed; Ruff passed; Neon migration applied | Pending commit/push |
+| 4 — Decision and context management | Complete | `4a8ff9a` | 29 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 5 — Mock simulation engine | Not started | — | — | — |
 | 6 — Simulation API and result persistence | Not started | — | — | — |
 | 7 — Recommendation refinement and reports | Not started | — | — | — |
@@ -100,7 +100,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
 - Frontend paths remain unchanged.
 
-## Phase 4 verification (commit and push pending)
+## Phase 4 verification
 
 - Added organization-scoped decision listing, partial update, archival, context
   read/update/delete, supported university decision types, and preparation
@@ -113,3 +113,5 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Local Alembic autogeneration detected only `decisions.decision_type` and
   `context_data.updated_at`. Neon upgrade applied revision `36393c8e6d04`.
 - API contract and schema documentation updated. Frontend diff is empty.
+- Phase 4 commit: `4a8ff9a` (`feat(backend): complete phase 4 - decisions and context management`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
