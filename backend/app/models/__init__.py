@@ -1,4 +1,5 @@
 from app.models.models import (
+    AnalysisRun,
     AuditLog,
     ContextData,
     Decision,
@@ -14,6 +15,7 @@ from app.models.models import (
 )
 
 __all__ = [
+    "AnalysisRun",
     "ContextData",
     "Decision",
     "AuditLog",

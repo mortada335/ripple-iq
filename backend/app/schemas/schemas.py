@@ -233,8 +233,21 @@ class ContextDataResponse(BaseModel):
 class SimulateResponse(BaseModel):
     decision_id: int
     status: str
+    analysis_run_id: int | None = None
+    analysis_status: Literal["completed"] = "completed"
     message: str
     simulated_at: datetime
+
+
+class AnalysisStatusResponse(BaseModel):
+    decision_id: int
+    analysis_run_id: int | None
+    analysis_status: Literal["pending", "running", "completed", "failed"]
+    schema_version: str | None = None
+    error_code: str | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    human_review_required: Literal[True] = True
 
 
 class StakeholderResponse(BaseModel):
@@ -251,10 +264,17 @@ class ScenarioResponse(BaseModel):
     title: str
     description: str
     feasibility_score: float
+    score_components: dict[str, float] = Field(default_factory=dict)
+    score_method: str | None = None
     is_recommended: bool
     tradeoff_summary: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ScenarioDetailResponse(ScenarioResponse):
+    id: int
+    decision_id: int
 
 
 class ImpactResponse(BaseModel):
@@ -273,6 +293,7 @@ class RiskResponse(BaseModel):
     title: str
     severity: str  # CRITICAL | HIGH | MEDIUM | LOW
     likelihood: str  # HIGH | MEDIUM | LOW
+    probability: float | None = None
     affected_stakeholders: list[str] = Field(default_factory=list)
     mitigation_strategy: str
 
@@ -297,6 +318,10 @@ class RecommendationResponse(BaseModel):
 class SimulationResultResponse(BaseModel):
     decision_id: int
     decision_title: str
+    schema_version: str = "0.1.0"
+    analysis_status: Literal["completed"] = "completed"
+    interpretation: dict[str, Any] = Field(default_factory=dict)
+    fairness: dict[str, Any] = Field(default_factory=dict)
     is_estimate: bool = True
     human_review_required: bool = True
     confidence: ConfidenceResponse

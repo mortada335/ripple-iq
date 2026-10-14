@@ -4,7 +4,7 @@ RippleIQ Decision Service
 Business logic for managing university decisions and attaching institutional context.
 """
 
-from app.models.models import ContextData, Decision, Impact, Recommendation, Risk, Scenario, Stakeholder
+from app.models.models import AnalysisRun, ContextData, Decision, Impact, Recommendation, Risk, Scenario, Stakeholder
 from app.schemas.schemas import ContextDataCreate, DecisionCreate, DecisionUpdate
 from app.services.audit_service import record_audit_event
 from sqlalchemy.orm import Session
@@ -217,6 +217,7 @@ class DecisionService:
 
     @staticmethod
     def _invalidate_simulation(db: Session, decision_id: int) -> None:
+        db.query(AnalysisRun).filter(AnalysisRun.decision_id == decision_id).delete(synchronize_session=False)
         scenario_ids = db.query(Scenario.id).filter(Scenario.decision_id == decision_id)
         db.query(Impact).filter(Impact.scenario_id.in_(scenario_ids)).delete(synchronize_session=False)
         db.query(Recommendation).filter(Recommendation.decision_id == decision_id).delete(synchronize_session=False)

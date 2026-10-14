@@ -227,6 +227,14 @@ Phase 4 adds `decisions.decision_type` (default `other`) and
 `student_services`, `technology`, and `other`. Revision
 `36393c8e6d04` applies these additions to existing databases.
 
+Phase 6 adds `analysis_runs`, linked to each decision with cascade deletion.
+Each run records `pending`, `running`, `completed`, or `failed`, the result
+schema version and JSON payload on success, a safe error code on failure, and
+start/finish timestamps. The JSON preserves the complete validated provider
+result; normalized stakeholders, scenarios, impacts, risks, and recommendation
+remain available through their existing tables. Revision `0f73b9f3edf4` adds
+the table and indexes.
+
 - `ix_decisions_status` ON `decisions(status)`
 - `ix_context_data_decision_id` ON `context_data(decision_id)`
 - `ix_stakeholders_decision_id` ON `stakeholders(decision_id)`

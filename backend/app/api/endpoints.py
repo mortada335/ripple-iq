@@ -23,7 +23,9 @@ from app.dependencies import (
     resolve_membership,
 )
 from app.models import User
+from app.models.models import Impact, Scenario
 from app.schemas.schemas import (
+    AnalysisStatusResponse,
     ApiV1HealthResponse,
     ContextDataCreate,
     ContextDataResponse,
@@ -31,14 +33,17 @@ from app.schemas.schemas import (
     DecisionCreate,
     DecisionResponse,
     DecisionUpdate,
+    ImpactResponse,
     ReportResponse,
+    RiskResponse,
     RootHealthResponse,
+    ScenarioDetailResponse,
     SimulateResponse,
     SimulationResultResponse,
 )
 from app.services.decision_service import DecisionService
 from app.services.report_service import ReportService
-from app.services.simulation_service import SimulationService
+from app.services.simulation_service import AnalysisExecutionError, SimulationService
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
@@ -288,12 +293,113 @@ def simulate_decision(id: int, db: Session = Depends(get_db), user: User = Depen
     """
     require_decision_access(db, user, id, write=True)
     try:
-        return SimulationService.run_simulation(db, id)
+        return SimulationService.run_simulation(db, id, actor_user_id=user.id)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "DECISION_NOT_FOUND", "message": str(e)},
         ) from e
+    except AnalysisExecutionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "ANALYSIS_FAILED",
+                "message": "Analysis could not be completed. Check its status and retry.",
+            },
+        ) from error
+
+
+@router.get("/api/v1/decisions/{id}/analysis", response_model=AnalysisStatusResponse, tags=["Simulation"])
+def get_analysis_status(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    require_decision_access(db, user, id)
+    return SimulationService.analysis_status(db, id)
+
+
+@router.post("/api/v1/decisions/{id}/analysis/retry", response_model=SimulateResponse, tags=["Simulation"])
+def retry_analysis(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    require_decision_access(db, user, id, write=True)
+    try:
+        return SimulationService.retry_failed_analysis(db, id, user.id)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ANALYSIS_NOT_RETRYABLE", "message": str(error)},
+        ) from error
+    except AnalysisExecutionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "ANALYSIS_FAILED",
+                "message": "Analysis could not be completed. Check its status and retry.",
+            },
+        ) from error
+
+
+@router.get("/api/v1/scenarios/{scenario_id}", response_model=ScenarioDetailResponse, tags=["Simulation"])
+def get_scenario(scenario_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    scenario = db.get(Scenario, scenario_id)
+    if scenario is None:
+        raise HTTPException(
+            status_code=404, detail={"code": "SCENARIO_NOT_FOUND", "message": "Scenario was not found."}
+        )
+    require_decision_access(db, user, scenario.decision_id)
+    run = SimulationService.latest_run(db, scenario.decision_id)
+    analysis = run.result_json if run is not None and run.status == "completed" else {}
+    item = next(
+        (
+            candidate
+            for candidate in analysis.get("scenarios", [])
+            if candidate["scenario_number"] == scenario.scenario_number
+        ),
+        {},
+    )
+    return ScenarioDetailResponse(
+        id=scenario.id,
+        decision_id=scenario.decision_id,
+        scenario_number=scenario.scenario_number,
+        title=scenario.title,
+        description=scenario.description,
+        feasibility_score=scenario.feasibility_score,
+        score_components=item.get("score_components", {}),
+        score_method=item.get("score_method"),
+        is_recommended=scenario.is_recommended,
+        tradeoff_summary=scenario.tradeoff_summary,
+    )
+
+
+@router.get("/api/v1/scenarios/{scenario_id}/impacts", response_model=list[ImpactResponse], tags=["Simulation"])
+def get_scenario_impacts(scenario_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    scenario = db.get(Scenario, scenario_id)
+    if scenario is None:
+        raise HTTPException(
+            status_code=404, detail={"code": "SCENARIO_NOT_FOUND", "message": "Scenario was not found."}
+        )
+    require_decision_access(db, user, scenario.decision_id)
+    return [
+        ImpactResponse(
+            stakeholder_key=impact.stakeholder_key,
+            scenario_number=scenario.scenario_number,
+            category=impact.category,
+            direction=impact.direction,
+            magnitude=impact.magnitude,
+            description=impact.description,
+            metric_estimate=impact.metric_estimate,
+        )
+        for impact in db.query(Impact).filter(Impact.scenario_id == scenario.id).all()
+    ]
+
+
+@router.get("/api/v1/scenarios/{scenario_id}/risks", response_model=list[RiskResponse], tags=["Simulation"])
+def get_scenario_risks(scenario_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    scenario = db.get(Scenario, scenario_id)
+    if scenario is None:
+        raise HTTPException(
+            status_code=404, detail={"code": "SCENARIO_NOT_FOUND", "message": "Scenario was not found."}
+        )
+    require_decision_access(db, user, scenario.decision_id)
+    run = SimulationService.latest_run(db, scenario.decision_id)
+    risks = run.result_json.get("risks", []) if run is not None and run.status == "completed" else []
+    return [RiskResponse(**risk) for risk in risks]
 
 
 @router.get(

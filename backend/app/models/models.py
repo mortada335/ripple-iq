@@ -113,6 +113,7 @@ class Decision(Base):
     )
     reports = relationship("Report", back_populates="decision", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="decision")
+    analysis_runs = relationship("AnalysisRun", back_populates="decision", cascade="all, delete-orphan")
 
 
 class ContextData(Base):
@@ -233,6 +234,22 @@ class Report(Base):
     generated_at = Column(DateTime(timezone=True), default=utc_now)
 
     decision = relationship("Decision", back_populates="reports")
+
+
+class AnalysisRun(Base):
+    __tablename__ = "analysis_runs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    decision_id = Column(Integer, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    schema_version = Column(String(20), nullable=True)
+    result_json = Column(JSON, nullable=True)
+    error_code = Column(String(50), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+
+    decision = relationship("Decision", back_populates="analysis_runs")
 
 
 class AuditLog(Base):

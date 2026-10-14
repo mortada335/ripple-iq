@@ -84,6 +84,23 @@ decision-maker. If the caller belongs to multiple organizations, include
   modify an archived decision return `409 DECISION_ARCHIVED`; validation errors
   use the standard error envelope in section 1.1.
 
+### Simulation and persisted analysis (Phase 6)
+
+- `POST /api/v1/decisions/{id}/simulate` runs synchronously and returns a run ID
+  and completed status. Validated results and normalized child records are
+  persisted.
+- `GET /api/v1/decisions/{id}/analysis` returns the latest status, timestamps,
+  schema version, safe error code, and `human_review_required: true`.
+- `GET /api/v1/decisions/{id}/result` serves the persisted completed result,
+  including schema version, fairness notes, confidence, score components, and
+  limitations. A missing or failed run returns `409 SIMULATION_NOT_RUN`.
+- `POST /api/v1/decisions/{id}/analysis/retry` starts a fresh run only when the
+  latest run failed. Provider errors return a generic `500 ANALYSIS_FAILED`;
+  diagnostic details are not sent to the caller.
+- `GET /api/v1/scenarios/{scenario_id}`, `/impacts`, and `/risks` return the
+  selected scenario, its impacts, and decision-level risks. All reads enforce
+  organization access.
+
 ### 2.1 Health Check (Root)
 Provides rapid uptime checks for container orchestrators and load balancers.
 
