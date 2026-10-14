@@ -1,0 +1,216 @@
+"use client";
+
+import React, { useEffect, useState, use } from "react";
+import Link from "next/link";
+import {
+  Award,
+  ArrowRight,
+  ChevronRight,
+  Sparkles,
+  Check,
+} from "lucide-react";
+import { getSimulationResult } from "@/lib/api";
+import { saveLocalSimulationResult } from "@/lib/mock-data";
+import { DecisionNavTabs } from "@/components/DecisionNavTabs";
+import { SimulationResult } from "@/types/decision";
+
+export default function ScenarioComparisonPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const resolvedParams = use(params);
+  const decisionId = resolvedParams.id;
+
+  const [result, setResult] = useState<SimulationResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [preferredToast, setPreferredToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSimulationResult(Number(decisionId))
+      .then((data) => {
+        setResult(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [decisionId]);
+
+  const handleSetPreferred = (scenarioNum: number) => {
+    if (!result) return;
+    const updated = {
+      ...result,
+      scenarios: result.scenarios.map((s) => ({
+        ...s,
+        is_recommended: s.scenario_number === scenarioNum,
+      })),
+      recommendation: {
+        ...result.recommendation,
+        selected_scenario_number: scenarioNum,
+        title: `Adopt Scenario ${scenarioNum}: ${result.scenarios.find((s) => s.scenario_number === scenarioNum)?.title}`,
+      },
+    };
+    setResult(updated);
+    saveLocalSimulationResult(Number(decisionId), updated);
+    setPreferredToast(`Scenario ${scenarioNum} marked as preferred institutional path`);
+    setTimeout(() => setPreferredToast(null), 2500);
+  };
+
+  if (loading || !result) {
+    return (
+      <div className="space-y-4">
+        <DecisionNavTabs decisionId={decisionId} />
+        <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 sm:space-y-5">
+      <DecisionNavTabs decisionId={decisionId} />
+
+      {preferredToast && (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+          <Check className="h-4 w-4 text-emerald-600" />
+          <span>{preferredToast}</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+            Step 2 of Decision Analysis
+          </span>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+            Comparative Scenario Matrix
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Side-by-side trade-off synthesis across 3 alternative policy implementations.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/decisions/${decisionId}/consequences`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+          >
+            <span>Cross-Stakeholder Impacts</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          <Link
+            href={`/decisions/${decisionId}/recommendation`}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 transition shadow-xs"
+          >
+            <Award className="h-3.5 w-3.5" />
+            <span>Recommendation</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* 3-Column Comparison Grid */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {result.scenarios.map((scenario) => {
+          const isWinner = scenario.is_recommended;
+          const scorePercent = Math.round(scenario.feasibility_score * 100);
+
+          return (
+            <div
+              key={scenario.scenario_number}
+              className={`relative flex flex-col justify-between rounded-xl border p-5 transition-all ${
+                isWinner
+                  ? "border-indigo-600 bg-white shadow-md ring-2 ring-indigo-600/20 dark:border-indigo-500 dark:bg-slate-900"
+                  : "border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900"
+              }`}
+            >
+              {isWinner && (
+                <div className="absolute -top-2.5 left-5 inline-flex items-center gap-1 rounded-full bg-indigo-600 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  <span>Recommended Path</span>
+                </div>
+              )}
+
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Scenario 0{scenario.scenario_number}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      scorePercent >= 80
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        : scorePercent >= 70
+                        ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                    }`}
+                  >
+                    {scorePercent}% Feasibility
+                  </span>
+                </div>
+
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                  {scenario.title}
+                </h3>
+
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {scenario.description}
+                </p>
+
+                {/* Score bar */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex justify-between text-[10px] font-medium text-slate-400">
+                    <span>Feasibility Rating</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      {scorePercent} / 100
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className={`h-full transition-all duration-500 ${
+                        isWinner ? "bg-indigo-600" : "bg-slate-500"
+                      }`}
+                      style={{ width: `${scorePercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Key Tradeoff */}
+                <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-800/40">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                    Trade-off Summary
+                  </span>
+                  <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {scenario.tradeoff_summary}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action footer */}
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSetPreferred(scenario.scenario_number)}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                    isWinner
+                      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                  title="Mark as Preferred Institutional Policy"
+                >
+                  {isWinner ? "✓ Preferred" : "Select Path"}
+                </button>
+
+                <Link
+                  href={`/decisions/${decisionId}/scenarios/${scenario.scenario_number}`}
+                  className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-slate-900 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition"
+                >
+                  <span>Breakdown</span>
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
