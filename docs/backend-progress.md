@@ -11,7 +11,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | Phase | Status | Commit | Verification | Push |
 |---|---|---|---|---|
 | 0 — Repository inspection and backend plan | Complete | `e821f1f` | `git diff --check` passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
-| 1 — FastAPI foundation and configuration | Committed locally | Pending | 15 tests passed; Ruff check/format passed; Uvicorn smoke checks all 200; frontend diff empty | Pending |
+| 1 — FastAPI foundation and configuration | Complete | `17b9f01` | 15 tests passed; Ruff check/format passed; Uvicorn smoke checks all 200; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 2 — Database, migrations, and base models | Not started | — | — | — |
 | 3 — Authentication and organization access | Not started | — | — | — |
 | 4 — Decision and context management | Not started | — | — | — |
@@ -55,4 +55,5 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Uvicorn started successfully; `/health`, `/api/v1/health`, `/docs`, and
   `/openapi.json` each returned HTTP 200.
 - `git diff --check` passed; no frontend paths changed.
-- Phase 1 commit hash and push status: pending.
+- Phase 1 commit: `17b9f01` (`feat(backend): complete phase 1 - FastAPI foundation`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
