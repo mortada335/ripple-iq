@@ -1,3 +1,7 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
@@ -6,9 +10,6 @@ from app.schemas.schemas import LoginRequest, TokenResponse, UserRegister, UserR
 from app.security.passwords import hash_password, verify_password
 from app.security.tokens import create_access_token
 from app.services.audit_service import record_audit_event
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 

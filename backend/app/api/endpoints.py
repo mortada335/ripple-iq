@@ -14,6 +14,11 @@ Implements the v1 API contract:
 
 from datetime import UTC, datetime
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import PlainTextResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.config import settings
 from app.database import get_db
 from app.dependencies import (
@@ -48,10 +53,6 @@ from app.services.decision_service import DecisionService
 from app.services.recommendation_service import RecommendationService
 from app.services.report_service import ReportService
 from app.services.simulation_service import AnalysisExecutionError, SimulationService
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from fastapi.responses import PlainTextResponse
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 router = APIRouter()
 

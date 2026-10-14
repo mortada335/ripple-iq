@@ -7,7 +7,6 @@ Stakeholder, Scenario, Impact, Risk, Recommendation, and Report.
 
 from datetime import UTC, datetime
 
-from app.database import Base
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -23,6 +22,8 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import relationship
+
+from app.database import Base
 
 
 def utc_now():

@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import jwt
+
 from app.config import settings
 
 ALGORITHM = "HS256"

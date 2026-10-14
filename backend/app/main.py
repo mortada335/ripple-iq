@@ -11,15 +11,16 @@ import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
-from app.api.endpoints import router as api_router
-from app.api.v1.auth import router as auth_router
-from app.api.v1.organizations import router as organizations_router
-from app.config import settings
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from app.api.endpoints import router as api_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.organizations import router as organizations_router
+from app.config import settings
 
 
 class JsonLogFormatter(logging.Formatter):

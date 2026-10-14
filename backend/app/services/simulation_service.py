@@ -3,6 +3,10 @@
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy.orm import Session
+
+from ai.provider import DecisionAnalyzer, default_analyzer
+from ai.schemas import AnalysisResult
 from app.models.models import (
     AnalysisRun,
     ContextData,
@@ -25,10 +29,6 @@ from app.schemas.schemas import (
     StakeholderResponse,
 )
 from app.services.audit_service import record_audit_event
-from sqlalchemy.orm import Session
-
-from ai.provider import DecisionAnalyzer, default_analyzer
-from ai.schemas import AnalysisResult
 
 
 class AnalysisExecutionError(Exception):

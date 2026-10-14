@@ -4,10 +4,11 @@ RippleIQ Decision Service
 Business logic for managing university decisions and attaching institutional context.
 """
 
+from sqlalchemy.orm import Session
+
 from app.models.models import AnalysisRun, ContextData, Decision, Impact, Recommendation, Risk, Scenario, Stakeholder
 from app.schemas.schemas import ContextDataCreate, DecisionCreate, DecisionUpdate
 from app.services.audit_service import record_audit_event
-from sqlalchemy.orm import Session
 
 
 class DecisionService:

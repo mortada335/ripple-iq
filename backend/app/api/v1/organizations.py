@@ -1,5 +1,9 @@
 import re
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.dependencies import get_current_user, get_membership, require_role
 from app.models import Organization, OrganizationMember, User
@@ -10,9 +14,6 @@ from app.schemas.schemas import (
     OrganizationMemberResponse,
     OrganizationResponse,
 )
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/v1/organizations", tags=["Organizations"])
 

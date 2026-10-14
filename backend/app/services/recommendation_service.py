@@ -1,5 +1,8 @@
 """Human review and refinement of persisted recommendations."""
 
+from sqlalchemy.orm import Session
+
+from ai.schemas import AnalysisResult
 from app.models.models import AnalysisRun, Decision, RecommendationRefinement
 from app.schemas.schemas import (
     RecommendationRefinementResponse,
@@ -8,9 +11,6 @@ from app.schemas.schemas import (
     RecommendationViewResponse,
 )
 from app.services.audit_service import record_audit_event
-from sqlalchemy.orm import Session
-
-from ai.schemas import AnalysisResult
 
 
 class RecommendationService:

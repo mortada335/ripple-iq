@@ -8,13 +8,13 @@ Ensures document auditability with SHA-256 integrity checksums.
 import hashlib
 from datetime import UTC, datetime
 
+from sqlalchemy.orm import Session
+
+from ai.schemas import AnalysisResult
 from app.models.models import Decision, Report
 from app.schemas.schemas import ReportResponse
 from app.services.recommendation_service import RecommendationService
 from app.services.simulation_service import SimulationService
-from sqlalchemy.orm import Session
-
-from ai.schemas import AnalysisResult
 
 
 class ReportService:
