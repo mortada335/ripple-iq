@@ -1,6 +1,6 @@
 # RippleIQ — Backend Service
 
-> **Framework:** FastAPI (Python 3.11+)  
+> **Framework:** FastAPI (Python 3.12+, verified on Python 3.13)
 > **ORM:** SQLAlchemy 2.0  
 > **Validation:** Pydantic v2  
 > **Migrations:** Alembic  
@@ -38,11 +38,21 @@ backend/
 | `GET` | `/health` | Root health check |
 | `GET` | `/api/v1/health` | API v1 status, DB connectivity, analyzer mode |
 | `POST` | `/api/v1/decisions` | Create decision |
+| `GET` | `/api/v1/decisions` | List decisions scoped to an organization |
 | `GET` | `/api/v1/decisions/{id}` | Get decision by ID |
+| `PATCH` | `/api/v1/decisions/{id}` | Update decision fields |
+| `DELETE` | `/api/v1/decisions/{id}` | Archive a decision |
 | `POST` | `/api/v1/decisions/{id}/context` | Attach institutional context data |
+| `GET/PATCH/DELETE` | `/api/v1/decisions/{id}/context`, `/api/v1/context/{context_id}` | Read and manage context |
 | `POST` | `/api/v1/decisions/{id}/simulate` | Run deterministic simulation |
+| `GET` | `/api/v1/decisions/{id}/analysis` | Get latest analysis status |
+| `POST` | `/api/v1/decisions/{id}/analysis/retry` | Retry failed analysis |
 | `GET` | `/api/v1/decisions/{id}/result` | Get full simulation result |
+| `GET` | `/api/v1/scenarios/{scenario_id}` | Read a scenario and score components |
+| `GET` | `/api/v1/decisions/{id}/recommendation` | Read original and current recommendation |
+| `POST` | `/api/v1/decisions/{id}/refine` | Save human recommendation feedback |
 | `GET` | `/api/v1/decisions/{id}/report` | Get audit-ready Markdown report |
+| `GET` | `/api/v1/decisions/{id}/report.md` | Download Markdown report |
 | `POST` | `/api/v1/auth/register` | Register with email, name, and password |
 | `POST` | `/api/v1/auth/login` | Sign in and receive a bearer token |
 | `GET` | `/api/v1/auth/me` | Get the authenticated account |
@@ -78,10 +88,11 @@ Private API routes require `Authorization: Bearer <access_token>`. See
    ```
 
    Set `DATABASE_URL` to your PostgreSQL connection string. SQLite is reserved
-   for isolated tests. Set `ALLOWED_ORIGINS` to comma-separated trusted frontend origins; an
-   empty value allows no cross-origin requests. Application logs use JSON lines,
-   and unexpected server errors are logged without exposing exception details
-   in API responses.
+   for isolated tests. Set `ALLOWED_ORIGINS` to comma-separated trusted frontend
+   origins; an empty value allows no cross-origin requests. Production requires
+   a private `SECRET_KEY` of at least 32 characters and explicit CORS origins.
+   Application logs use JSON lines; error responses omit stack traces and SQL
+   details.
 
    For Neon, supply its PostgreSQL connection URI through the `DATABASE_URL`
    environment variable. The app uses the existing SQLAlchemy/psycopg2 stack;
@@ -92,7 +103,7 @@ Private API routes require `Authorization: Bearer <access_token>`. See
    same.
 
 4. Start PostgreSQL (for example, `docker compose up -d db` from the repository
-   root), then run migrations:
+   root), then run migrations from the `backend/` directory:
    ```bash
    alembic upgrade head
    ```
@@ -102,7 +113,16 @@ Private API routes require `Authorization: Bearer <access_token>`. See
    uvicorn app.main:app --reload --port 8000
    ```
 
-6. Run tests:
+6. Run backend and AI tests from `backend/`:
    ```bash
-   pytest -v
+   python -m pytest tests ../ai/tests
    ```
+
+   Run Ruff from the repository root:
+   ```bash
+   python -m ruff check backend ai
+   python -m ruff format --check backend ai
+   ```
+
+Health checks are available at `http://localhost:8000/health` and
+`http://localhost:8000/api/v1/health`; Swagger is at `http://localhost:8000/docs`.

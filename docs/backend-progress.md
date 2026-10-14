@@ -19,7 +19,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 6 — Simulation API and result persistence | Complete | `177d7ea` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 7 — Recommendation refinement and reports | Complete | `dceb304` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 8 — Security, validation, and production basics | Complete | `179e1cf` | 39 tests passed; Ruff passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
-| 9 — Complete testing and documentation | Not started | — | — | — |
+| 9 — Complete testing and documentation | In progress | — | 40 tests passed; full Ruff check/format passed | Not pushed |
 | 10 — Final verification | Not started | — | — | — |
 
 ## Phase 0 baseline
@@ -167,6 +167,20 @@ diff check, documentation update, focused commit, and push have succeeded.
   diff is empty.
 - Phase 8 commit: `179e1cf` (`feat(backend): complete phase 8 - security and production basics`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
+
+## Phase 9 verification (commit and push pending)
+
+- Added the registration-to-report end-to-end HTTP test and expanded OpenAPI
+  coverage checks for the implemented route groups.
+- Updated the API contract with current simulation, persisted analysis,
+  recommendation, refinement, and report response fields. Updated backend and
+  root setup instructions and added `docs/testing.md`.
+- `backend/.venv/Scripts/python.exe -m pytest backend/tests ai/tests`: 40 passed
+  (four upstream Starlette deprecation warnings).
+- `python -m ruff check backend ai`: passed.
+- `python -m ruff format --check backend ai`: passed (47 files).
+- `git diff --check` passed; frontend diff is empty. No secrets, database
+  dumps, or generated credential files are tracked.
 
 ## Phase 6 verification
 

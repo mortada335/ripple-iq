@@ -26,7 +26,7 @@ In the event of client (4xx) or server (5xx) errors, the API guarantees a consis
 #### Standard Error Codes
 | HTTP Status | Code | Meaning |
 | :--- | :--- | :--- |
-| `400` | `INVALID_PAYLOAD` | Request body failed Pydantic validation |
+| `422` | `VALIDATION_ERROR` | Request body failed Pydantic validation |
 | `401` | `AUTHENTICATION_REQUIRED` / `INVALID_CREDENTIALS` | Missing or invalid bearer token or credentials |
 | `403` | `INSUFFICIENT_ROLE` | Organization role does not permit the requested action |
 | `404` | `NOT_FOUND` | Requested entity (Decision, Result, etc.) does not exist |
@@ -39,9 +39,12 @@ In the event of client (4xx) or server (5xx) errors, the API guarantees a consis
 
 `POST /api/v1/auth/register` accepts `{ "email": "person@university.edu",
 "full_name": "Campus Analyst", "password": "at-least-12-characters" }` and
-returns public user fields only. Passwords must be 12–128 characters.
+returns `201` with `{ "id": 7, "email": "person@university.edu",
+"full_name": "Campus Analyst", "created_at": "2026-10-14T12:00:00Z" }`.
+Password fields and hashes are never returned. Passwords must be 12–128 characters.
 `POST /api/v1/auth/login` accepts email and password and returns
 `{ "access_token": "...", "token_type": "bearer", "expires_in": 1800 }`.
+Invalid credentials return `401 INVALID_CREDENTIALS`.
 Pass this token as `Authorization: Bearer <access_token>` to private routes.
 `GET /api/v1/auth/me` returns the current user's id, email, name, and creation
 timestamp.
@@ -91,6 +94,9 @@ decision-maker. If the caller belongs to multiple organizations, include
   persisted.
 - `GET /api/v1/decisions/{id}/analysis` returns the latest status, timestamps,
   schema version, safe error code, and `human_review_required: true`.
+  A completed example is `{ "decision_id": 1, "analysis_run_id": 1,
+  "analysis_status": "completed", "schema_version": "0.1.0",
+  "error_code": null, "human_review_required": true, ... }`.
 - `GET /api/v1/decisions/{id}/result` serves the persisted completed result,
   including schema version, fairness notes, confidence, score components, and
   limitations. A missing or failed run returns `409 SIMULATION_NOT_RUN`.
@@ -275,7 +281,9 @@ Executes the deterministic AI simulation engine across the decision and context.
 {
   "decision_id": 1,
   "status": "COMPLETED",
-  "message": "Simulation executed successfully across 5 stakeholder groups and 3 scenarios.",
+  "analysis_run_id": 1,
+  "analysis_status": "completed",
+  "message": "Analysis completed for 5 stakeholder groups and 3 scenarios.",
   "simulated_at": "2026-10-12T18:22:00Z"
 }
 ```
@@ -292,6 +300,19 @@ Retrieves the full structured simulation result including stakeholders, 3 scenar
 {
   "decision_id": 1,
   "decision_title": "Reduce in-person university attendance from five days to four days per week",
+  "schema_version": "0.1.0",
+  "analysis_status": "completed",
+  "interpretation": {
+    "decision_type": "attendance",
+    "change_type": "reduce",
+    "subject": "Reduce in-person university attendance from five days to four days per week",
+    "source_text": "Reduce in-person university attendance from five days to four days per week"
+  },
+  "fairness": {
+    "potential_concerns": ["Review schedule, accessibility, childcare, and employment constraints across student groups."],
+    "affected_groups_to_review": ["students", "faculty", "staff", "commuters", "people with disabilities"],
+    "note": "Fairness notes identify questions for human review and do not measure group outcomes."
+  },
   "is_estimate": true,
   "human_review_required": true,
   "confidence": {
@@ -336,7 +357,13 @@ Retrieves the full structured simulation result including stakeholders, 3 scenar
       "scenario_number": 1,
       "title": "Apply the decision as written",
       "description": "Full compression of campus operations into Monday through Thursday. Campus facilities closed Friday through Sunday.",
-      "feasibility_score": 0.65,
+      "feasibility_score": 0.525,
+      "score_components": {
+        "implementation_feasibility": 0.65,
+        "stakeholder_protection": 0.35,
+        "reversibility": 0.3
+      },
+      "score_method": "Weighted heuristic: feasibility × 0.60 + stakeholder protection × 0.30 + reversibility × 0.10. Components are qualitative estimates, not measured outcomes.",
       "is_recommended": false,
       "tradeoff_summary": "Maximizes energy and commute savings but creates acute operational jeopardy for continuous scientific research laboratories."
     },
@@ -344,7 +371,7 @@ Retrieves the full structured simulation result including stakeholders, 3 scenar
       "scenario_number": 2,
       "title": "Apply a modified version that protects laboratories",
       "description": "Compress classroom instruction to 4 days while keeping wet laboratories, scientific research, and specialized clinical facilities open 5-7 days with dedicated support staffing.",
-      "feasibility_score": 0.88,
+      "feasibility_score": 0.878,
       "is_recommended": true,
       "tradeoff_summary": "Balances 80% of energy and commuting gains while safeguarding multimillion-dollar sponsored research grants and continuous biological cultures."
     },
@@ -352,7 +379,7 @@ Retrieves the full structured simulation result including stakeholders, 3 scenar
       "scenario_number": 3,
       "title": "Run a limited pilot first",
       "description": "Pilot the 4-day schedule within the Faculty of Humanities and Social Sciences for one full academic semester before institution-wide expansion.",
-      "feasibility_score": 0.78,
+      "feasibility_score": 0.788,
       "is_recommended": false,
       "tradeoff_summary": "Lowest operational disruption and provides empirical empirical data, but creates inter-departmental scheduling friction during the trial period."
     }
@@ -404,6 +431,7 @@ Retrieves the full structured simulation result including stakeholders, 3 scenar
       "title": "Continuous Research Experiment Interruption",
       "severity": "CRITICAL",
       "likelihood": "HIGH",
+      "probability": 0.8,
       "affected_stakeholders": ["laboratories", "faculty"],
       "mitigation_strategy": "Establish explicit laboratory access exemptions and essential research personnel building credentials."
     },
