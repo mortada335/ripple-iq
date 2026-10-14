@@ -64,6 +64,26 @@ decision-maker. If the caller belongs to multiple organizations, include
 
 ## 2. Endpoints
 
+### Decision and context management (Phase 4)
+
+- `GET /api/v1/decisions?offset=0&limit=50` lists decisions for the caller's
+  selected organization (`limit` is 1–100).
+- `PATCH /api/v1/decisions/{id}` accepts any subset of `title`, `description`,
+  `decision_type`, `department`, `time_horizon`, and `priority`.
+- `DELETE /api/v1/decisions/{id}` archives the decision and returns `204`.
+- `GET /api/v1/decisions/{id}/context` reads attached context;
+  `PATCH /api/v1/context/{context_id}` updates supplied context fields;
+  `DELETE /api/v1/context/{context_id}` deletes context and returns `204`.
+- Decision types: `academic_policy`, `attendance`, `budget`, `staffing`,
+  `facilities`, `student_services`, `technology`, `other`. New decisions begin
+  as `DRAFT`; adding context sets `READY_FOR_ANALYSIS`. Changing decision or
+  context inputs clears stored simulation-derived records and returns the
+  decision to the appropriate preparation status. Important mutations create
+  audit-log entries.
+- All routes require a bearer token and organization membership. Attempts to
+  modify an archived decision return `409 DECISION_ARCHIVED`; validation errors
+  use the standard error envelope in section 1.1.
+
 ### 2.1 Health Check (Root)
 Provides rapid uptime checks for container orchestrators and load balancers.
 

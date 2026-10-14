@@ -27,8 +27,10 @@ from app.schemas.schemas import (
     ApiV1HealthResponse,
     ContextDataCreate,
     ContextDataResponse,
+    ContextDataUpdate,
     DecisionCreate,
     DecisionResponse,
+    DecisionUpdate,
     ReportResponse,
     RootHealthResponse,
     SimulateResponse,
@@ -37,12 +39,29 @@ from app.schemas.schemas import (
 from app.services.decision_service import DecisionService
 from app.services.report_service import ReportService
 from app.services.simulation_service import SimulationService
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 router = APIRouter()
+
+
+def decision_response(decision) -> DecisionResponse:
+    return DecisionResponse(
+        id=decision.id,
+        title=decision.title,
+        description=decision.description,
+        decision_type=decision.decision_type,
+        department=decision.department,
+        time_horizon=decision.time_horizon,
+        priority=decision.priority,
+        status=decision.status,
+        context_attached=decision.context_data is not None,
+        simulation_ready=decision.recommendation is not None,
+        created_at=decision.created_at,
+        updated_at=decision.updated_at,
+    )
 
 
 # ==========================================
@@ -114,19 +133,20 @@ def create_decision(
             detail={"code": "INSUFFICIENT_ROLE", "message": "Your organization role cannot create decisions."},
         )
     decision = DecisionService.create_decision(db, data, membership.organization_id, user.id)
-    return DecisionResponse(
-        id=decision.id,
-        title=decision.title,
-        description=decision.description,
-        department=decision.department,
-        time_horizon=decision.time_horizon,
-        priority=decision.priority,
-        status=decision.status,
-        context_attached=False,
-        simulation_ready=False,
-        created_at=decision.created_at,
-        updated_at=decision.updated_at,
-    )
+    return decision_response(decision)
+
+
+@router.get("/api/v1/decisions", response_model=list[DecisionResponse], tags=["Decisions"])
+def list_decisions(
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    organization_id: int | None = Depends(organization_header),
+):
+    membership = resolve_membership(db, user, organization_id)
+    decisions = DecisionService.list_decisions(db, membership.organization_id, offset=offset, limit=limit)
+    return [decision_response(decision) for decision in decisions]
 
 
 @router.get(
@@ -145,22 +165,31 @@ def get_decision(id: int, db: Session = Depends(get_db), user: User = Depends(ge
             detail={"code": "DECISION_NOT_FOUND", "message": f"Decision with ID {id} was not found."},
         )
 
-    context_attached = decision.context_data is not None
-    simulation_ready = decision.recommendation is not None
+    return decision_response(decision)
 
-    return DecisionResponse(
-        id=decision.id,
-        title=decision.title,
-        description=decision.description,
-        department=decision.department,
-        time_horizon=decision.time_horizon,
-        priority=decision.priority,
-        status=decision.status,
-        context_attached=context_attached,
-        simulation_ready=simulation_ready,
-        created_at=decision.created_at,
-        updated_at=decision.updated_at,
-    )
+
+@router.patch("/api/v1/decisions/{id}", response_model=DecisionResponse, tags=["Decisions"])
+def update_decision(
+    id: int,
+    data: DecisionUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    decision = require_decision_access(db, user, id, write=True)
+    try:
+        return decision_response(DecisionService.update_decision(db, decision, data, user.id))
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INVALID_DECISION_UPDATE", "message": str(error)},
+        ) from error
+
+
+@router.delete("/api/v1/decisions/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Decisions"])
+def archive_decision(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    decision = require_decision_access(db, user, id, write=True)
+    DecisionService.archive_decision(db, decision, user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ==========================================
@@ -183,13 +212,62 @@ def attach_context(
     """Attaches or updates operational context (enrollment, labs, transit, assumptions)."""
     require_decision_access(db, user, id, write=True)
     try:
-        context = DecisionService.attach_context(db, id, data)
+        context = DecisionService.attach_context(db, id, data, actor_user_id=user.id)
         return ContextDataResponse.model_validate(context)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "DECISION_NOT_FOUND", "message": str(e)},
         ) from e
+
+
+@router.get("/api/v1/decisions/{id}/context", response_model=ContextDataResponse, tags=["Decisions"])
+def get_decision_context(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    require_decision_access(db, user, id)
+    context = DecisionService.get_context(db, id)
+    if context is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "CONTEXT_NOT_FOUND", "message": "Context data was not found."},
+        )
+    return ContextDataResponse.model_validate(context)
+
+
+@router.patch("/api/v1/context/{context_id}", response_model=ContextDataResponse, tags=["Decisions"])
+def update_context(
+    context_id: int,
+    data: ContextDataUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    context = DecisionService.get_context_by_id(db, context_id)
+    if context is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "CONTEXT_NOT_FOUND", "message": "Context data was not found."},
+        )
+    require_decision_access(db, user, context.decision_id, write=True)
+    try:
+        context = DecisionService.update_context(db, context, data.model_dump(exclude_unset=True), user.id)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INVALID_CONTEXT_UPDATE", "message": str(error)},
+        ) from error
+    return ContextDataResponse.model_validate(context)
+
+
+@router.delete("/api/v1/context/{context_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Decisions"])
+def delete_context(context_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    context = DecisionService.get_context_by_id(db, context_id)
+    if context is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "CONTEXT_NOT_FOUND", "message": "Context data was not found."},
+        )
+    require_decision_access(db, user, context.decision_id, write=True)
+    DecisionService.delete_context(db, context, user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ==========================================

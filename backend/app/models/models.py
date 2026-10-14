@@ -20,6 +20,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import relationship
 
@@ -91,6 +92,7 @@ class Decision(Base):
 
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=False)
+    decision_type = Column(String(50), nullable=False, default="other", server_default="other")
     department = Column(String(255), nullable=True)
     time_horizon = Column(String(100), nullable=True)
     priority = Column(String(50), default="HIGH")
@@ -129,6 +131,9 @@ class ContextData(Base):
     constraints = Column(Text, nullable=True)
     raw_metadata = Column(JSON, default=dict)
     created_at = Column(DateTime(timezone=True), default=utc_now)
+    updated_at = Column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now, server_default=func.now()
+    )
 
     decision = relationship("Decision", back_populates="context_data")
 

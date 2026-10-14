@@ -113,6 +113,11 @@ def require_decision_access(
         )
     if write:
         require_role(membership, {"owner", "admin", "decision_maker"})
+        if decision.status == "ARCHIVED":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"code": "DECISION_ARCHIVED", "message": "Archived decisions cannot be changed."},
+            )
     return decision
 
 

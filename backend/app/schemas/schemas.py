@@ -12,6 +12,16 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 OrganizationRole = Literal["owner", "admin", "decision_maker", "reviewer", "viewer"]
+DecisionType = Literal[
+    "academic_policy",
+    "attendance",
+    "budget",
+    "staffing",
+    "facilities",
+    "student_services",
+    "technology",
+    "other",
+]
 
 
 class UserRegister(BaseModel):
@@ -137,7 +147,10 @@ class ErrorEnvelope(BaseModel):
 
 class DecisionCreate(BaseModel):
     title: str = Field(..., min_length=5, max_length=500, description="Concise university policy proposal")
-    description: str = Field(..., min_length=10, description="Detailed narrative and operational scope")
+    description: str = Field(
+        ..., min_length=10, max_length=10000, description="Detailed narrative and operational scope"
+    )
+    decision_type: DecisionType = "other"
     department: str | None = Field(None, max_length=255, description="Governing university department")
     time_horizon: str | None = Field("1 Academic Year", max_length=100)
     priority: str | None = Field("HIGH", max_length=50)
@@ -147,6 +160,7 @@ class DecisionResponse(BaseModel):
     id: int
     title: str
     description: str
+    decision_type: DecisionType = "other"
     department: str | None = None
     time_horizon: str | None = None
     priority: str
@@ -159,6 +173,15 @@ class DecisionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DecisionUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=5, max_length=500)
+    description: str | None = Field(default=None, min_length=10, max_length=10000)
+    decision_type: DecisionType | None = None
+    department: str | None = Field(default=None, max_length=255)
+    time_horizon: str | None = Field(default=None, max_length=100)
+    priority: str | None = Field(default=None, max_length=50)
+
+
 # ==========================================
 # Context Data Schemas
 # ==========================================
@@ -169,9 +192,21 @@ class ContextDataCreate(BaseModel):
     faculty_count: int | None = Field(None, ge=1, description="Total faculty members")
     active_laboratories: int | None = Field(None, ge=0, description="Continuous research/wet laboratories")
     transit_dependency_rate: float | None = Field(None, ge=0.0, le=100.0, description="Commuter transit percentage")
-    key_assumptions: list[str] = Field(default_factory=list, description="Explicit administrative assumptions")
-    constraints: str | None = Field(None, description="Regulatory, accreditation, or union bounds")
+    key_assumptions: list[str] = Field(
+        default_factory=list, max_length=50, description="Explicit administrative assumptions"
+    )
+    constraints: str | None = Field(None, max_length=4000, description="Regulatory, accreditation, or union bounds")
     raw_metadata: dict[str, Any] = Field(default_factory=dict, description="Custom institutional metadata")
+
+
+class ContextDataUpdate(BaseModel):
+    student_population: int | None = Field(default=None, ge=1)
+    faculty_count: int | None = Field(default=None, ge=1)
+    active_laboratories: int | None = Field(default=None, ge=0)
+    transit_dependency_rate: float | None = Field(default=None, ge=0.0, le=100.0)
+    key_assumptions: list[str] | None = Field(default=None, max_length=50)
+    constraints: str | None = Field(default=None, max_length=4000)
+    raw_metadata: dict[str, Any] | None = None
 
 
 class ContextDataResponse(BaseModel):
@@ -185,6 +220,7 @@ class ContextDataResponse(BaseModel):
     constraints: str | None = None
     raw_metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

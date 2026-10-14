@@ -14,7 +14,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 1 — FastAPI foundation and configuration | Complete | `17b9f01` | 15 tests passed; Ruff check/format passed; Uvicorn smoke checks all 200; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 2 — Database, migrations, and base models | Complete | `97ad6b2` | 16 tests passed; Ruff passed; PostgreSQL and SQLite migrations/schema checks passed; Neon API health reports connected | Pushed to `origin/backend/full-mvp-implementation` |
 | 3 — Authentication and organization access | Complete | `5364228` | 26 tests passed; Ruff passed; PostgreSQL password-hash migration and API/DB smoke checks passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
-| 4 — Decision and context management | Not started | — | — | — |
+| 4 — Decision and context management | In progress | — | 29 tests passed; Ruff passed; Neon migration applied | Pending commit/push |
 | 5 — Mock simulation engine | Not started | — | — | — |
 | 6 — Simulation API and result persistence | Not started | — | — | — |
 | 7 — Recommendation refinement and reports | Not started | — | — | — |
@@ -99,3 +99,17 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Phase 3 commit: `5364228` (`feat(backend): complete phase 3 - authentication and organization access`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
 - Frontend paths remain unchanged.
+
+## Phase 4 verification (commit and push pending)
+
+- Added organization-scoped decision listing, partial update, archival, context
+  read/update/delete, supported university decision types, and preparation
+  statuses. Changes to decision inputs or context clear stale simulation data.
+- Important decision/context mutations are recorded in `audit_logs`.
+- `backend/.venv/Scripts/python.exe -m pytest backend/tests ai/tests`: 29 passed
+  (three upstream Starlette deprecation warnings).
+- Ruff check and format passed for all changed Phase 4 Python modules and the
+  new Alembic revision.
+- Local Alembic autogeneration detected only `decisions.decision_type` and
+  `context_data.updated_at`. Neon upgrade applied revision `36393c8e6d04`.
+- API contract and schema documentation updated. Frontend diff is empty.
