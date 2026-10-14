@@ -15,7 +15,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 2 — Database, migrations, and base models | Complete | `97ad6b2` | 16 tests passed; Ruff passed; PostgreSQL and SQLite migrations/schema checks passed; Neon API health reports connected | Pushed to `origin/backend/full-mvp-implementation` |
 | 3 — Authentication and organization access | Complete | `5364228` | 26 tests passed; Ruff passed; PostgreSQL password-hash migration and API/DB smoke checks passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 4 — Decision and context management | Complete | `4a8ff9a` | 29 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
-| 5 — Mock simulation engine | In progress | — | 32 tests passed; Ruff passed; provider output validated | Not pushed |
+| 5 — Mock simulation engine | Complete | `851e475` | 32 tests passed; Ruff passed; provider output validated | Pushed to `origin/backend/full-mvp-implementation` |
 | 6 — Simulation API and result persistence | Not started | — | — | — |
 | 7 — Recommendation refinement and reports | Not started | — | — | — |
 | 8 — Security, validation, and production basics | Not started | — | — | — |
@@ -116,7 +116,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Phase 4 commit: `4a8ff9a` (`feat(backend): complete phase 4 - decisions and context management`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
 
-## Phase 5 verification (commit and push pending)
+## Phase 5 verification
 
 - Added the `DecisionAnalyzer` provider protocol and deterministic mock provider
   using strict Pydantic v2 schemas versioned `0.1.0`.
@@ -130,3 +130,5 @@ diff check, documentation update, focused commit, and push have succeeded.
   32 passed (three upstream Starlette deprecation warnings).
 - Ruff check and format passed for all Phase 5 Python files. Frontend diff is
   empty.
+- Phase 5 commit: `851e475` (`feat(backend): complete phase 5 - deterministic decision simulation`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
