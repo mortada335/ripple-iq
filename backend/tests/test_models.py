@@ -3,7 +3,7 @@ from app.models import AuditLog, Decision, Organization, OrganizationMember, Use
 
 def test_organization_membership_and_audit_log_relationships(db_session):
     organization = Organization(name="North Campus University", slug="north-campus")
-    user = User(email="reviewer@example.edu", full_name="Campus Reviewer")
+    user = User(email="reviewer@example.edu", full_name="Campus Reviewer", password_hash="test-only-password-hash")
     decision = Decision(
         organization=organization,
         creator=user,

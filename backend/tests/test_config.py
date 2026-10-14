@@ -1,0 +1,18 @@
+import pytest
+from app.config import Settings
+from pydantic import ValidationError
+
+
+def test_standard_postgres_url_uses_installed_psycopg2_driver():
+    settings = Settings(DATABASE_URL="postgresql://db_user:db_password@localhost/rippleiq")
+    assert settings.sqlalchemy_database_url == "postgresql+psycopg2://db_user:db_password@localhost/rippleiq"
+
+
+def test_production_rejects_placeholder_signing_secret():
+    with pytest.raises(ValidationError):
+        Settings(ENVIRONMENT="production", SECRET_KEY="replace-with-a-private-random-key-of-at-least-32-characters")
+
+
+def test_production_accepts_private_length_signing_secret():
+    settings = Settings(ENVIRONMENT="production", SECRET_KEY="r" * 64)
+    assert settings.SECRET_KEY == "r" * 64

@@ -16,6 +16,13 @@ from datetime import UTC, datetime
 
 from app.config import settings
 from app.database import get_db
+from app.dependencies import (
+    get_current_user,
+    organization_header,
+    require_decision_access,
+    resolve_membership,
+)
+from app.models import User
 from app.schemas.schemas import (
     ApiV1HealthResponse,
     ContextDataCreate,
@@ -93,9 +100,20 @@ def api_v1_health(db: Session = Depends(get_db)):
     tags=["Decisions"],
     summary="Create a New University Decision Proposal",
 )
-def create_decision(data: DecisionCreate, db: Session = Depends(get_db)):
+def create_decision(
+    data: DecisionCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    organization_id: int | None = Depends(organization_header),
+):
     """Creates a new decision entity in DRAFT status."""
-    decision = DecisionService.create_decision(db, data)
+    membership = resolve_membership(db, user, organization_id)
+    if membership.role not in {"owner", "admin", "decision_maker"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "INSUFFICIENT_ROLE", "message": "Your organization role cannot create decisions."},
+        )
+    decision = DecisionService.create_decision(db, data, membership.organization_id, user.id)
     return DecisionResponse(
         id=decision.id,
         title=decision.title,
@@ -117,8 +135,9 @@ def create_decision(data: DecisionCreate, db: Session = Depends(get_db)):
     tags=["Decisions"],
     summary="Retrieve Decision by ID",
 )
-def get_decision(id: int, db: Session = Depends(get_db)):
+def get_decision(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Retrieves decision metadata, status, and attached context flags."""
+    require_decision_access(db, user, id)
     decision = DecisionService.get_decision(db, id)
     if not decision:
         raise HTTPException(
@@ -155,8 +174,14 @@ def get_decision(id: int, db: Session = Depends(get_db)):
     tags=["Decisions"],
     summary="Attach Institutional Context Data to Decision",
 )
-def attach_context(id: int, data: ContextDataCreate, db: Session = Depends(get_db)):
+def attach_context(
+    id: int,
+    data: ContextDataCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """Attaches or updates operational context (enrollment, labs, transit, assumptions)."""
+    require_decision_access(db, user, id, write=True)
     try:
         context = DecisionService.attach_context(db, id, data)
         return ContextDataResponse.model_validate(context)
@@ -178,11 +203,12 @@ def attach_context(id: int, data: ContextDataCreate, db: Session = Depends(get_d
     tags=["Simulation"],
     summary="Execute Decision Impact Simulation",
 )
-def simulate_decision(id: int, db: Session = Depends(get_db)):
+def simulate_decision(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """
     Runs the deterministic AI Mock Analyzer across the decision and context data,
     generating 5 stakeholder profiles, 3 comparative scenarios, risks, and recommendation.
     """
+    require_decision_access(db, user, id, write=True)
     try:
         return SimulationService.run_simulation(db, id)
     except ValueError as e:
@@ -198,11 +224,12 @@ def simulate_decision(id: int, db: Session = Depends(get_db)):
     tags=["Simulation"],
     summary="Retrieve Full Simulation Results",
 )
-def get_simulation_result(id: int, db: Session = Depends(get_db)):
+def get_simulation_result(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """
     Returns full structured simulation analysis:
     stakeholders, 3 scenarios, impacts, risks, assumptions, confidence, limitations, and recommendation.
     """
+    require_decision_access(db, user, id)
     try:
         return SimulationService.get_simulation_result(db, id)
     except ValueError as e:
@@ -228,11 +255,17 @@ def get_simulation_result(id: int, db: Session = Depends(get_db)):
     tags=["Reports"],
     summary="Generate and Retrieve Audit-Ready Markdown Report",
 )
-def get_report(id: int, request: Request, db: Session = Depends(get_db)):
+def get_report(
+    id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """
     Compiles an executive-grade Markdown decision memorandum.
     Supports JSON response or raw Markdown via 'Accept: text/markdown'.
     """
+    require_decision_access(db, user, id)
     try:
         report = ReportService.generate_report(db, id)
         accept_header = request.headers.get("accept", "")

@@ -5,10 +5,95 @@ Defines request and response schemas for decisions, context, simulation results,
 reports, health checks, and standardized error envelopes.
 """
 
+import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+OrganizationRole = Literal["owner", "admin", "decision_maker", "reviewer", "viewer"]
+
+
+class UserRegister(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+    full_name: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=12, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        normalized = value.strip().casefold()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", normalized):
+            raise ValueError("Enter a valid email address.")
+        return normalized
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        normalized = value.strip().casefold()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", normalized):
+            raise ValueError("Enter a valid email address.")
+        return normalized
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OrganizationCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=255)
+    country: str | None = Field(default=None, max_length=100)
+
+
+class OrganizationResponse(BaseModel):
+    id: int
+    name: str
+    slug: str
+    country: str | None
+    role: OrganizationRole
+    created_at: datetime
+
+
+class OrganizationMemberCreate(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+    role: OrganizationRole
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        normalized = value.strip().casefold()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", normalized):
+            raise ValueError("Enter a valid email address.")
+        return normalized
+
+
+class OrganizationMemberResponse(BaseModel):
+    user_id: int
+    email: str
+    full_name: str
+    role: OrganizationRole
+    created_at: datetime
+
+
+class OrganizationDetailResponse(OrganizationResponse):
+    members: list[OrganizationMemberResponse]
+
 
 # ==========================================
 # Health Check Schemas

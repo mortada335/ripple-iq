@@ -51,6 +51,7 @@ class User(Base):
     organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True)
     email = Column(String(255), nullable=False, unique=True, index=True)
     full_name = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)
     role = Column(String(50), nullable=False, default="ADMIN")
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)

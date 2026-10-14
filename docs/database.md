@@ -23,13 +23,15 @@ organization/user pair and constrain role values to `owner`, `admin`,
 `decision_maker`, `reviewer`, or `viewer`. Audit logs retain the organization,
 actor, and decision references when available, plus an action, resource, JSON
 details, and creation timestamp.
+The `users.password_hash` column stores Argon2 hashes only; it is nullable to
+leave any legacy account without a credential unable to authenticate.
 
 Run `alembic upgrade head` against a new PostgreSQL database before starting the
 API. The app no longer creates database tables implicitly during startup.
 Databases previously created by the old development `create_all` startup path
 have no Alembic revision marker; do not run the clean-database migration against
 those databases without first backing them up and planning a schema baseline.
-The current Neon PostgreSQL branch is at Alembic revision `b85d83e3c062`; its
+The current Neon PostgreSQL branch is at Alembic revision `ec7bfb230dc3`; its
 connection string is supplied at runtime through `DATABASE_URL`, never stored
 in the repository. The same setting can later point at a private PostgreSQL
 endpoint in the VPC when the backend moves to a local server.

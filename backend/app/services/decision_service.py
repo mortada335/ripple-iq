@@ -11,8 +11,15 @@ from sqlalchemy.orm import Session
 
 class DecisionService:
     @staticmethod
-    def create_decision(db: Session, data: DecisionCreate) -> Decision:
+    def create_decision(
+        db: Session,
+        data: DecisionCreate,
+        organization_id: int | None = None,
+        created_by_user_id: int | None = None,
+    ) -> Decision:
         decision = Decision(
+            organization_id=organization_id,
+            created_by_user_id=created_by_user_id,
             title=data.title,
             description=data.description,
             department=data.department,

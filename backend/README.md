@@ -43,8 +43,17 @@ backend/
 | `POST` | `/api/v1/decisions/{id}/simulate` | Run deterministic simulation |
 | `GET` | `/api/v1/decisions/{id}/result` | Get full simulation result |
 | `GET` | `/api/v1/decisions/{id}/report` | Get audit-ready Markdown report |
+| `POST` | `/api/v1/auth/register` | Register with email, name, and password |
+| `POST` | `/api/v1/auth/login` | Sign in and receive a bearer token |
+| `GET` | `/api/v1/auth/me` | Get the authenticated account |
+| `POST` | `/api/v1/organizations` | Create an organization as its owner |
+| `GET` | `/api/v1/organizations` | List the current user's organizations |
+| `GET` | `/api/v1/organizations/{organization_id}` | Get an organization and its members |
+| `POST` | `/api/v1/organizations/{organization_id}/members` | Add a registered user with a role |
 
 Interactive Swagger documentation is available at `/docs`.
+Private API routes require `Authorization: Bearer <access_token>`. See
+[`docs/security.md`](../docs/security.md) for role permissions and configuration.
 
 ---
 

@@ -27,9 +27,38 @@ In the event of client (4xx) or server (5xx) errors, the API guarantees a consis
 | HTTP Status | Code | Meaning |
 | :--- | :--- | :--- |
 | `400` | `INVALID_PAYLOAD` | Request body failed Pydantic validation |
+| `401` | `AUTHENTICATION_REQUIRED` / `INVALID_CREDENTIALS` | Missing or invalid bearer token or credentials |
+| `403` | `INSUFFICIENT_ROLE` | Organization role does not permit the requested action |
 | `404` | `NOT_FOUND` | Requested entity (Decision, Result, etc.) does not exist |
 | `409` | `STATE_CONFLICT` | Action invalid in current state (e.g., retrieving result before simulation) |
 | `500` | `INTERNAL_SERVER_ERROR` | Sanitized server error (no stack traces leaked) |
+
+---
+
+### Authentication and Organizations
+
+`POST /api/v1/auth/register` accepts `{ "email": "person@university.edu",
+"full_name": "Campus Analyst", "password": "at-least-12-characters" }` and
+returns public user fields only. Passwords must be 12–128 characters.
+`POST /api/v1/auth/login` accepts email and password and returns
+`{ "access_token": "...", "token_type": "bearer", "expires_in": 1800 }`.
+Pass this token as `Authorization: Bearer <access_token>` to private routes.
+`GET /api/v1/auth/me` returns the current user's id, email, name, and creation
+timestamp.
+
+`POST /api/v1/organizations` accepts `{ "name": "University Name",
+"country": "Iraq" }` and makes the caller an owner. `GET /api/v1/organizations`
+lists organizations the caller belongs to. `GET /api/v1/organizations/{id}`
+returns the organization and its member roles. Owners and admins may add an
+already registered user with `POST /api/v1/organizations/{id}/members`, using
+`{ "email": "reviewer@university.edu", "role": "reviewer" }`. Only an owner
+may grant owner/admin roles.
+
+Decision, context, simulation, result, and report routes require a member token.
+Creating decisions, attaching context, and simulating require owner, admin, or
+decision-maker. If the caller belongs to multiple organizations, include
+`X-Organization-ID` on decision creation. An inaccessible decision returns
+404.
 
 ---
 
