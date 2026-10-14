@@ -5,9 +5,10 @@ Defines request and response schemas for decisions, context, simulation results,
 reports, health checks, and standardized error envelopes.
 """
 
+import json
 import re
 from datetime import datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -22,6 +23,7 @@ DecisionType = Literal[
     "technology",
     "other",
 ]
+ContextAssumption = Annotated[str, Field(min_length=1, max_length=500)]
 
 
 class UserRegister(BaseModel):
@@ -187,16 +189,33 @@ class DecisionUpdate(BaseModel):
 # ==========================================
 
 
+def _validate_context_metadata(value: dict[str, Any]) -> dict[str, Any]:
+    if len(value) > 50:
+        raise ValueError("Custom metadata may contain at most 50 top-level fields.")
+    try:
+        encoded = json.dumps(value, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError):
+        raise ValueError("Custom metadata must contain valid JSON values.") from None
+    if len(encoded) > 10000:
+        raise ValueError("Custom metadata may not exceed 10,000 characters when serialized.")
+    return value
+
+
 class ContextDataCreate(BaseModel):
     student_population: int | None = Field(None, ge=1, description="Total enrolled student body")
     faculty_count: int | None = Field(None, ge=1, description="Total faculty members")
     active_laboratories: int | None = Field(None, ge=0, description="Continuous research/wet laboratories")
     transit_dependency_rate: float | None = Field(None, ge=0.0, le=100.0, description="Commuter transit percentage")
-    key_assumptions: list[str] = Field(
+    key_assumptions: list[ContextAssumption] = Field(
         default_factory=list, max_length=50, description="Explicit administrative assumptions"
     )
     constraints: str | None = Field(None, max_length=4000, description="Regulatory, accreditation, or union bounds")
     raw_metadata: dict[str, Any] = Field(default_factory=dict, description="Custom institutional metadata")
+
+    @field_validator("raw_metadata")
+    @classmethod
+    def validate_metadata_size(cls, value: dict[str, Any]) -> dict[str, Any]:
+        return _validate_context_metadata(value)
 
 
 class ContextDataUpdate(BaseModel):
@@ -204,9 +223,16 @@ class ContextDataUpdate(BaseModel):
     faculty_count: int | None = Field(default=None, ge=1)
     active_laboratories: int | None = Field(default=None, ge=0)
     transit_dependency_rate: float | None = Field(default=None, ge=0.0, le=100.0)
-    key_assumptions: list[str] | None = Field(default=None, max_length=50)
+    key_assumptions: list[ContextAssumption] | None = Field(default=None, max_length=50)
     constraints: str | None = Field(default=None, max_length=4000)
     raw_metadata: dict[str, Any] | None = None
+
+    @field_validator("raw_metadata")
+    @classmethod
+    def validate_metadata_size(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        if value is None:
+            return value
+        return _validate_context_metadata(value)
 
 
 class ContextDataResponse(BaseModel):

@@ -108,3 +108,20 @@ def test_decision_list_is_scoped_to_selected_organization(client, db_session):
     assert all(item["id"] != other_decision.id for item in listed.json())
     hidden = client.get(f"/api/v1/decisions/{other_decision.id}")
     assert hidden.status_code == 404
+
+
+def test_context_text_and_metadata_limits_use_standard_errors(client):
+    decision_id = create_decision(client).json()["id"]
+    response = client.post(
+        f"/api/v1/decisions/{decision_id}/context",
+        json={"key_assumptions": ["x" * 501]},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    oversized = client.post(
+        f"/api/v1/decisions/{decision_id}/context",
+        json={"raw_metadata": {"notes": "x" * 10001}},
+    )
+    assert oversized.status_code == 422
+    assert oversized.json()["error"]["code"] == "VALIDATION_ERROR"

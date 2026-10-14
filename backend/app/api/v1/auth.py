@@ -5,6 +5,7 @@ from app.models import User
 from app.schemas.schemas import LoginRequest, TokenResponse, UserRegister, UserResponse
 from app.security.passwords import hash_password, verify_password
 from app.security.tokens import create_access_token
+from app.services.audit_service import record_audit_event
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -17,6 +18,16 @@ def register(data: UserRegister, db: Session = Depends(get_db)) -> User:
     user = User(email=data.email, full_name=data.full_name, password_hash=hash_password(data.password))
     db.add(user)
     try:
+        db.flush()
+        record_audit_event(
+            db,
+            organization_id=None,
+            actor_user_id=user.id,
+            decision_id=None,
+            action="auth.registered",
+            resource_type="user",
+            resource_id=user.id,
+        )
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -37,11 +48,31 @@ def login(data: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
         or not user.password_hash
         or not verify_password(data.password, user.password_hash)
     ):
+        record_audit_event(
+            db,
+            organization_id=None,
+            actor_user_id=user.id if user is not None else None,
+            decision_id=None,
+            action="auth.login_failed",
+            resource_type="authentication",
+            resource_id=None,
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "INVALID_CREDENTIALS", "message": "Email or password is incorrect."},
             headers={"WWW-Authenticate": "Bearer"},
         )
+    record_audit_event(
+        db,
+        organization_id=None,
+        actor_user_id=user.id,
+        decision_id=None,
+        action="auth.login_succeeded",
+        resource_type="user",
+        resource_id=user.id,
+    )
+    db.commit()
     return TokenResponse(
         access_token=create_access_token(user.id),
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,

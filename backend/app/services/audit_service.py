@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 def record_audit_event(
     db: Session,
     *,
-    organization_id: int,
-    actor_user_id: int,
+    organization_id: int | None,
+    actor_user_id: int | None,
     decision_id: int | None,
     action: str,
     resource_type: str,

@@ -43,6 +43,7 @@ from app.schemas.schemas import (
     SimulateResponse,
     SimulationResultResponse,
 )
+from app.services.audit_service import record_audit_event
 from app.services.decision_service import DecisionService
 from app.services.recommendation_service import RecommendationService
 from app.services.report_service import ReportService
@@ -438,7 +439,7 @@ def get_simulation_result(id: int, db: Session = Depends(get_db), user: User = D
 
 @router.get("/api/v1/decisions/{id}/report.md", tags=["Reports"])
 def download_report_markdown(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    require_decision_access(db, user, id)
+    decision = require_decision_access(db, user, id)
     try:
         report = ReportService.generate_report(db, id)
     except ValueError as error:
@@ -449,6 +450,7 @@ def download_report_markdown(id: int, db: Session = Depends(get_db), user: User 
                 "message": "A completed analysis is required to generate a report.",
             },
         ) from error
+    audit_report_download(db, decision, user)
     return PlainTextResponse(
         content=report.content_markdown,
         media_type="text/markdown",
@@ -509,9 +511,10 @@ def get_report(
     Compiles an executive-grade Markdown decision memorandum.
     Supports JSON response or raw Markdown via 'Accept: text/markdown'.
     """
-    require_decision_access(db, user, id)
+    decision = require_decision_access(db, user, id)
     try:
         report = ReportService.generate_report(db, id)
+        audit_report_download(db, decision, user)
         accept_header = request.headers.get("accept", "")
         if "text/markdown" in accept_header or "text/plain" in accept_header:
             return PlainTextResponse(
@@ -525,3 +528,18 @@ def get_report(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "DECISION_NOT_FOUND", "message": str(e)},
         ) from e
+
+
+def audit_report_download(db: Session, decision, user: User) -> None:
+    if decision.organization_id is None:
+        return
+    record_audit_event(
+        db,
+        organization_id=decision.organization_id,
+        actor_user_id=user.id,
+        decision_id=decision.id,
+        action="report.downloaded",
+        resource_type="report",
+        resource_id=decision.id,
+    )
+    db.commit()

@@ -40,6 +40,15 @@ organization boundary. Refinement feedback is stored with its author and
 analysis run, is not written to application logs, and does not overwrite the
 original analysis result.
 
+Authentication registration, successful/failed login attempts, decision and
+context mutations, analysis attempts, and report downloads create audit log
+records. Failed-login entries do not store the submitted email or password.
+`/api/v1/health` returns only connected/disconnected database state; SQL errors
+are not included in API responses. Production configuration rejects wildcard
+CORS origins and placeholder/short signing keys. Context assumption strings
+are capped at 500 characters and custom JSON metadata at 50 top-level fields
+and 10,000 serialized characters. There are no file-upload routes in this MVP.
+
 ## Deployment and remaining work
 
 Set `DATABASE_URL` and `SECRET_KEY` in the backend process environment. The

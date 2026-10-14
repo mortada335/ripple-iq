@@ -54,6 +54,10 @@ class Settings(BaseSettings):
             secret_is_placeholder = any(marker in self.SECRET_KEY.casefold() for marker in ("change", "replace"))
             if len(self.SECRET_KEY) < 32 or secret_is_placeholder:
                 raise ValueError("Set SECRET_KEY to a private random value of at least 32 characters in production.")
+            if any("*" in origin for origin in self.cors_origins):
+                raise ValueError(
+                    "Configure explicit ALLOWED_ORIGINS values in production; wildcard CORS is not allowed."
+                )
         if self.ACCESS_TOKEN_EXPIRE_MINUTES < 1:
             raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES must be positive.")
         return self

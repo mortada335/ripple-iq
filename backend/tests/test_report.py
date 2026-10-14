@@ -2,8 +2,10 @@
 Tests for Markdown Report Generation Endpoint
 """
 
+from app.models import AuditLog
 
-def test_generate_and_retrieve_markdown_report(client):
+
+def test_generate_and_retrieve_markdown_report(client, db_session):
     # 1. Create demo decision
     decision_payload = {
         "title": "Reduce in-person university attendance from five days to four days per week",
@@ -72,3 +74,4 @@ def test_generate_and_retrieve_markdown_report(client):
     downloadable = client.get(f"/api/v1/decisions/{decision_id}/report.md")
     assert downloadable.status_code == 200
     assert downloadable.headers["content-disposition"].endswith(f'rippleiq-decision-{decision_id}-report.md"')
+    assert db_session.query(AuditLog).filter_by(decision_id=decision_id, action="report.downloaded").count() >= 3

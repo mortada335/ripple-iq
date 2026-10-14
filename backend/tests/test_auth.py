@@ -1,7 +1,7 @@
-from app.models import Decision, Organization, OrganizationMember, User
+from app.models import AuditLog, Decision, Organization, OrganizationMember, User
 
 
-def test_register_login_and_current_user(client):
+def test_register_login_and_current_user(client, db_session):
     registration = client.post(
         "/api/v1/auth/register",
         json={"email": " Analyst@Example.edu ", "full_name": "Campus Analyst", "password": "a-strong-passphrase"},
@@ -24,13 +24,16 @@ def test_register_login_and_current_user(client):
     assert current_user.status_code == 200
     assert current_user.json()["id"] == user["id"]
     assert "password_hash" not in current_user.json()
+    actions = {row.action for row in db_session.query(AuditLog).filter(AuditLog.actor_user_id == user["id"]).all()}
+    assert {"auth.registered", "auth.login_succeeded"} <= actions
 
 
-def test_invalid_credentials_and_duplicate_registration(client):
+def test_invalid_credentials_and_duplicate_registration(client, db_session):
     payload = {"email": "owner@example.edu", "password": "wrong-password"}
     response = client.post("/api/v1/auth/login", json=payload)
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
+    assert db_session.query(AuditLog).filter_by(action="auth.login_failed").count() == 1
 
     duplicate = client.post(
         "/api/v1/auth/register",
@@ -121,3 +124,22 @@ def test_viewer_cannot_create_decisions(client, db_session):
     )
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "INSUFFICIENT_ROLE"
+
+
+def test_viewer_cannot_run_or_refine_analysis(client, db_session):
+    created = client.post(
+        "/api/v1/decisions",
+        json={"title": "Review academic advising", "description": "Assess current advising access."},
+    )
+    decision_id = created.json()["id"]
+    assert client.post(f"/api/v1/decisions/{decision_id}/simulate").status_code == 200
+
+    owner = db_session.query(User).filter_by(email="owner@example.edu").one()
+    membership = db_session.query(OrganizationMember).filter_by(user_id=owner.id).one()
+    membership.role = "viewer"
+    db_session.commit()
+
+    simulation = client.post(f"/api/v1/decisions/{decision_id}/simulate")
+    refinement = client.post(f"/api/v1/decisions/{decision_id}/refine", json={"feedback": "Consider a pilot."})
+    assert simulation.status_code == 403
+    assert refinement.status_code == 403

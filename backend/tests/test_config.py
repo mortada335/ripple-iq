@@ -16,3 +16,8 @@ def test_production_rejects_placeholder_signing_secret():
 def test_production_accepts_private_length_signing_secret():
     settings = Settings(ENVIRONMENT="production", SECRET_KEY="r" * 64)
     assert settings.SECRET_KEY == "r" * 64
+
+
+def test_production_rejects_wildcard_cors():
+    with pytest.raises(ValidationError):
+        Settings(ENVIRONMENT="production", SECRET_KEY="r" * 64, ALLOWED_ORIGINS="*")

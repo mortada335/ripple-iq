@@ -22,6 +22,18 @@ def test_api_v1_health(client):
     assert "timestamp" in data
 
 
+def test_api_v1_health_does_not_expose_database_errors(client, db_session, monkeypatch):
+    def fail_query(*args, **kwargs):
+        raise RuntimeError("private database connection detail")
+
+    monkeypatch.setattr(db_session, "execute", fail_query)
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "degraded"
+    assert response.json()["database"] == "disconnected"
+    assert "private database connection detail" not in response.text
+
+
 def test_docs_and_openapi(client):
     docs_resp = client.get("/docs")
     assert docs_resp.status_code == 200
