@@ -13,7 +13,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 0 — Repository inspection and backend plan | Complete | `e821f1f` | `git diff --check` passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 1 — FastAPI foundation and configuration | Complete | `17b9f01` | 15 tests passed; Ruff check/format passed; Uvicorn smoke checks all 200; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 2 — Database, migrations, and base models | Complete | `97ad6b2` | 16 tests passed; Ruff passed; PostgreSQL and SQLite migrations/schema checks passed; Neon API health reports connected | Pushed to `origin/backend/full-mvp-implementation` |
-| 3 — Authentication and organization access | Committed locally | Pending | 26 tests passed; Ruff passed; PostgreSQL password-hash migration and API/DB smoke checks passed; frontend diff empty | Pending |
+| 3 — Authentication and organization access | Complete | `5364228` | 26 tests passed; Ruff passed; PostgreSQL password-hash migration and API/DB smoke checks passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 4 — Decision and context management | Not started | — | — | — |
 | 5 — Mock simulation engine | Not started | — | — | — |
 | 6 — Simulation API and result persistence | Not started | — | — | — |
@@ -95,5 +95,7 @@ diff check, documentation update, focused commit, and push have succeeded.
   `alembic check` reports no drift.
 - Uvicorn smoke checks passed: API health reported `database=connected`,
   OpenAPI included auth/organization routes, and Swagger returned HTTP 200.
-- Frontend diff is empty. Phase 3 commit hash and push result are pending.
+- Frontend diff is empty.
+- Phase 3 commit: `5364228` (`feat(backend): complete phase 3 - authentication and organization access`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
 - Frontend paths remain unchanged.
