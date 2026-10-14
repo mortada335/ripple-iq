@@ -260,3 +260,5 @@ diff check, documentation update, focused commit, and push have succeeded.
 - The shared Neon password was used only to verify and configure this local
   ignored environment file; rotate it in Neon and replace `DATABASE_URL` before
   treating it as a long-term credential.
+- Recovery implementation commit: `bc21635` (`fix(backend): restore Neon connection and migrate demo data`).
+  Pushed to `origin/backend/full-mvp-implementation`.
