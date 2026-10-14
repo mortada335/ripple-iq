@@ -18,7 +18,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 | 5 — Mock simulation engine | Complete | `851e475` | 32 tests passed; Ruff passed; provider output validated | Pushed to `origin/backend/full-mvp-implementation` |
 | 6 — Simulation API and result persistence | Complete | `177d7ea` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
 | 7 — Recommendation refinement and reports | Complete | `dceb304` | 35 tests passed; Ruff passed; Neon migration applied and checked | Pushed to `origin/backend/full-mvp-implementation` |
-| 8 — Security, validation, and production basics | In progress | — | 39 tests passed; Ruff pending final check | Not pushed |
+| 8 — Security, validation, and production basics | Complete | `179e1cf` | 39 tests passed; Ruff passed; frontend diff empty | Pushed to `origin/backend/full-mvp-implementation` |
 | 9 — Complete testing and documentation | Not started | — | — | — |
 | 10 — Final verification | Not started | — | — | — |
 
@@ -149,7 +149,7 @@ diff check, documentation update, focused commit, and push have succeeded.
 - Phase 7 commit: `dceb304` (`feat(backend): complete phase 7 - recommendations and Markdown reports`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
 
-## Phase 8 verification (commit and push pending)
+## Phase 8 verification
 
 - Added audit events for registration, successful/failed login, report
   downloads, and retained audit coverage for decision/context changes,
@@ -165,6 +165,8 @@ diff check, documentation update, focused commit, and push have succeeded.
   39 passed (four upstream Starlette deprecation warnings).
 - Ruff check and format passed for all changed Phase 8 Python files. Frontend
   diff is empty.
+- Phase 8 commit: `179e1cf` (`feat(backend): complete phase 8 - security and production basics`).
+- Pushed successfully to `origin/backend/full-mvp-implementation`.
 
 ## Phase 6 verification
 
