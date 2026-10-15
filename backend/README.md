@@ -4,7 +4,7 @@
 > **ORM:** SQLAlchemy 2.0  
 > **Validation:** Pydantic v2  
 > **Migrations:** Alembic  
-> **Simulation Engine:** Deterministic Mock Analyzer (`ai/mock_analyzer.py`)
+> **Simulation Engine:** Deterministic mock by default; optional proxy/Gemini failover
 
 ---
 
@@ -62,6 +62,9 @@ backend/
 | `POST` | `/api/v1/organizations/{organization_id}/members` | Add a registered user with a role |
 
 Interactive Swagger documentation is available at `/docs`.
+The simulation result response includes non-secret provenance fields identifying
+the provider/model, attempt count, fallback use, and whether a deterministic mock
+was returned. This is an additive API field; no database schema change is needed.
 Private API routes require `Authorization: Bearer <access_token>`. See
 [`docs/security.md`](../docs/security.md) for role permissions and configuration.
 
@@ -95,6 +98,16 @@ Private API routes require `Authorization: Bearer <access_token>`. See
    a private `SECRET_KEY` of at least 32 characters and explicit CORS origins.
    Application logs use JSON lines; error responses omit stack traces and SQL
    details.
+
+   To opt into hosted inference, configure `ANALYZER_BACKEND=multi_provider`,
+   then supply the proxy key/model and newly rotated Gemini keys/model listed in
+   `.env.example`. The confirmed proxy model list included `gpt-5.5` and
+   `claude-fable-5`; `gpt-5.5` is the example selection. Google's current API
+   example uses `gemini-3.8-flash`; verify model availability with your API
+   project before production. Failover order is proxy, Gemini key 1, Gemini key
+   2, then mock only when `LLM_DEGRADED_MODE_ENABLED=true`. Set degraded mode to
+   false when policy requires an error instead of a mock result. See
+   `docs/ai-provider-ocr.md` for provider and OCR details.
 
    For Neon, supply its PostgreSQL connection URI through `backend/.env` or the
    deployment environment's `DATABASE_URL` (include `sslmode=require`). The API

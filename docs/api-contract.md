@@ -63,6 +63,20 @@ decision-maker. If the caller belongs to multiple organizations, include
 `X-Organization-ID` on decision creation. An inaccessible decision returns
 404.
 
+`GET /api/v1/ai/status` returns provider names and configured booleans, analyzer
+mode, failover/degraded-mode policy, and a note that this is configuration
+readiness only. It never probes providers or returns credentials; `configured`
+does not mean authenticated or reachable.
+
+`POST /api/v1/decisions/{id}/documents/extract` accepts raw PDF/image bytes
+(not multipart) and query parameters `source_document_id`, `source_version`,
+and `filename`. It checks access to the decision's organization before reading
+or processing the body, then returns per-page text and extractor names plus
+source ID/version, extraction time, and `human_verification_required: true`.
+The endpoint writes an audit event but does not persist the uploaded source or
+extracted text. The 10 MiB, 100-page, and 30-second limits apply. OCR output is
+not verified evidence and is not automatically included in decision analysis.
+
 ---
 
 ## 2. Endpoints
@@ -313,6 +327,12 @@ Executes the deterministic AI simulation engine across the decision and context.
 ### 2.7 Get Simulation Result
 Retrieves the full structured simulation result including stakeholders, 3 scenarios, impacts, risks, assumptions, confidence score, limitations, and the mandatory human review flag.
 
+The response also includes `provenance` with provider, model, attempt count,
+fallback usage, and `is_mock`. This additive field identifies explicitly when a
+degraded mock result was returned; it contains no credential values.
+`confidence.is_calibrated_probability` is always `false`: the score is a
+heuristic indicator and must not be interpreted as a probability of success.
+
 - **Method / Path:** `GET /api/v1/decisions/{id}/result`
 - **Parameters:** `id` (integer, Path)
 - **Response `200 OK`:**
@@ -339,6 +359,13 @@ Retrieves the full structured simulation result including stakeholders, 3 scenar
     "score": 0.82,
     "level": "HIGH",
     "rationale": "High confidence based on structured operational context and verified university scheduling precedents."
+  },
+  "provenance": {
+    "provider": "deterministic_mock",
+    "model": null,
+    "attempt_count": 1,
+    "fallback_used": false,
+    "is_mock": true
   },
   "stakeholders": [
     {

@@ -55,6 +55,15 @@ Set `DATABASE_URL` and `SECRET_KEY` in the backend process environment. The
 connection URI is not stored in the repository. The current Neon connection can
 be replaced later with a VPC-private PostgreSQL URI without a code change.
 
+The optional document extraction service accepts in-memory bytes only and has
+no upload or document retrieval endpoint. Callers must authorize each document
+against its organization before invoking the service. Extraction returns the
+document ID, organization, version, and page numbers; it does not persist
+documents or send them to an external service. Marker runs offline in a separate
+worker. See `docs/ai-provider-ocr.md` for limits and setup. Provider keys belong
+in environment configuration or a secret manager. Logs and API errors expose
+sanitized provider categories only.
+
 Email verification, password reset, invitation workflows, token revocation,
 and rate limiting are outside the current auth endpoints. Add rate limiting at
 the API gateway or application layer before exposing login publicly.
