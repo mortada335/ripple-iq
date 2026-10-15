@@ -1,0 +1,3 @@
+# Heavy optional OCR worker dependency. Marker model weights have a separate
+# license and are downloaded separately; review both before enabling this backend.
+marker-pdf>=1.0.0
