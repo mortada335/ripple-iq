@@ -222,3 +222,43 @@ diff check, documentation update, focused commit, and push have succeeded.
   `0f73b9f3edf4`; `alembic check` reported no drift. Frontend diff is empty.
 - Phase 6 commit: `177d7ea` (`feat(backend): complete phase 6 - simulation API and persistence`).
 - Pushed successfully to `origin/backend/full-mvp-implementation`.
+
+## Neon connection recovery and demo data import
+
+- Diagnosis: no repository-root or `backend/.env` existed and the active demo
+  server had been explicitly started with `DATABASE_URL=sqlite:///./rippleiq_demo.db`.
+  The app had no silent SQLite fallback. Neon DNS and TCP/5432 were reachable;
+  a read-only psycopg2 check connected with TLS, and Neon reported PostgreSQL
+  18.6. Before import, its schema was at Alembic head `2f3e05c71afe` with zero
+  application rows.
+- Created an ignored `backend/.env`; settings now resolve that file relative
+  to `backend/app/config.py`, so the result is independent of startup directory.
+  Production rejects SQLite. The health response exposes `database_backend`.
+- Created `backend/rippleiq_demo.pre-neon.backup.sqlite3` with SQLite's online
+  backup API before import. The guarded importer verified source and Neon
+  columns against ORM metadata, confirmed an empty target, preserved explicit
+  IDs/relationships/JSON/timestamps, inserted records transactionally, and
+  aligned PostgreSQL ID sequences. It refuses a second import into populated
+  tables.
+- Neon verification: 1 user, 1 organization, 1 membership, Decision 1, 1 context,
+  1 completed analysis, 3 scenarios, 5 stakeholders, 8 impacts, 4 risks, 1
+  recommendation, and 5 audit events. The report endpoint was exercised and
+  generated a report record; the temporary API CRUD verification decision was
+  archived.
+- Restarted Uvicorn without a database command-line override. `/health`,
+  `/api/v1/health` (`database=connected`, `database_backend=postgresql`), and
+  `/docs` returned HTTP 200. Demo login, Decision 1/context/analysis/result/
+  recommendation/report retrieval, and create/read/update/archive API checks
+  passed. Neon Alembic upgrade was a no-op at head; `alembic check` reported
+  no new upgrade operations.
+- `backend/.venv/Scripts/python.exe -m pytest backend/tests ai/tests`: 43 passed,
+  four upstream Starlette deprecation warnings. `ruff check backend ai` and
+  `ruff format --check backend ai` passed (52 files). The exact imported rows
+  in SQLite and Neon were compared table-by-table, including IDs, JSON and UTC
+  timestamps; every SQLite source row matched. The SQLite backup was also
+  compared logically with its source and matched every table.
+- The shared Neon password was used only to verify and configure this local
+  ignored environment file; rotate it in Neon and replace `DATABASE_URL` before
+  treating it as a long-term credential.
+- Recovery implementation commit: `bc21635` (`fix(backend): restore Neon connection and migrate demo data`).
+  Pushed to `origin/backend/full-mvp-implementation`.

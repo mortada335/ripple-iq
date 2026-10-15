@@ -6,9 +6,10 @@ Handles SQLAlchemy engine initialization, session lifecycle, and dependency inje
 
 from collections.abc import Generator
 
-from app.config import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
+from app.config import settings
 
 # Setup engine arguments (SQLite requires check_same_thread=False)
 connect_args = {}

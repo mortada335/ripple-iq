@@ -5,8 +5,9 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from ai.provider import DecisionAnalyzer, default_analyzer
+from ai.provider import DecisionAnalyzer, create_configured_analyzer
 from ai.schemas import AnalysisResult
+from app.config import settings
 from app.models.models import (
     AnalysisRun,
     ContextData,
@@ -29,6 +30,8 @@ from app.schemas.schemas import (
     StakeholderResponse,
 )
 from app.services.audit_service import record_audit_event
+
+default_analyzer = create_configured_analyzer(settings)
 
 
 class AnalysisExecutionError(Exception):
@@ -186,6 +189,7 @@ class SimulationService:
             assumptions=analysis.assumptions,
             limitations=analysis.limitations,
             recommendation=RecommendationResponse(**analysis.recommendation.model_dump()),
+            provenance=analysis.provenance,
         )
 
     @staticmethod

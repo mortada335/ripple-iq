@@ -18,6 +18,7 @@ def test_api_v1_health(client):
     data = response.json()
     assert data["status"] == "healthy"
     assert data["database"] == "connected"
+    assert data["database_backend"] == "sqlite"
     assert data["analyzer_mode"] == "mock_deterministic"
     assert "timestamp" in data
 
@@ -31,6 +32,7 @@ def test_api_v1_health_does_not_expose_database_errors(client, db_session, monke
     assert response.status_code == 200
     assert response.json()["status"] == "degraded"
     assert response.json()["database"] == "disconnected"
+    assert "Check DATABASE_URL" in response.json()["database_message"]
     assert "private database connection detail" not in response.text
 
 

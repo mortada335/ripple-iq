@@ -1,0 +1,4 @@
+# Install into an isolated OCR worker environment only.
+pymupdf>=1.24.0
+pytesseract>=0.3.13
+Pillow>=10.0.0
