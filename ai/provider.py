@@ -145,3 +145,10 @@ class DeterministicMockProvider:
 
 
 default_analyzer: DecisionAnalyzer = DeterministicMockProvider()
+
+
+def create_configured_analyzer(settings: Any) -> DecisionAnalyzer:
+    """Construct the configured provider chain without checking remote services at startup."""
+    from ai.remote_providers import create_analyzer
+
+    return create_analyzer(settings, DeterministicMockProvider())
