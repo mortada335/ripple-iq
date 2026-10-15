@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.database import get_db
@@ -38,7 +39,9 @@ from app.schemas.schemas import (
     DecisionCreate,
     DecisionResponse,
     DecisionUpdate,
+    ExtractedDocumentResponse,
     ImpactResponse,
+    ProviderStatusResponse,
     RecommendationRefineRequest,
     RecommendationViewResponse,
     ReportResponse,
@@ -50,11 +53,29 @@ from app.schemas.schemas import (
 )
 from app.services.audit_service import record_audit_event
 from app.services.decision_service import DecisionService
+from app.services.document_processing import DocumentProcessingError, process_document
 from app.services.recommendation_service import RecommendationService
 from app.services.report_service import ReportService
 from app.services.simulation_service import AnalysisExecutionError, SimulationService
 
 router = APIRouter()
+
+
+@router.get("/api/v1/ai/status", response_model=ProviderStatusResponse, tags=["AI"])
+def get_ai_status():
+    """Expose provider configuration readiness without probing or revealing credentials."""
+    candidates = [
+        ("openai_compatible_proxy", bool(settings.LLM_PRIMARY_API_KEY and settings.LLM_PRIMARY_MODEL)),
+        ("google_gemini_key_1", bool(settings.GEMINI_API_KEY_1 and settings.GEMINI_MODEL)),
+        ("google_gemini_key_2", bool(settings.GEMINI_API_KEY_2 and settings.GEMINI_MODEL)),
+    ]
+    return ProviderStatusResponse(
+        mode=settings.ANALYZER_BACKEND,
+        providers=[{"name": name, "configured": configured} for name, configured in candidates],
+        failover_enabled=settings.LLM_FAILOVER_ENABLED,
+        degraded_mode_enabled=settings.LLM_DEGRADED_MODE_ENABLED,
+        note="Configuration status only; provider reachability is checked during analysis.",
+    )
 
 
 def decision_response(decision) -> DecisionResponse:
@@ -286,6 +307,82 @@ def delete_context(context_id: int, db: Session = Depends(get_db), user: User = 
     require_decision_access(db, user, context.decision_id, write=True)
     DecisionService.delete_context(db, context, user.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ==========================================
+# Organization-scoped local document extraction
+# ==========================================
+
+
+@router.post(
+    "/api/v1/decisions/{id}/documents/extract",
+    response_model=ExtractedDocumentResponse,
+    tags=["Documents"],
+    summary="Extract text from a document after decision access is verified",
+)
+async def extract_decision_document(
+    id: int,
+    request: Request,
+    source_document_id: str = Query(min_length=1, max_length=200),
+    source_version: str = Query(min_length=1, max_length=100),
+    filename: str = Query(min_length=1, max_length=255),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    decision = require_decision_access(db, user, id)
+    content = bytearray()
+    content_length = request.headers.get("content-length")
+    if content_length and content_length.isdigit() and int(content_length) > settings.OCR_MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={"code": "FILE_TOO_LARGE", "message": "The document exceeds the configured size limit."},
+        )
+    async for chunk in request.stream():
+        if len(content) + len(chunk) > settings.OCR_MAX_FILE_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail={"code": "FILE_TOO_LARGE", "message": "The document exceeds the configured size limit."},
+            )
+        content.extend(chunk)
+    try:
+        extracted = await run_in_threadpool(
+            process_document,
+            bytes(content),
+            source_document_id=source_document_id,
+            organization_id=decision.organization_id,
+            source_version=source_version,
+            source_name=filename,
+        )
+    except DocumentProcessingError as error:
+        status_code = {
+            "OCR_CAPACITY_EXCEEDED": status.HTTP_503_SERVICE_UNAVAILABLE,
+            "OCR_BACKEND_UNAVAILABLE": status.HTTP_503_SERVICE_UNAVAILABLE,
+            "PDF_EXTRACTION_UNAVAILABLE": status.HTTP_503_SERVICE_UNAVAILABLE,
+            "PROCESSING_TIMEOUT": status.HTTP_408_REQUEST_TIMEOUT,
+            "FILE_TOO_LARGE": status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        }.get(error.code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        raise HTTPException(
+            status_code=status_code,
+            detail={"code": error.code, "message": str(error)},
+        ) from error
+    record_audit_event(
+        db,
+        organization_id=decision.organization_id,
+        actor_user_id=user.id,
+        decision_id=decision.id,
+        action="document.text_extracted",
+        resource_type="document",
+        resource_id=source_document_id,
+        details={"source_version": source_version, "page_count": len(extracted.pages)},
+    )
+    return ExtractedDocumentResponse(
+        source_document_id=extracted.source_document_id,
+        organization_id=extracted.organization_id,
+        source_version=extracted.source_version,
+        source_name=extracted.source_name,
+        extracted_at=extracted.extracted_at,
+        pages=[page.__dict__ for page in extracted.pages],
+    )
 
 
 # ==========================================
