@@ -281,10 +281,10 @@ export default function ConsequencesPage({
                 {isExpanded && (
                   <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 space-y-1 animate-in fade-in duration-150">
                     <p>
-                      <strong>Governance Verification:</strong> Evaluated in correlation with operational constraints under Academic Standard 4.2.
+                      <strong>Operational Check:</strong> Review these impacts against campus constraints and the assumptions entered for this analysis.
                     </p>
                     <p>
-                      <strong>Department Oversight:</strong> Responsible institutional unit notified for mitigation planning.
+                      <strong>Follow-up:</strong> The responsible academic team should review and plan mitigations for these impacts.
                     </p>
                   </div>
                 )}

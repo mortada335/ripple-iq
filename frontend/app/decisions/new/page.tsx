@@ -14,11 +14,11 @@ import { createDecision } from "@/lib/api";
 import { Priority } from "@/types/decision";
 
 const DEPARTMENTS = [
-  "Office of the Provost & Vice Chancellor for Academic Affairs",
+  "Academic Affairs",
   "Faculty of Engineering & Natural Sciences",
   "Division of Campus Operations & Facilities Management",
   "Office of Student Life & Commuter Services",
-  "Institutional Research & Accreditation Council",
+  "Institutional Research",
 ];
 
 const TIME_HORIZONS = [
@@ -118,7 +118,7 @@ export default function CreateDecisionPage() {
             Draft Policy Proposal
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Define the scope, governance department, and timeline before attaching operational context.
+            Describe the proposed change, responsible academic team, and timeline before adding campus data.
           </p>
         </div>
         <button
@@ -175,7 +175,7 @@ export default function CreateDecisionPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                Sponsoring Governance Unit <span className="text-rose-500">*</span>
+                Responsible Academic Team <span className="text-rose-500">*</span>
               </label>
               <select
                 value={department}

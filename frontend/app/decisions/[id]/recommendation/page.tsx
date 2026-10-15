@@ -45,6 +45,12 @@ export default function RecommendationPage({
 
   const rec = result.recommendation;
   const confidenceScore = Math.round(result.confidence.score * 100);
+  const confidenceTone =
+    confidenceScore >= 80
+      ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+      : confidenceScore >= 60
+      ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+      : "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300";
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -123,7 +129,7 @@ export default function RecommendationPage({
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Algorithmic Confidence
             </span>
-            <span className="rounded-full bg-indigo-100 px-2 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+            <span title={result.confidence.rationale} className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${confidenceTone}`}>
               {result.confidence.level}
             </span>
           </div>

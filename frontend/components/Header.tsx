@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Compass,
-  Globe,
   Building2,
   ChevronDown,
   Activity,
@@ -19,17 +18,16 @@ import { checkApiHealth } from "@/lib/api";
 import { HealthResponse } from "@/types/decision";
 
 const UNIVERSITIES = [
-  { id: "al-mustaqbal", name: "Al-Mustaqbal University", code: "AMU" },
-  { id: "kfupm", name: "King Fahd University of Petroleum & Minerals", code: "KFUPM" },
-  { id: "aub", name: "American University of Beirut", code: "AUB" },
-  { id: "qu", name: "Qatar University Governance", code: "QU" },
+  { id: "northstar", name: "Northstar University (Demo)", code: "NU" },
+  { id: "riverside", name: "Riverside University (Demo)", code: "RU" },
+  { id: "cedar-grove", name: "Cedar Grove University (Demo)", code: "CGU" },
+  { id: "summit", name: "Summit University (Demo)", code: "SU" },
 ];
 
 export function Header() {
   const router = useRouter();
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [refreshingHealth, setRefreshingHealth] = useState(false);
-  const [lang, setLang] = useState<"EN" | "AR">("EN");
   const [selectedUniv, setSelectedUniv] = useState(UNIVERSITIES[0]);
   const [univDropdownOpen, setUnivDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -65,15 +63,6 @@ export function Header() {
     };
   }, []);
 
-  const toggleLanguage = () => {
-    const nextLang = lang === "EN" ? "AR" : "EN";
-    setLang(nextLang);
-    if (typeof document !== "undefined") {
-      document.documentElement.dir = nextLang === "AR" ? "rtl" : "ltr";
-      document.documentElement.lang = nextLang === "AR" ? "ar" : "en";
-    }
-  };
-
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-950/95 sm:px-6">
       {/* Brand & Institution Switcher */}
@@ -87,7 +76,7 @@ export function Header() {
               Ripple<span className="text-indigo-600 dark:text-indigo-400">IQ</span>
             </span>
             <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {lang === "AR" ? "الحوكمة المؤسسية" : "Institutional Governance"}
+              University Decision Support
             </span>
           </div>
         </Link>
@@ -107,7 +96,7 @@ export function Header() {
           </button>
 
           {univDropdownOpen && (
-            <div className="absolute left-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute start-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Switch Institution
               </div>
@@ -126,7 +115,7 @@ export function Header() {
                 >
                   <span className="truncate">{univ.name}</span>
                   {selectedUniv.id === univ.id && (
-                    <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 ml-2" />
+                    <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 ms-2" />
                   )}
                 </button>
               ))}
@@ -165,17 +154,17 @@ export function Header() {
         </button>
 
         {/* Language Switcher */}
-        <button
+        {/* <button
           onClick={toggleLanguage}
           className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 transition-colors"
           title="Toggle Language & Layout Direction"
         >
           <Globe className="h-3.5 w-3.5 text-slate-500" />
           <span>{lang === "EN" ? "EN" : "العربية"}</span>
-        </button>
+        </button> */}
 
         {/* Current User Profile with Dropdown */}
-        <div className="relative pl-1" ref={profileRef}>
+        <div className="relative ps-1" ref={profileRef}>
           <button
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 transition"
@@ -183,22 +172,22 @@ export function Header() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-semibold text-xs shadow-xs">
               SM
             </div>
-            <div className="hidden flex-col text-left lg:flex">
+            <div className="hidden flex-col text-start lg:flex">
               <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                Dr. Sarah Al-Mansoor
+                Alex Morgan
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                Provost & Vice Chancellor
+                Academic Affairs Lead
               </span>
             </div>
             <ChevronDown className="h-3 w-3 text-slate-400 hidden lg:block" />
           </button>
 
           {profileDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in zoom-in-95 duration-150 text-xs">
+            <div className="absolute end-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in zoom-in-95 duration-150 text-xs">
               <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
-                <p className="font-bold text-slate-900 dark:text-white">Dr. Sarah Al-Mansoor</p>
-                <p className="text-[11px] text-slate-500">ID: FAC-88219 (Provost)</p>
+                <p className="font-bold text-slate-900 dark:text-white">Alex Morgan</p>
+                <p className="text-[11px] text-slate-500">Demo account · Academic Affairs</p>
               </div>
 
               <Link
@@ -207,7 +196,7 @@ export function Header() {
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition"
               >
                 <Sliders className="h-3.5 w-3.5 text-slate-400" />
-                <span>Governance Settings</span>
+                <span>University Settings</span>
               </Link>
 
               <Link
@@ -226,7 +215,7 @@ export function Header() {
                   setProfileDropdownOpen(false);
                   router.push("/login");
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition text-left"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition text-start"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 <span>Sign Out</span>

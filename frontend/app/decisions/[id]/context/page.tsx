@@ -129,7 +129,7 @@ export default function DecisionContextPage({
             Institutional Operational Baseline
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Ground the simulation in verifiable campus numbers and governance constraints.
+            Use campus data and practical constraints to make the impact estimates more useful.
           </p>
         </div>
 
@@ -139,7 +139,7 @@ export default function DecisionContextPage({
           className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition cursor-pointer"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Load Demo Institutional Profile</span>
+          <span>Load Demo Campus Data</span>
         </button>
       </div>
 

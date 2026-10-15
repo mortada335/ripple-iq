@@ -7,8 +7,8 @@ import {
   CheckCircle2,
   Loader2,
   Compass,
-  FastForward,
   XCircle,
+  RotateCcw,
 } from "lucide-react";
 import { runSimulation } from "@/lib/api";
 
@@ -31,7 +31,7 @@ const STEPS = [
   {
     id: 4,
     title: "Synthesizing Risk Register & Explainable Recommendation",
-    desc: "Calculating feasibility ratings, confidence score (82%), and governance disclaimers.",
+    desc: "Calculating feasibility ratings, confidence score (82%), and review notes.",
   },
 ];
 
@@ -46,10 +46,11 @@ export default function AnalysisProgressPage({
 
   const [activeStep, setActiveStep] = useState(1);
   const [complete, setComplete] = useState(false);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    runSimulation(Number(decisionId)).catch(() => null);
 
     const t1 = setTimeout(() => {
       if (!cancelled) setActiveStep(2);
@@ -60,24 +61,27 @@ export default function AnalysisProgressPage({
     const t3 = setTimeout(() => {
       if (!cancelled) setActiveStep(4);
     }, 2200);
-    const t4 = setTimeout(() => {
-      if (!cancelled) {
+
+    runSimulation(Number(decisionId))
+      .then(() => {
+        if (cancelled) return;
         setComplete(true);
-        const redirectTimer = setTimeout(() => {
+        setActiveStep(4);
+        setTimeout(() => {
           if (!cancelled) router.push(`/decisions/${decisionId}/scenarios`);
         }, 800);
-        return () => clearTimeout(redirectTimer);
-      }
-    }, 3000);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      });
 
     return () => {
       cancelled = true;
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      clearTimeout(t4);
     };
-  }, [decisionId, router]);
+  }, [decisionId, router, attempt]);
 
   return (
     <div className="max-w-2xl mx-auto py-2 sm:py-4 space-y-4 sm:space-y-6">
@@ -96,7 +100,25 @@ export default function AnalysisProgressPage({
       </div>
 
       {/* Stepper Card */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4" aria-live="polite">
+        {error && (
+          <div role="alert" className="flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+            <span>Simulation encountered an issue. Please retry.</span>
+            <button
+              type="button"
+              onClick={() => {
+                setError(false);
+                setComplete(false);
+                setActiveStep(1);
+                setAttempt((current) => current + 1);
+              }}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-rose-300 px-2.5 py-1.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Retry Simulation
+            </button>
+          </div>
+        )}
         <div className="space-y-4">
           {STEPS.map((step) => {
             const isDone = activeStep > step.id || complete;
@@ -177,20 +199,16 @@ export default function AnalysisProgressPage({
         {/* Action controls */}
         <div className="flex items-center justify-between pt-2">
           <Link
-            href={`/decisions/${decisionId}/context`}
+          href={`/decisions/${decisionId}`}
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           >
             <XCircle className="h-3.5 w-3.5" />
             <span>Cancel Simulation</span>
           </Link>
 
-          <button
-            onClick={() => router.push(`/decisions/${decisionId}/scenarios`)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition cursor-pointer"
-          >
-            <FastForward className="h-3.5 w-3.5" />
-            <span>Skip to Results</span>
-          </button>
+          <span className="text-[11px] text-slate-500" role="status">
+            {complete ? "Simulation complete. Opening results…" : "Results open when the simulation completes."}
+          </span>
         </div>
       </div>
     </div>

@@ -123,7 +123,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           <div className="space-y-1 text-amber-900 dark:text-amber-200">
             <strong>MANDATORY HUMAN REVIEW REQUIRED</strong>
             <p className="text-xs">
-              Algorithmic decision-support estimate. Final institutional policy requires administrative governance authorization.
+              AI-generated estimate for discussion. University leaders and affected teams make the final decision.
             </p>
           </div>
         </div>
@@ -136,7 +136,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
     // Blockquotes
     else if (line.startsWith("> ")) {
       elements.push(
-        <blockquote key={i} className="my-2 border-l-4 border-indigo-500 pl-3 italic text-xs text-slate-600 dark:text-slate-400">
+        <blockquote key={i} className="my-2 border-s-4 border-indigo-500 ps-3 italic text-xs text-slate-600 dark:text-slate-400">
           {renderInline(line.replace("> ", ""))}
         </blockquote>
       );

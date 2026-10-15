@@ -65,6 +65,7 @@ export interface Impact {
   direction: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
   magnitude: "LOW" | "MEDIUM" | "HIGH";
   description: string;
+  metric_estimate?: string | null;
 }
 
 export interface RiskItem {

@@ -112,6 +112,30 @@ export default function ScenarioComparisonPage({
         {result.scenarios.map((scenario) => {
           const isWinner = scenario.is_recommended;
           const scorePercent = Math.round(scenario.feasibility_score * 100);
+          const scenarioImpacts = result.impacts.filter(
+            (impact) => impact.scenario_number === scenario.scenario_number
+          );
+          const stakeholderNames = (direction: "POSITIVE" | "NEGATIVE") =>
+            Array.from(
+              new Set(
+                scenarioImpacts
+                  .filter((impact) => impact.direction === direction)
+                  .map(
+                    (impact) =>
+                      result.stakeholders.find(
+                        (stakeholder) => stakeholder.key === impact.stakeholder_key
+                      )?.name ?? impact.stakeholder_key
+                  )
+              )
+            );
+          const beneficiaries = stakeholderNames("POSITIVE");
+          const disadvantaged = stakeholderNames("NEGATIVE");
+          const facilitiesImpacts = scenarioImpacts.filter((impact) =>
+            ["FACILITIES", "OPERATIONAL"].includes(impact.category.toUpperCase())
+          );
+          const financialImpacts = scenarioImpacts.filter((impact) =>
+            ["FINANCIAL", "BUDGET"].includes(impact.category.toUpperCase())
+          );
 
           return (
             <div
@@ -123,7 +147,7 @@ export default function ScenarioComparisonPage({
               }`}
             >
               {isWinner && (
-                <div className="absolute -top-2.5 left-5 inline-flex items-center gap-1 rounded-full bg-indigo-600 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs">
+                <div className="absolute -top-2.5 start-5 inline-flex items-center gap-1 rounded-full bg-indigo-600 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs">
                   <Sparkles className="h-2.5 w-2.5" />
                   <span>Recommended Path</span>
                 </div>
@@ -154,6 +178,50 @@ export default function ScenarioComparisonPage({
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   {scenario.description}
                 </p>
+
+                <details className="rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-xs dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                  <summary className="cursor-pointer font-semibold text-indigo-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-indigo-200">
+                    Assumptions made
+                  </summary>
+                  {scenario.assumptions?.length ? (
+                    <ul className="mt-2 list-disc space-y-1 ps-5 text-slate-700 dark:text-slate-300">
+                      {scenario.assumptions.map((assumption, index) => (
+                        <li key={`${scenario.scenario_number}-assumption-${index}`}>
+                          {assumption}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-slate-600 dark:text-slate-400">
+                      Scenario-specific assumptions were not provided by the analysis.
+                    </p>
+                  )}
+                </details>
+
+                <div className="grid gap-2 rounded-lg border border-slate-200 p-3 text-[11px] dark:border-slate-700">
+                  <div>
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300">Primary beneficiaries</span>
+                    <p className="mt-0.5 text-slate-600 dark:text-slate-400">{beneficiaries.join(", ") || "No positive stakeholder impacts reported."}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-rose-800 dark:text-rose-300">Groups facing negative impacts</span>
+                    <p className="mt-0.5 text-slate-600 dark:text-slate-400">{disadvantaged.join(", ") || "No negative stakeholder impacts reported."}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">Facilities effects</span>
+                    <p className="mt-0.5 text-slate-600 dark:text-slate-400">
+                      {facilitiesImpacts.length
+                        ? facilitiesImpacts.map((impact) => impact.metric_estimate || impact.description).join(" ")
+                        : "No facilities estimate was returned by the API."}
+                    </p>
+                    <span className="mt-2 block font-bold text-slate-800 dark:text-slate-200">Budget & financial effects</span>
+                    <p className="mt-0.5 text-slate-600 dark:text-slate-400">
+                      {financialImpacts.length
+                        ? financialImpacts.map((impact) => impact.metric_estimate || impact.description).join(" ")
+                        : "No budget estimate was returned by the API."}
+                    </p>
+                  </div>
+                </div>
 
                 {/* Score bar */}
                 <div className="space-y-1 pt-1">
@@ -194,7 +262,7 @@ export default function ScenarioComparisonPage({
                       ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
-                  title="Mark as Preferred Institutional Policy"
+                  title="Choose this as the preferred university decision path"
                 >
                   {isWinner ? "✓ Preferred" : "Select Path"}
                 </button>

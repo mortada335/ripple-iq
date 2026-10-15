@@ -21,8 +21,8 @@ export function CharterModal({ isOpen, onClose }: CharterModalProps) {
               <BookOpen className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold">University Governance & Audit Charter</h2>
-              <p className="text-[11px] text-slate-500">Accreditation Standards Clause 4.2 — Institutional Decision Support</p>
+              <h2 className="text-sm font-bold">Responsible Use of RippleIQ</h2>
+              <p className="text-[11px] text-slate-500">University decision support · Demo prototype</p>
             </div>
           </div>
           <button
@@ -41,13 +41,13 @@ export function CharterModal({ isOpen, onClose }: CharterModalProps) {
               <span>Mandatory Human Review Rule</span>
             </div>
             <p className="text-[11px] leading-relaxed">
-              Under no circumstances shall RippleIQ algorithmic outputs replace human deliberation. All scenario recommendations require formal review and approval by the Academic Senate and Office of the Provost.
+              RippleIQ analysis is advisory and does not replace human judgment. University leaders and affected academic teams should review scenario recommendations before making a decision.
             </p>
           </div>
 
           <div className="space-y-3">
             <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">
-              Core Institutional Principles
+              How RippleIQ Supports Better Decisions
             </h3>
 
             <div className="grid grid-cols-1 gap-2.5">

@@ -10,9 +10,28 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RippleIQ — Institutional Policy Decision Support",
+  title: {
+    default: "RippleIQ — University Decision Impact Simulator",
+    template: "%s | RippleIQ",
+  },
   description:
-    "Predictive foresight and cascading consequence modeling for university leadership and academic governance boards.",
+    "Explore how university decisions may affect students, faculty, research, and campus operations before acting.",
+  applicationName: "RippleIQ",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+  openGraph: {
+    type: "website",
+    siteName: "RippleIQ",
+    title: "RippleIQ — University Decision Impact Simulator",
+    description:
+      "Explore how university decisions may affect students, faculty, research, and campus operations before acting.",
+  },
 };
 
 export default function RootLayout({

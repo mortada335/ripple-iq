@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -40,7 +41,8 @@ export default function RiskRegisterPage({
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [risks, setRisks] = useState<RiskItem[]>([]);
   const [filterSeverity, setFilterSeverity] = useState<string>("ALL");
-  const [sortBy, setSortBy] = useState<"severity" | "likelihood">("severity");
+  const searchParams = useSearchParams();
+  const sortBy = searchParams.get("sort") === "likelihood" ? "likelihood" : "severity";
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -53,6 +55,13 @@ export default function RiskRegisterPage({
       })
       .catch(() => setLoading(false));
   }, [decisionId]);
+
+  const toggleSort = () => {
+    const nextSort = sortBy === "severity" ? "likelihood" : "severity";
+    const url = new URL(window.location.href);
+    url.searchParams.set("sort", nextSort);
+    window.history.replaceState(null, "", url);
+  };
 
   const toggleAcknowledge = (idx: number) => {
     const updated = [...risks];
@@ -169,7 +178,7 @@ export default function RiskRegisterPage({
           </div>
           <div>
             <div className="font-bold text-slate-900 dark:text-white">
-              Risk Governance Log
+              Risk Review
             </div>
             <div className="text-[11px] text-slate-500">
               {acknowledgedCount} of {risks.length} critical risks formally acknowledged.
@@ -181,7 +190,8 @@ export default function RiskRegisterPage({
           {/* Sort By Toggle */}
           <button
             type="button"
-            onClick={() => setSortBy(sortBy === "severity" ? "likelihood" : "severity")}
+            onClick={toggleSort}
+            aria-label={`Sort risks by ${sortBy === "severity" ? "likelihood" : "severity"}`}
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 cursor-pointer"
           >
             <ArrowUpDown className="h-3 w-3" />

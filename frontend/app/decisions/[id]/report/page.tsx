@@ -78,7 +78,7 @@ export default function ReportPreviewPage({
             Executive Decision Memorandum
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Audit-ready Markdown memorandum formatted for academic senate and governance review.
+            A shareable decision brief for university leaders and affected academic teams.
           </p>
         </div>
 
@@ -152,7 +152,7 @@ export default function ReportPreviewPage({
 
           {/* Render content */}
           {viewMode === "PREVIEW" ? (
-            <div className="max-h-[600px] overflow-y-auto pr-1">
+            <div className="max-h-[600px] overflow-y-auto pe-1">
               <MarkdownViewer content={report.content_markdown} />
             </div>
           ) : (
@@ -193,13 +193,13 @@ export default function ReportPreviewPage({
                   Authoring Engine
                 </span>
                 <span className="font-medium text-slate-800 dark:text-slate-200 text-[11px]">
-                  RippleIQ Governance v0.1.0
+                  RippleIQ · University Decision Brief
                 </span>
               </div>
             </div>
 
             <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400">
-              Approved for Academic Senate distribution.
+              Ready to share with the university decision-making team.
             </div>
           </div>
 

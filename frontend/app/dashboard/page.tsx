@@ -95,7 +95,7 @@ export default function DashboardPage() {
     <div className="space-y-4 sm:space-y-5">
       {/* Download toast notification */}
       {downloadToast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-xs font-semibold text-emerald-800 shadow-xl dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-300 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-5 end-5 z-50 flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-xs font-semibold text-emerald-800 shadow-xl dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-300 animate-in fade-in slide-in-from-bottom-2 duration-200" role="status" aria-live="polite">
           <Check className="h-4 w-4 text-emerald-500" />
           <span>{downloadToast}</span>
         </div>
@@ -105,10 +105,10 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-            Institutional Foresight Dashboard
+            University Decision Dashboard
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Model cascading second-order impacts across university policies before board ratification.
+            Compare possible outcomes of university decisions before choosing a path forward.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             <span className="text-[10px] font-medium text-amber-600">Enforced</span>
           </div>
           <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-            Provost Authorization
+            Leadership Review
           </p>
         </div>
       </div>
@@ -208,13 +208,13 @@ export default function DashboardPage() {
       {/* Search & Filter Bar */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+          <Search className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search proposals by keyword or department..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-9 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 ps-9 pe-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
           />
         </div>
 
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={(e) => handleToggleArchive(e, decision.id)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer ml-1"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer ms-1"
                       title={isArchived ? "Restore to Active" : "Soft-archive decision"}
                     >
                       {isArchived ? (
@@ -366,7 +366,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, decision.id)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-rose-600 cursor-pointer ml-1"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-rose-600 cursor-pointer ms-1"
                         title="Delete Proposal"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

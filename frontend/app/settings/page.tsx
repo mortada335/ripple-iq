@@ -16,7 +16,7 @@ import { HealthResponse } from "@/types/decision";
 const STORAGE_KEY = "rippleiq_settings";
 
 const DEFAULT_SETTINGS = {
-  institutionName: "Al-Mustaqbal University",
+  institutionName: "Northstar University (Demo)",
   academicCalendar: "Two-Semester (Fall / Spring)",
   currency: "USD ($)",
   language: "en-US",
@@ -90,7 +90,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-          Institutional Governance Settings
+          University Settings
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Configure university branding parameters, analytical engines, and test backend API connectivity.

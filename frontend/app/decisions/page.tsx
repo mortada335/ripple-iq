@@ -87,10 +87,10 @@ export default function HistoricalDecisionsPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-            Historical Policy Archive
+            Past Decision Analyses
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Catalog of institutional policy proposals, simulation logs, and ratified memorandums.
+            Browse university proposals and their completed impact analyses.
           </p>
         </div>
 
@@ -105,13 +105,13 @@ export default function HistoricalDecisionsPage() {
 
       {/* Search Filter */}
       <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+        <Search className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Filter historical archives by title or department..."
-          className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-9 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-xl border border-slate-200 bg-white py-1.5 ps-9 pe-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
         />
       </div>
 

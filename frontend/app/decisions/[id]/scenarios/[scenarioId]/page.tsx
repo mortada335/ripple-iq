@@ -189,7 +189,7 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
           <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
               <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Assumptions & Governance Conditions</span>
+              <span>Assumptions & Decision Conditions</span>
             </div>
             <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
               {(scenario.assumptions || [
@@ -208,7 +208,7 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
         {/* Tradeoff Box */}
         <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs dark:border-amber-900/60 dark:bg-amber-950/30">
           <span className="font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300 text-[10px]">
-            Governance Evaluation Note
+            Decision Review Note
           </span>
           <p className="mt-0.5 text-amber-950 dark:text-amber-200 leading-relaxed text-[11px]">
             {scenario.tradeoff_summary}

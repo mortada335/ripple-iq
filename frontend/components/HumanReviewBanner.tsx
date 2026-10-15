@@ -12,7 +12,7 @@ export function HumanReviewBanner() {
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <span className="font-semibold text-[11px]">
-            Governance Notice: Decision Support Only — Mandatory Human Review Required
+            Decision Support Only — Human Review Required
           </span>
         </div>
         <button
@@ -37,7 +37,7 @@ export function HumanReviewBanner() {
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                Institutional Governance Notice
+                University Decision Review
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-amber-200/60 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
                 <ShieldCheck className="h-3 w-3" />
@@ -46,7 +46,7 @@ export function HumanReviewBanner() {
             </div>
             <p className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90">
               RippleIQ outputs are algorithmic decision-support models intended to inform leadership deliberation. 
-              Final policy approval requires formal administrative review and committee authorization.
+              University leaders and relevant academic teams make final decisions after reviewing the analysis.
             </p>
           </div>
         </div>

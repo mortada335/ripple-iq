@@ -45,11 +45,11 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-50/70 p-4 transition-colors dark:border-slate-800 dark:bg-slate-950 md:flex sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+      <aside className="hidden w-64 shrink-0 flex-col border-e border-slate-200 bg-slate-50/70 p-4 transition-colors dark:border-slate-800 dark:bg-slate-950 md:flex sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
         {/* Navigation menu */}
         <nav className="flex-1 space-y-1">
           <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Governance Operations
+            Decision Workspace
           </div>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -101,14 +101,14 @@ export function Sidebar() {
               <span>Policy Guidelines</span>
             </div>
             <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-              All simulations follow University Accreditation Standard 4.2.
+              Simulations are estimates for discussion and require human review.
             </p>
             <button
               type="button"
               onClick={() => setCharterOpen(true)}
               className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer"
             >
-              Review Audit Charter →
+              Review Responsible Use →
             </button>
           </div>
         </div>
