@@ -78,6 +78,18 @@ class AnalysisRecommendation(BaseModel):
     rationale: str = Field(min_length=1, max_length=3000)
 
 
+class AnalysisProvenance(BaseModel):
+    """Non-secret metadata describing the engine that generated an analysis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider: Literal["deterministic_mock", "openai_compatible_proxy", "google_gemini"] = "deterministic_mock"
+    model: str | None = Field(default=None, max_length=120)
+    attempt_count: int = Field(default=1, ge=1, le=20)
+    fallback_used: bool = False
+    is_mock: bool = True
+
+
 class FairnessAssessment(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -105,6 +117,7 @@ class AnalysisResult(BaseModel):
     confidence_rationale: str = Field(min_length=1, max_length=2000)
     limitations: list[str] = Field(min_length=1, max_length=100)
     human_review_required: Literal[True] = True
+    provenance: AnalysisProvenance = Field(default_factory=AnalysisProvenance)
 
     @model_validator(mode="after")
     def validate_scenario_references(self) -> "AnalysisResult":
