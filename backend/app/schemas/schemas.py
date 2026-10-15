@@ -12,6 +12,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ai.schemas import AnalysisProvenance
+
 OrganizationRole = Literal["owner", "admin", "decision_maker", "reviewer", "viewer"]
 DecisionType = Literal[
     "academic_policy",
@@ -126,6 +128,31 @@ class ApiV1HealthResponse(BaseModel):
     database_message: str | None = None
     analyzer_mode: str
     timestamp: datetime
+
+
+class ProviderStatusResponse(BaseModel):
+    mode: Literal["mock_deterministic", "multi_provider"]
+    providers: list[dict[str, str | bool]]
+    failover_enabled: bool
+    degraded_mode_enabled: bool
+    note: str
+
+
+class ExtractedDocumentPageResponse(BaseModel):
+    page_number: int
+    text: str
+    backend: str
+    quality_warning: str | None = None
+
+
+class ExtractedDocumentResponse(BaseModel):
+    source_document_id: str
+    organization_id: int
+    source_version: str
+    source_name: str
+    extracted_at: datetime
+    human_verification_required: Literal[True] = True
+    pages: list[ExtractedDocumentPageResponse]
 
 
 # ==========================================
@@ -332,6 +359,7 @@ class ConfidenceResponse(BaseModel):
     score: float
     level: str
     rationale: str
+    is_calibrated_probability: Literal[False] = False
 
 
 class RecommendationResponse(BaseModel):
@@ -384,6 +412,7 @@ class SimulationResultResponse(BaseModel):
     assumptions: list[str]
     limitations: list[str]
     recommendation: RecommendationResponse | None = None
+    provenance: AnalysisProvenance = Field(default_factory=AnalysisProvenance)
 
 
 # ==========================================

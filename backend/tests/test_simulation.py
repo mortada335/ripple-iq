@@ -82,6 +82,7 @@ def test_full_simulation_flow_for_demo_decision(client, db_session):
     assert res["recommendation"] is not None
     assert res["recommendation"]["selected_scenario_number"] == 2
     assert res["confidence"]["score"] >= 0.7
+    assert res["confidence"]["is_calibrated_probability"] is False
     assert res["schema_version"] == "0.1.0"
     assert res["analysis_status"] == "completed"
     assert res["fairness"]["potential_concerns"]
