@@ -1,4 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+RippleIQ's Next.js pilot collects organization-scoped institutional knowledge
+about a four-day campus-week scenario for human review. Start the API first,
+then configure the API URL if it is not running at `http://localhost:8000`:
+
+```powershell
+$env:NEXT_PUBLIC_API_URL = "http://localhost:8000"
+pnpm dev
+```
+
+Contributors need a RippleIQ access token and organization membership. The
+submission endpoint requires explicit consent; responses remain pending until
+an organization reviewer approves or rejects them. Approval adds them to a
+review workflow only; it does not train a model.
 
 ## Getting Started
 
