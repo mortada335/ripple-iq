@@ -9,6 +9,18 @@
 
 ## 1. Global Specifications
 
+## Knowledge pilot
+
+- `POST /api/v1/knowledge-submissions` accepts a scenario key, contributor role,
+  answer map, optional source label/date, and mandatory `consent_to_review: true`.
+  Requires an authenticated organization member. The response is stored with
+  `pending` status and is not used directly for model training.
+- `GET /api/v1/knowledge-submissions` lists up to 200 submissions for the
+  selected organization. Only owners, admins, and reviewers may access it.
+- `PATCH /api/v1/knowledge-submissions/{id}` accepts `{"status":"approved"}`
+  or `{"status":"rejected"}`. Only owners, admins, and reviewers may review
+  submissions in their organization.
+
 ### 1.1 Error Handling Envelope
 In the event of client (4xx) or server (5xx) errors, the API guarantees a consistent JSON payload:
 

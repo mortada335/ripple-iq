@@ -270,6 +270,24 @@ class RecommendationRefinement(Base):
     analysis_run = relationship("AnalysisRun", back_populates="refinements")
 
 
+class KnowledgeSubmission(Base):
+    """User-contributed institutional knowledge awaiting human review."""
+
+    __tablename__ = "knowledge_submissions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    submitted_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    scenario_key = Column(String(100), nullable=False, index=True)
+    contributor_role = Column(String(100), nullable=False)
+    answers = Column(JSON, nullable=False)
+    source_name = Column(String(255), nullable=True)
+    source_date = Column(String(30), nullable=True)
+    consent_to_review = Column(Boolean, nullable=False)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
