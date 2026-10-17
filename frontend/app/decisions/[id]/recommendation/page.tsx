@@ -66,7 +66,7 @@ export default function RecommendationPage({
             Executive Synthesis & Strategic Recommendation
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Synthesized recommendation for university leadership with explicit confidence and assumptions.
+            Synthesized recommendation for decision-makers with explicit confidence and assumptions.
           </p>
         </div>
 

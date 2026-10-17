@@ -10,16 +10,19 @@ import {
   Archive,
   ArchiveRestore,
   Trash2,
-  Check,
 } from "lucide-react";
 import { getDecisions, getReport, toggleArchiveDecision, deleteDecision } from "@/lib/api";
 import { Decision } from "@/types/decision";
+import { Pagination } from "@/components/Pagination";
+import { toast } from "sonner";
+
+const PAGE_SIZE = 20;
 
 export default function HistoricalDecisionsPage() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const loadDecisions = () => {
     getDecisions()
@@ -27,7 +30,10 @@ export default function HistoricalDecisionsPage() {
         setDecisions(data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setLoading(false);
+        toast.error("Could not load decisions");
+      });
   };
 
   useEffect(() => {
@@ -46,26 +52,35 @@ export default function HistoricalDecisionsPage() {
       a.download = rep.filename;
       a.click();
       URL.revokeObjectURL(url);
-      setToast("Memorandum downloaded");
-      setTimeout(() => setToast(null), 2500);
+      toast.success("Report downloaded");
     } catch {
-      alert("Failed to download memorandum.");
+      toast.error("Failed to download report");
     }
   };
 
   const handleToggleArchive = async (e: React.MouseEvent, id: number) => {
     e.preventDefault();
     e.stopPropagation();
-    await toggleArchiveDecision(id);
-    loadDecisions();
+    try {
+      await toggleArchiveDecision(id);
+      toast.success("Decision archive status updated");
+      loadDecisions();
+    } catch {
+      toast.error("Could not update the decision");
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.preventDefault();
     e.stopPropagation();
     if (confirm("Delete this decision proposal from archive?")) {
-      await deleteDecision(id);
-      loadDecisions();
+      try {
+        await deleteDecision(id);
+        toast.success("Decision deleted");
+        loadDecisions();
+      } catch {
+        toast.error("Could not delete the decision");
+      }
     }
   };
 
@@ -74,23 +89,19 @@ export default function HistoricalDecisionsPage() {
       d.title.toLowerCase().includes(search.toLowerCase()) ||
       d.department.toLowerCase().includes(search.toLowerCase())
   );
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {toast && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-          <Check className="h-4 w-4 text-emerald-600" />
-          <span>{toast}</span>
-        </div>
-      )}
-
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
             Past Decision Analyses
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Browse university proposals and their completed impact analyses.
+            Browse organization decisions and their completed impact analyses.
           </p>
         </div>
 
@@ -109,8 +120,8 @@ export default function HistoricalDecisionsPage() {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter historical archives by title or department..."
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Filter decisions by title or responsible team..."
           className="w-full rounded-xl border border-slate-200 bg-white py-1.5 ps-9 pe-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
         />
       </div>
@@ -120,14 +131,14 @@ export default function HistoricalDecisionsPage() {
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {loading ? (
             <div className="p-6 text-center text-xs text-slate-400 animate-pulse">
-              Loading policy archives...
+              Loading decisions...
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate-400">
               No historical decisions found.
             </div>
           ) : (
-            filtered.map((d) => {
+            visible.map((d) => {
               const isArchived = d.status === "ARCHIVED";
 
               return (
@@ -231,6 +242,12 @@ export default function HistoricalDecisionsPage() {
           )}
         </div>
       </div>
+      {!loading && filtered.length > 0 && (
+        <>
+          <p className="text-center text-[11px] text-slate-500">Pagination is local to this demo until server-side paging is connected.</p>
+          <Pagination page={currentPage} pageSize={PAGE_SIZE} totalItems={filtered.length} onPageChange={(nextPage) => setPage(Math.min(Math.max(1, nextPage), pageCount))} />
+        </>
+      )}
     </div>
   );
 }

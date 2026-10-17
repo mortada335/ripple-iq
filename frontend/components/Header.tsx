@@ -1,44 +1,37 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Compass,
+  Activity,
+  Archive,
   Building2,
   ChevronDown,
-  Activity,
-  Check,
+  Compass,
   LogOut,
-  Sliders,
-  Archive,
+  Menu,
   RefreshCw,
+  Sliders,
+  UserRound,
 } from "lucide-react";
 import { checkApiHealth } from "@/lib/api";
-import { HealthResponse } from "@/types/decision";
+import { useOrganizationProfile } from "@/lib/use-organization";
+import type { HealthResponse } from "@/types/decision";
 
-const UNIVERSITIES = [
-  { id: "northstar", name: "Northstar University (Demo)", code: "NU" },
-  { id: "riverside", name: "Riverside University (Demo)", code: "RU" },
-  { id: "cedar-grove", name: "Cedar Grove University (Demo)", code: "CGU" },
-  { id: "summit", name: "Summit University (Demo)", code: "SU" },
-];
-
-export function Header() {
+export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
   const router = useRouter();
+  const organization = useOrganizationProfile();
   const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [refreshingHealth, setRefreshingHealth] = useState(false);
-  const [selectedUniv, setSelectedUniv] = useState(UNIVERSITIES[0]);
-  const [univDropdownOpen, setUnivDropdownOpen] = useState(false);
+  const [refreshingHealth, setRefreshingHealth] = useState(true);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-
-  const univRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const refreshHealth = () => {
     setRefreshingHealth(true);
     checkApiHealth()
       .then(setHealth)
+      .catch(() => setHealth(null))
       .finally(() => setRefreshingHealth(false));
   };
 
@@ -46,179 +39,101 @@ export function Header() {
     let isMounted = true;
     checkApiHealth().then((data) => {
       if (isMounted) setHealth(data);
+    }).catch(() => {
+      if (isMounted) setHealth(null);
+    }).finally(() => {
+      if (isMounted) setRefreshingHealth(false);
     });
 
-    const handleClickOutside = (e: MouseEvent) => {
-      if (univRef.current && !univRef.current.contains(e.target as Node)) {
-        setUnivDropdownOpen(false);
-      }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", closeOnOutsideClick);
     return () => {
       isMounted = false;
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", closeOnOutsideClick);
     };
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-950/95 sm:px-6">
-      {/* Brand & Institution Switcher */}
-      <div className="flex items-center gap-4 sm:gap-6">
-        <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md shadow-slate-900/20 group-hover:bg-slate-800 transition-colors">
-            <Compass className="h-5 w-5 text-indigo-400 group-hover:rotate-45 transition-transform duration-300" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold tracking-tight text-slate-900 dark:text-white text-base">
-              Ripple<span className="text-indigo-600 dark:text-indigo-400">IQ</span>
-            </span>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              University Decision Support
-            </span>
-          </div>
+    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 sm:px-6">
+      <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+        <button
+          type="button"
+          onClick={onOpenNavigation}
+          aria-label="Open navigation menu"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-slate-200 dark:hover:bg-slate-800 md:hidden"
+        >
+          <Menu className="h-5 w-5" aria-hidden="true" />
+        </button>
+        <Link href="/dashboard" className="group flex shrink-0 items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white shadow-sm dark:bg-indigo-600">
+            <Compass className="h-5 w-5 text-indigo-300 transition-transform group-hover:rotate-45" aria-hidden="true" />
+          </span>
+          <span className="flex flex-col">
+            <span className="text-base font-bold tracking-tight text-slate-950 dark:text-white">Ripple<span className="text-indigo-600 dark:text-indigo-400">IQ</span></span>
+            <span className="hidden text-[9px] font-semibold uppercase tracking-wider text-slate-500 sm:block">Decision impact analysis</span>
+          </span>
         </Link>
 
-        {/* Vertical divider */}
-        <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-800 md:block" />
-
-        {/* University Switcher with Dropdown */}
-        <div className="relative hidden md:block" ref={univRef}>
-          <button
-            onClick={() => setUnivDropdownOpen(!univDropdownOpen)}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
-          >
-            <Building2 className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="font-semibold">{selectedUniv.name}</span>
-            <ChevronDown className="h-3 w-3 text-slate-400" />
-          </button>
-
-          {univDropdownOpen && (
-            <div className="absolute start-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Switch Institution
-              </div>
-              {UNIVERSITIES.map((univ) => (
-                <button
-                  key={univ.id}
-                  onClick={() => {
-                    setSelectedUniv(univ);
-                    setUnivDropdownOpen(false);
-                  }}
-                  className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition ${
-                    selectedUniv.id === univ.id
-                      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold"
-                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <span className="truncate">{univ.name}</span>
-                  {selectedUniv.id === univ.id && (
-                    <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 ms-2" />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <span className="hidden h-7 w-px bg-slate-200 dark:bg-slate-800 md:block" aria-hidden="true" />
+        <Link href="/onboarding" className="hidden min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:text-slate-200 dark:hover:bg-slate-800 sm:flex">
+          <Building2 className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+          <span className="max-w-48 truncate">{organization.name}</span>
+          <span className="hidden rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800 lg:inline dark:bg-amber-950 dark:text-amber-200">Demo</span>
+        </Link>
       </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center gap-3">
-        {/* Backend Connectivity Status */}
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
+          type="button"
           onClick={refreshHealth}
-          title={
+          aria-label={refreshingHealth ? "Checking backend status" : health?.status === "healthy" ? "Backend connected. Refresh status." : "Backend unavailable. Refresh status."}
+          title="Check backend connection"
+          disabled={refreshingHealth}
+          className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-2.5 text-[10px] font-semibold transition hover:opacity-85 sm:text-[11px] ${
             health?.status === "healthy"
-              ? "Live Backend Connected. Click to re-check."
-              : "Client Mock Engine Active. Click to re-check backend."
-          }
-          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium border cursor-pointer transition hover:opacity-85 ${
-            health?.status === "healthy"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
-              : "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"
+              : "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
           }`}
         >
-          {refreshingHealth ? (
-            <RefreshCw className="h-3 w-3 animate-spin text-slate-500" />
-          ) : health?.status === "healthy" ? (
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-            </span>
-          ) : (
-            <Activity className="h-3 w-3 text-slate-500" />
-          )}
-          <span>{health?.status === "healthy" ? "API Live" : "Demo Engine"}</span>
+          {refreshingHealth ? <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Activity className="h-3.5 w-3.5" aria-hidden="true" />}
+          <span className="hidden sm:inline">{refreshingHealth ? "Checking API" : health?.status === "healthy" ? "API connected" : "API unavailable"}</span>
         </button>
 
-        {/* Language Switcher */}
-        {/* <button
-          onClick={toggleLanguage}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 transition-colors"
-          title="Toggle Language & Layout Direction"
-        >
-          <Globe className="h-3.5 w-3.5 text-slate-500" />
-          <span>{lang === "EN" ? "EN" : "العربية"}</span>
-        </button> */}
-
-        {/* Current User Profile with Dropdown */}
-        <div className="relative ps-1" ref={profileRef}>
+        <div className="relative" ref={profileRef}>
           <button
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+            type="button"
+            onClick={() => setProfileDropdownOpen((open) => !open)}
+            aria-expanded={profileDropdownOpen}
+            aria-controls="profile-menu"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl px-2 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:hover:bg-slate-900"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-semibold text-xs shadow-xs">
-              SM
-            </div>
-            <div className="hidden flex-col text-start lg:flex">
-              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                Alex Morgan
-              </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                Academic Affairs Lead
-              </span>
-            </div>
-            <ChevronDown className="h-3 w-3 text-slate-400 hidden lg:block" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200"><UserRound className="h-4 w-4" aria-hidden="true" /></span>
+            <span className="hidden text-start sm:block"><span className="block text-xs font-semibold text-slate-900 dark:text-white">Demo user</span><span className="block text-[10px] text-slate-500">Local prototype</span></span>
+            <ChevronDown className="hidden h-3.5 w-3.5 text-slate-400 sm:block" aria-hidden="true" />
           </button>
 
           {profileDropdownOpen && (
-            <div className="absolute end-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in zoom-in-95 duration-150 text-xs">
-              <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
-                <p className="font-bold text-slate-900 dark:text-white">Alex Morgan</p>
-                <p className="text-[11px] text-slate-500">Demo account · Academic Affairs</p>
+            <div id="profile-menu" className="absolute end-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900">
+              <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800">
+                <p className="font-bold text-slate-900 dark:text-white">Demo account</p>
+                <p className="text-[11px] text-slate-500">Account features need backend auth</p>
               </div>
-
-              <Link
-                href="/settings"
-                onClick={() => setProfileDropdownOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition"
-              >
-                <Sliders className="h-3.5 w-3.5 text-slate-400" />
-                <span>University Settings</span>
+              <Link href="/onboarding" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                <Building2 className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> Organization profile
               </Link>
-
-              <Link
-                href="/decisions"
-                onClick={() => setProfileDropdownOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition"
-              >
-                <Archive className="h-3.5 w-3.5 text-slate-400" />
-                <span>Historical Archive</span>
+              <Link href="/settings" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                <Sliders className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> Preferences
               </Link>
-
+              <Link href="/decisions" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                <Archive className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> Decision history
+              </Link>
               <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  router.push("/login");
-                }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition text-start"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                <span>Sign Out</span>
+              <button type="button" onClick={() => { setProfileDropdownOpen(false); router.push("/login"); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30">
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> Leave demo
               </button>
             </div>
           )}

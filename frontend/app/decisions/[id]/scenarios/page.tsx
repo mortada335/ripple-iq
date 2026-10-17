@@ -7,12 +7,13 @@ import {
   ArrowRight,
   ChevronRight,
   Sparkles,
-  Check,
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
 import { saveLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { SimulationResult } from "@/types/decision";
+import { ComparisonBarChart } from "@/components/ComparisonBarChart";
+import { toast } from "sonner";
 
 export default function ScenarioComparisonPage({
   params,
@@ -24,7 +25,6 @@ export default function ScenarioComparisonPage({
 
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [preferredToast, setPreferredToast] = useState<string | null>(null);
 
   useEffect(() => {
     getSimulationResult(Number(decisionId))
@@ -51,8 +51,7 @@ export default function ScenarioComparisonPage({
     };
     setResult(updated);
     saveLocalSimulationResult(Number(decisionId), updated);
-    setPreferredToast(`Scenario ${scenarioNum} marked as preferred institutional path`);
-    setTimeout(() => setPreferredToast(null), 2500);
+    toast.success(`Scenario ${scenarioNum} selected as the preferred path`, { description: "Saved in the local demo only." });
   };
 
   if (loading || !result) {
@@ -68,12 +67,17 @@ export default function ScenarioComparisonPage({
     <div className="space-y-4 sm:space-y-5">
       <DecisionNavTabs decisionId={decisionId} />
 
-      {preferredToast && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-          <Check className="h-4 w-4 text-emerald-600" />
-          <span>{preferredToast}</span>
-        </div>
-      )}
+      <ComparisonBarChart
+        title="Scenario feasibility comparison"
+        maxValue={100}
+        valueSuffix="%"
+        items={result.scenarios.map((scenario) => ({
+          label: `Scenario ${scenario.scenario_number}: ${scenario.title}`,
+          value: Math.round(scenario.feasibility_score * 100),
+          tone: scenario.is_recommended ? "indigo" as const : "emerald" as const,
+          detail: scenario.is_recommended ? "recommended" : undefined,
+        }))}
+      />
 
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -262,7 +266,7 @@ export default function ScenarioComparisonPage({
                       ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
-                  title="Choose this as the preferred university decision path"
+                  title="Choose this as the preferred decision path"
                 >
                   {isWinner ? "✓ Preferred" : "Select Path"}
                 </button>

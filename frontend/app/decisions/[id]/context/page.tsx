@@ -13,13 +13,13 @@ import {
   Loader2,
   AlertCircle,
   Save,
-  Check,
   ArrowLeft,
 } from "lucide-react";
 import { attachDecisionContext, getDecision } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { DEMO_CONTEXT } from "@/lib/mock-data";
 import { Decision } from "@/types/decision";
+import { toast } from "sonner";
 
 export default function DecisionContextPage({
   params,
@@ -46,7 +46,6 @@ export default function DecisionContextPage({
 
   const [loading, setLoading] = useState(false);
   const [savingOnly, setSavingOnly] = useState(false);
-  const [saveToast, setSaveToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,8 +59,7 @@ export default function DecisionContextPage({
     setTransitRate(DEMO_CONTEXT.transit_dependency_rate);
     setAssumptions(DEMO_CONTEXT.key_assumptions.join("\n"));
     setConstraints(DEMO_CONTEXT.constraints);
-    setSaveToast("Demo institutional attendance context loaded");
-    setTimeout(() => setSaveToast(null), 2500);
+    toast.success("University demo context loaded", { description: "This is sample data. Review it before continuing." });
   };
 
   const saveContextPayload = async () => {
@@ -85,8 +83,7 @@ export default function DecisionContextPage({
     setError(null);
     try {
       await saveContextPayload();
-      setSaveToast("Operational baseline context attached successfully");
-      setTimeout(() => setSaveToast(null), 3000);
+      toast.success("Context saved", { description: "Demo mode stores the context in this browser." });
     } catch {
       setError("Failed to attach institutional context.");
     } finally {
@@ -112,12 +109,9 @@ export default function DecisionContextPage({
     <div className="space-y-4">
       <DecisionNavTabs decisionId={decisionId} />
 
-      {saveToast && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-          <Check className="h-4 w-4 text-emerald-600" />
-          <span>{saveToast}</span>
-        </div>
-      )}
+      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+        The numeric fields below match the university demo schema. General organization context is captured in assumptions and constraints until the backend supports organization-specific context fields.
+      </p>
 
       {/* Page Title & Demo Preset */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -126,10 +120,10 @@ export default function DecisionContextPage({
             Step 1 of Decision Analysis
           </span>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-            Institutional Operational Baseline
+            Decision context
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Use campus data and practical constraints to make the impact estimates more useful.
+            Add operating details and assumptions to make the analysis more relevant.
           </p>
         </div>
 

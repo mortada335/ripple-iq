@@ -17,15 +17,7 @@ import {
 import { getSimulationResult } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { SimulationResult } from "@/types/decision";
-
-// Sentiment rating mock mapped per stakeholder (-100 to +100)
-const STAKEHOLDER_SENTIMENT: Record<string, number> = {
-  students: 65,
-  faculty: 45,
-  laboratories: -30,
-  administration: 70,
-  transportation: 80,
-};
+import { ComparisonBarChart } from "@/components/ComparisonBarChart";
 
 export default function ConsequencesPage({
   params,
@@ -105,7 +97,7 @@ export default function ConsequencesPage({
             Stakeholder Ripples & Impact Map
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Granular second-order consequences mapped across 5 university constituencies.
+            Explore the people and groups affected by this decision.
           </p>
         </div>
 
@@ -169,50 +161,19 @@ export default function ConsequencesPage({
         </div>
       </div>
 
-      {/* Stakeholder Sentiment Overview Cards with Impact Meter */}
+      {/* Impact overview derived from analysis data */}
       {selectedStakeholder === "all" && (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-          {result.stakeholders.map((stk) => {
-            const sentiment = STAKEHOLDER_SENTIMENT[stk.key] || 50;
-            const isPositive = sentiment >= 0;
-
-            return (
-              <div
-                key={stk.key}
-                onClick={() => setSelectedStakeholder(stk.key)}
-                className="cursor-pointer rounded-xl border border-slate-200 bg-white p-3 shadow-xs hover:border-indigo-500 hover:shadow-xs transition dark:border-slate-800 dark:bg-slate-900"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
-                    {getStakeholderIcon(stk.key)}
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
-                      {stk.name}
-                    </span>
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold ${
-                      isPositive ? "text-emerald-600" : "text-rose-600"
-                    }`}
-                  >
-                    {isPositive ? `+${sentiment}` : sentiment}
-                  </span>
-                </div>
-
-                {/* Sentiment Bar (-100 to +100) */}
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                  <div
-                    className={`h-full ${isPositive ? "bg-emerald-500" : "bg-rose-500"}`}
-                    style={{ width: `${Math.abs(sentiment)}%` }}
-                  />
-                </div>
-
-                <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                  {stk.summary}
-                </p>
-              </div>
-            );
+        <ComparisonBarChart
+          title="Reported positive and negative impacts by stakeholder"
+          maxValue={Math.max(1, ...result.impacts.map((impact) => result.impacts.filter((candidate) => candidate.stakeholder_key === impact.stakeholder_key).length))}
+          items={result.stakeholders.flatMap((stakeholder) => {
+            const stakeholderImpacts = result.impacts.filter((impact) => impact.stakeholder_key === stakeholder.key);
+            return [
+              { label: `${stakeholder.name} · Positive`, value: stakeholderImpacts.filter((impact) => impact.direction === "POSITIVE").length, tone: "emerald" as const },
+              { label: `${stakeholder.name} · Negative`, value: stakeholderImpacts.filter((impact) => impact.direction === "NEGATIVE").length, tone: "rose" as const },
+            ];
           })}
-        </div>
+        />
       )}
 
       {/* Impact Ripple Cards Grid */}

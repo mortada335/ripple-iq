@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
@@ -8,6 +8,7 @@ import { HumanReviewBanner } from "./HumanReviewBanner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const isLoginPage = pathname === "/login";
 
   if (isLoginPage) {
@@ -22,9 +23,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         Skip to content
       </a>
-      <Header />
+      <Header onOpenNavigation={() => setMobileNavigationOpen(true)} />
       <div className="flex flex-1 items-start">
-        <Sidebar />
+        <Sidebar mobileOpen={mobileNavigationOpen} onClose={() => setMobileNavigationOpen(false)} />
         <main id="main-content" className="flex-1 flex flex-col min-w-0">
           <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4 sm:space-y-5">
             <HumanReviewBanner />

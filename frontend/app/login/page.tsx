@@ -61,7 +61,7 @@ export default function LoginPage() {
             Ripple<span className="text-indigo-400">IQ</span>
           </h1>
           <p className="text-[11px] uppercase tracking-widest text-slate-400 font-semibold">
-            University Decision Impact Simulator · Demo
+            Decision Impact Analysis · Demo
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="login-email" className="block text-xs font-semibold text-slate-300 mb-1">
-                University Email
+                Work or organization email
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
@@ -161,7 +161,7 @@ export default function LoginPage() {
 
         {/* Demo prototype note */}
         <p className="text-center text-[10px] text-slate-500">
-          Demo prototype for university leaders and academic teams. AI analysis supports human review.
+          Demo prototype for organizations and their teams. AI analysis supports human review.
         </p>
       </div>
     </div>

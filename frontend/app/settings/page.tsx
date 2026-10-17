@@ -1,348 +1,148 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  Building2,
-  Activity,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Save,
-  RotateCcw,
-} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState, type FormEvent } from "react";
+import { Activity, Building2, CheckCircle2, Globe2, RefreshCw, RotateCcw, Save } from "lucide-react";
+import { toast } from "sonner";
+import { FormField } from "@/components/FormField";
+import { formatCurrency, getCurrencyCodes, getCurrencyLabel } from "@/lib/currency";
 import { checkApiHealth } from "@/lib/api";
-import { HealthResponse } from "@/types/decision";
+import type { HealthResponse } from "@/types/decision";
 
 const STORAGE_KEY = "rippleiq_settings";
+const DEFAULT_SETTINGS = { currency: "IQD", language: "en" };
+const controlClassName = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 
-const DEFAULT_SETTINGS = {
-  institutionName: "Northstar University (Demo)",
-  academicCalendar: "Two-Semester (Fall / Spring)",
-  currency: "USD ($)",
-  language: "en-US",
-  analyzerMode: "mock_deterministic",
-};
-
-function getInitialSettings() {
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-      }
-    } catch {
-      // fallback
-    }
-  }
-  return DEFAULT_SETTINGS;
+function applyLanguageDirection(language: string) {
+  document.documentElement.lang = language;
+  document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
 }
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState(getInitialSettings);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [checkingHealth, setCheckingHealth] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [checkingHealth, setCheckingHealth] = useState(true);
 
   const fetchHealth = async () => {
     setCheckingHealth(true);
     try {
-      const data = await checkApiHealth();
-      setHealth(data);
-    } catch {
-      // offline
+      setHealth(await checkApiHealth());
     } finally {
       setCheckingHealth(false);
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed: unknown = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            const candidate = parsed as Partial<typeof DEFAULT_SETTINGS>;
+            const next = {
+              currency: typeof candidate.currency === "string" && /^[A-Z]{3}$/.test(candidate.currency) ? candidate.currency : DEFAULT_SETTINGS.currency,
+              language: candidate.language === "ar" ? "ar" : "en",
+            };
+            setSettings(next);
+            applyLanguageDirection(next.language);
+          }
+        }
+      } catch {
+        toast.error("Could not read saved demo preferences");
+      }
+    });
     checkApiHealth().then((data) => {
-      if (isMounted) setHealth(data);
+      if (active) setHealth(data);
+    }).catch(() => {
+      if (active) setHealth(null);
+    }).finally(() => {
+      if (active) setCheckingHealth(false);
     });
     return () => {
-      isMounted = false;
+      active = false;
+      window.cancelAnimationFrame(frame);
     };
   }, []);
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch (err) {
-      console.error("Failed to save settings", err);
+      applyLanguageDirection(settings.language);
+      toast.success("Preferences saved in this browser", {
+        description: "These demo preferences are not synced to an account.",
+      });
+    } catch {
+      toast.error("Could not save preferences", { description: "Check browser storage settings and try again." });
     }
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
   };
 
   const handleReset = () => {
     setSettings(DEFAULT_SETTINGS);
+    applyLanguageDirection(DEFAULT_SETTINGS.language);
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch {}
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2000);
+      toast.success("Preferences reset");
+    } catch {
+      toast.error("Could not reset saved preferences");
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-          University Settings
-        </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          Configure university branding parameters, analytical engines, and test backend API connectivity.
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Workspace</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Preferences</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Manage local demo preferences and check whether the API is reachable.</p>
+      </header>
 
-      {/* Backend API Health Status Card */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="rounded-xl bg-indigo-50 p-2 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
-              <Activity className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-xs font-bold text-slate-900 dark:text-white">
-                Backend System & Database Connectivity
-              </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Live status from <code className="font-mono text-[10px]">/api/v1/health</code>
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={fetchHealth}
-            disabled={checkingHealth}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 disabled:opacity-50 transition cursor-pointer"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${checkingHealth ? "animate-spin" : ""}`}
-            />
-            <span>Test Health Status</span>
-          </button>
+      <section aria-labelledby="org-profile-title" className="flex flex-col gap-4 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <Building2 className="mt-0.5 h-5 w-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+          <div><h2 id="org-profile-title" className="text-sm font-semibold text-slate-900 dark:text-white">Organization profile</h2><p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Add demo organization context. It stays in this browser until an organization API is connected.</p></div>
         </div>
+        <Link href="/onboarding" className="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-xs font-semibold text-white hover:bg-indigo-500">Edit organization profile</Link>
+      </section>
 
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 pt-1">
-          <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-              API Status
-            </span>
-            <div className="flex items-center gap-1.5">
-              {health?.status === "healthy" ? (
-                <>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                    Healthy (Connected)
-                  </span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                    Client Mock Engine (Demo)
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
+      <section aria-labelledby="api-health-title" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"><Activity className="h-5 w-5" aria-hidden="true" /></span><div><h2 id="api-health-title" className="text-sm font-semibold text-slate-900 dark:text-white">API connection</h2><p className="text-xs text-slate-500">GET /api/v1/health</p></div></div>
+          <button type="button" onClick={() => void fetchHealth()} disabled={checkingHealth} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><RefreshCw className={`h-3.5 w-3.5 ${checkingHealth ? "animate-spin" : ""}`} aria-hidden="true" /> Refresh status</button>
+        </div>
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm dark:bg-slate-800/60">
+          {health?.status === "healthy" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" /> : <Activity className="h-4 w-4 text-amber-600" aria-hidden="true" />}
+          <span className="font-medium text-slate-800 dark:text-slate-200">{health?.status === "healthy" ? "Backend reachable" : health?.status === "degraded" ? "Backend is degraded" : "Demo mode — backend not reachable"}</span>
+          {health?.analyzer_mode && <span className="ms-auto hidden text-xs text-slate-500 sm:inline">Analyzer: {health.analyzer_mode}</span>}
+        </div>
+      </section>
 
-          <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-              Database
-            </span>
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {health?.database || "SQLite / Local"}
-            </span>
-          </div>
-
-          <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-              Analyzer Backend
-            </span>
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {health?.analyzer_mode || "mock_deterministic"}
-            </span>
+      <form onSubmit={handleSave} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"><Globe2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" /><h2 className="text-sm font-semibold text-slate-900 dark:text-white">Regional preferences</h2></div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField id="preference-currency" label="Preferred currency" hint="Standard ISO 4217 currency codes. Financial analysis must return its own currency before this can format live values.">
+            <select className={controlClassName} value={settings.currency} onChange={(event) => setSettings({ ...settings, currency: event.target.value })}>
+              {!getCurrencyCodes().includes(settings.currency) && <option value={settings.currency}>{settings.currency}</option>}
+              {getCurrencyCodes().map((code) => <option key={code} value={code}>{getCurrencyLabel(code, settings.language)}</option>)}
+            </select>
+          </FormField>
+          <FormField id="preference-language" label="Interface language" hint="Arabic selection switches layout direction; untranslated screens will remain in English for now.">
+            <select className={controlClassName} value={settings.language} onChange={(event) => setSettings({ ...settings, language: event.target.value })}>
+              <option value="en">English · LTR</option>
+              <option value="ar">العربية · RTL preview</option>
+            </select>
+          </FormField>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">Currency formatting preview: <strong>{formatCurrency(12345.67, settings.currency, settings.language)}</strong></div>
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:justify-between">
+          <span className="self-center text-xs text-slate-500">Saved to this browser only</span>
+          <div className="flex gap-2 sm:ms-auto">
+            <button type="button" onClick={handleReset} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Reset</button>
+            <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-xs font-semibold text-white hover:bg-indigo-500"><Save className="h-3.5 w-3.5" aria-hidden="true" /> Save preferences</button>
           </div>
         </div>
-      </div>
-
-      {/* University Institutional Settings Form */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <form onSubmit={handleSave} className="space-y-4 sm:space-y-5">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white border-b border-slate-100 pb-2.5 dark:border-slate-800">
-            <Building2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            <span>Institutional Profile</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                University Name
-              </label>
-              <input
-                type="text"
-                value={settings.institutionName}
-                onChange={(e) =>
-                  setSettings({ ...settings, institutionName: e.target.value })
-                }
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                Academic Calendar System
-              </label>
-              <select
-                value={settings.academicCalendar}
-                onChange={(e) =>
-                  setSettings({ ...settings, academicCalendar: e.target.value })
-                }
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              >
-                <option value="Two-Semester (Fall / Spring)">Two-Semester (Fall / Spring)</option>
-                <option value="Trimester / Quarter">Trimester / Quarter</option>
-                <option value="Continuous Modular">Continuous Modular</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                Budget Currency
-              </label>
-              <select
-                value={settings.currency}
-                onChange={(e) =>
-                  setSettings({ ...settings, currency: e.target.value })
-                }
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              >
-                <option value="USD ($)">USD ($)</option>
-                <option value="EUR (€)">EUR (€)</option>
-                <option value="SAR (﷼)">SAR (﷼)</option>
-                <option value="GBP (£)">GBP (£)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                Language & Direction
-              </label>
-              <select
-                value={settings.language}
-                onChange={(e) =>
-                  setSettings({ ...settings, language: e.target.value })
-                }
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              >
-                <option value="en-US">English (LTR) — Standard</option>
-                <option value="ar-SA">العربية (RTL) — تجريبي</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Analysis Engine Mode */}
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-              Simulation Analyzer Engine
-            </label>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <label
-                className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 transition ${
-                  settings.analyzerMode === "mock_deterministic"
-                    ? "border-indigo-600 bg-indigo-50/60 dark:border-indigo-500 dark:bg-indigo-950/40"
-                    : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="analyzer"
-                  value="mock_deterministic"
-                  checked={settings.analyzerMode === "mock_deterministic"}
-                  onChange={() =>
-                    setSettings({ ...settings, analyzerMode: "mock_deterministic" })
-                  }
-                  className="mt-0.5 text-indigo-600"
-                />
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">
-                    Deterministic Engine (Active)
-                  </div>
-                  <p className="text-[10px] text-slate-500">
-                    Fast, reproducible policy impact generation with verified mathematical precedents.
-                  </p>
-                </div>
-              </label>
-
-              <label
-                className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 transition opacity-60 ${
-                  settings.analyzerMode === "llm_gateway"
-                    ? "border-indigo-600 bg-indigo-50/60"
-                    : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="analyzer"
-                  value="llm_gateway"
-                  disabled
-                  checked={settings.analyzerMode === "llm_gateway"}
-                  onChange={() =>
-                    setSettings({ ...settings, analyzerMode: "llm_gateway" })
-                  }
-                  className="mt-0.5 text-indigo-600"
-                />
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">
-                    LLM Gateway (Future)
-                  </div>
-                  <p className="text-[10px] text-slate-500">
-                    Deep generative policy analysis with external knowledge grounding.
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Save Action */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
-            {savedSuccess ? (
-              <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Settings Saved to Session</span>
-              </span>
-            ) : (
-              <span className="text-[10px] text-slate-400">
-                Changes persist locally in your browser.
-              </span>
-            )}
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 cursor-pointer"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset</span>
-              </button>
-
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition cursor-pointer"
-              >
-                <Save className="h-3.5 w-3.5" />
-                <span>Save Configuration</span>
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
+      </form>
     </div>
   );
 }

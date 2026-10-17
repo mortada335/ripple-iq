@@ -22,7 +22,7 @@ export function CharterModal({ isOpen, onClose }: CharterModalProps) {
             </div>
             <div>
               <h2 className="text-sm font-bold">Responsible Use of RippleIQ</h2>
-              <p className="text-[11px] text-slate-500">University decision support · Demo prototype</p>
+              <p className="text-[11px] text-slate-500">Organization decision support · Demo prototype</p>
             </div>
           </div>
           <button
@@ -41,7 +41,7 @@ export function CharterModal({ isOpen, onClose }: CharterModalProps) {
               <span>Mandatory Human Review Rule</span>
             </div>
             <p className="text-[11px] leading-relaxed">
-              RippleIQ analysis is advisory and does not replace human judgment. University leaders and affected academic teams should review scenario recommendations before making a decision.
+              RippleIQ analysis is advisory and does not replace human judgment. Organization leaders and affected teams should review scenario recommendations before making a decision.
             </p>
           </div>
 
@@ -55,7 +55,7 @@ export function CharterModal({ isOpen, onClose }: CharterModalProps) {
                 <Scale className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
                   <div className="font-bold text-slate-900 dark:text-white">1. Balanced Multi-Stakeholder Evaluation</div>
-                  <div className="text-[11px] text-slate-500">Simulations evaluate consequences across students, faculty, laboratories, operations, and transportation without institutional bias.</div>
+                  <div className="text-[11px] text-slate-500">Simulations should evaluate consequences across the groups affected by a decision without organizational bias.</div>
                 </div>
               </div>
 

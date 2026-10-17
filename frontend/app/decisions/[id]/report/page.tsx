@@ -5,15 +5,18 @@ import Link from "next/link";
 import {
   Copy,
   Download,
-  Check,
   Code,
   Eye,
   ArrowLeft,
+  FileText,
+  Printer,
 } from "lucide-react";
 import { getReport } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { ReportResponse } from "@/types/decision";
+import { toast } from "sonner";
+import { downloadReportDocx } from "@/lib/report-export";
 
 export default function ReportPreviewPage({
   params,
@@ -25,7 +28,6 @@ export default function ReportPreviewPage({
 
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [viewMode, setViewMode] = useState<"PREVIEW" | "RAW">("PREVIEW");
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,11 +39,14 @@ export default function ReportPreviewPage({
       .catch(() => setLoading(false));
   }, [decisionId]);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!report) return;
-    navigator.clipboard.writeText(report.content_markdown);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(report.content_markdown);
+      toast.success("Markdown copied to clipboard");
+    } catch {
+      toast.error("Could not access the clipboard", { description: "Select and copy the raw Markdown instead." });
+    }
   };
 
   const handleDownload = () => {
@@ -53,6 +58,22 @@ export default function ReportPreviewPage({
     a.download = report.filename || `rippleiq-decision-${decisionId}-report.md`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Markdown report downloaded");
+  };
+
+  const handleDownloadDocx = async () => {
+    if (!report) return;
+    try {
+      await downloadReportDocx(report.content_markdown, report.filename || `rippleiq-decision-${decisionId}-report.md`);
+      toast.success("Word report downloaded");
+    } catch {
+      toast.error("Could not create the Word report");
+    }
+  };
+
+  const handlePrintPdf = () => {
+    toast.info("Choose Save as PDF in your browser’s print dialog");
+    window.print();
   };
 
   if (loading || !report) {
@@ -78,28 +99,19 @@ export default function ReportPreviewPage({
             Executive Decision Memorandum
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            A shareable decision brief for university leaders and affected academic teams.
+            A shareable decision brief for your organization and affected stakeholders.
           </p>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
           <button
             type="button"
             onClick={handleCopy}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
           >
-            {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-emerald-600">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" />
-                <span>Copy Markdown</span>
-              </>
-            )}
+            <Copy className="h-3.5 w-3.5" />
+            <span>Copy Markdown</span>
           </button>
 
           <button
@@ -110,11 +122,38 @@ export default function ReportPreviewPage({
             <Download className="h-3.5 w-3.5" />
             <span>Download .md</span>
           </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadDocx}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>Download .docx</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrintPdf}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            <span>Print / Save PDF</span>
+          </button>
         </div>
       </div>
 
+      <article id="report-print-content" className="hidden print:block" aria-label="Printable decision report">
+        <div className="mb-6 border-b border-slate-200 pb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">RippleIQ · Decision impact analysis</p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">Decision Brief</h1>
+          <p className="mt-1 text-xs text-slate-500">Generated {new Date(report.generated_at).toLocaleString()}</p>
+        </div>
+        <MarkdownViewer content={report.content_markdown} />
+      </article>
+
       {/* Main Container with Sidebar Metadata */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 print:hidden">
         {/* Document Viewer */}
         <div className="lg:col-span-3 rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
           {/* Tab Switcher */}
@@ -184,7 +223,7 @@ export default function ReportPreviewPage({
                   Integrity Checksum
                 </span>
                 <span className="font-mono text-[10px] text-slate-500 break-all">
-                  {report.checksum || "sha256-verified-ok"}
+                  {report.checksum || "Not provided by the report service"}
                 </span>
               </div>
 
@@ -193,13 +232,13 @@ export default function ReportPreviewPage({
                   Authoring Engine
                 </span>
                 <span className="font-medium text-slate-800 dark:text-slate-200 text-[11px]">
-                  RippleIQ · University Decision Brief
+                  RippleIQ · Organization Decision Brief
                 </span>
               </div>
             </div>
 
             <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400">
-              Ready to share with the university decision-making team.
+              Ready to share with your organization’s decision-making team.
             </div>
           </div>
 

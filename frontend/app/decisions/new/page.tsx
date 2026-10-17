@@ -12,28 +12,25 @@ import {
 } from "lucide-react";
 import { createDecision } from "@/lib/api";
 import { Priority } from "@/types/decision";
-
-const DEPARTMENTS = [
-  "Academic Affairs",
-  "Faculty of Engineering & Natural Sciences",
-  "Division of Campus Operations & Facilities Management",
-  "Office of Student Life & Commuter Services",
-  "Institutional Research",
-];
+import { FormField } from "@/components/FormField";
+import { toast } from "sonner";
 
 const TIME_HORIZONS = [
-  "1 Semester (Pilot)",
-  "1 Academic Year",
-  "3 Years (Strategic Cycle)",
-  "5 Years (Institutional Master Plan)",
+  "1 month",
+  "1 quarter",
+  "1 year",
+  "3 years",
+  "5 years",
 ];
+
+const fieldClass = "w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white";
 
 export default function CreateDecisionPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [department, setDepartment] = useState(DEPARTMENTS[0]);
-  const [timeHorizon, setTimeHorizon] = useState(TIME_HORIZONS[1]);
+  const [department, setDepartment] = useState("Operations");
+  const [timeHorizon, setTimeHorizon] = useState(TIME_HORIZONS[2]);
   const [priority, setPriority] = useState<Priority>("HIGH");
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -44,8 +41,8 @@ export default function CreateDecisionPage() {
     setDescription(
       "Evaluate institutional shift from traditional 5-day on-campus instruction to a 4-day condensed week (Monday through Thursday) with Friday designated for asynchronous digital learning, grading, and faculty research."
     );
-    setDepartment(DEPARTMENTS[0]);
-    setTimeHorizon(TIME_HORIZONS[1]);
+    setDepartment("Academic Affairs (demo example)");
+    setTimeHorizon(TIME_HORIZONS[2]);
     setPriority("HIGH");
     setError(null);
   };
@@ -67,7 +64,7 @@ export default function CreateDecisionPage() {
       });
       router.push("/dashboard");
     } catch {
-      setError("Failed to save draft.");
+      toast.error("Could not save the draft", { description: "The demo may be offline or the API request failed." });
       setSavingDraft(false);
     }
   };
@@ -96,7 +93,7 @@ export default function CreateDecisionPage() {
       });
       router.push(`/decisions/${decision.id}/context`);
     } catch {
-      setError("Failed to create decision proposal. Please try again.");
+      toast.error("Could not create the decision", { description: "Check the details and try again." });
       setLoading(false);
     }
   };
@@ -115,10 +112,10 @@ export default function CreateDecisionPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-            Draft Policy Proposal
+            Create a decision
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Describe the proposed change, responsible academic team, and timeline before adding campus data.
+            Describe a proposed change, who is responsible, and the time horizon you want to evaluate.
           </p>
         </div>
         <button
@@ -127,7 +124,7 @@ export default function CreateDecisionPage() {
           className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Pre-fill Demo 4-Day Policy</span>
+          <span>Load university demo example</span>
         </button>
       </div>
 
@@ -141,77 +138,27 @@ export default function CreateDecisionPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-              Policy Proposal Title <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Transition undergraduate campus instruction to a 4-day condensed week"
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-            />
-          </div>
+          <FormField id="decision-title" label="Decision title" required hint="Use a clear, specific description of the choice you are evaluating.">
+            <input type="text" required minLength={5} maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Change the weekly operating schedule" className={fieldClass} />
+          </FormField>
 
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-              Scope & Institutional Rationale <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              required
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detail the operational change, schedule shifts, remote expectations, and core objective..."
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-            />
-          </div>
+          <FormField id="decision-description" label="What are you considering?" required hint="Include the context, intended change, and important constraints.">
+            <textarea required minLength={20} rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Explain the options or change being considered and why it matters to your organization..." className={`${fieldClass} resize-y`} />
+          </FormField>
 
-          {/* Department & Time Horizon */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                Responsible Academic Team <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              >
-                {DEPARTMENTS.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                Evaluation Time Horizon <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={timeHorizon}
-                onChange={(e) => setTimeHorizon(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              >
-                {TIME_HORIZONS.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <FormField id="decision-team" label="Responsible team or unit" hint="Enter any team name; this is not limited to universities.">
+              <input className={fieldClass} value={department} onChange={(event) => setDepartment(event.target.value)} maxLength={120} placeholder="Operations, product, academic affairs..." />
+            </FormField>
+            <FormField id="decision-horizon" label="Evaluation time horizon" required>
+              <select value={timeHorizon} onChange={(e) => setTimeHorizon(e.target.value)} className={fieldClass}>{TIME_HORIZONS.map((h) => <option key={h} value={h}>{h}</option>)}</select>
+            </FormField>
           </div>
 
           {/* Priority */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-              Institutional Priority Level
+              Priority
             </label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {(["LOW", "MEDIUM", "HIGH", "CRITICAL"] as Priority[]).map((p) => (

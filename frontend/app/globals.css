@@ -128,3 +128,56 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  @page {
+    size: auto;
+    margin: 18mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #report-print-content,
+  #report-print-content * {
+    visibility: visible !important;
+  }
+
+  #report-print-content {
+    display: block !important;
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    color: #0f172a !important;
+    background: #fff !important;
+    font-size: 10pt;
+  }
+
+  #report-print-content h1,
+  #report-print-content h2,
+  #report-print-content h3,
+  #report-print-content p,
+  #report-print-content li,
+  #report-print-content th,
+  #report-print-content td {
+    color: #0f172a !important;
+  }
+
+  #report-print-content table {
+    width: 100%;
+    border-collapse: collapse;
+    break-inside: auto;
+  }
+
+  #report-print-content tr,
+  #report-print-content img {
+    break-inside: avoid;
+  }
+
+  #report-print-content th,
+  #report-print-content td {
+    border: 1px solid #cbd5e1;
+    padding: 6pt;
+  }
+}

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,11 +12,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "RippleIQ — University Decision Impact Simulator",
+    default: "RippleIQ — Decision Impact Analysis",
     template: "%s | RippleIQ",
   },
   description:
-    "Explore how university decisions may affect students, faculty, research, and campus operations before acting.",
+    "Explore how organizational decisions may affect people, operations, and resources before acting.",
   applicationName: "RippleIQ",
   robots: {
     index: false,
@@ -28,9 +29,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "RippleIQ",
-    title: "RippleIQ — University Decision Impact Simulator",
+    title: "RippleIQ — Decision Impact Analysis",
     description:
-      "Explore how university decisions may affect students, faculty, research, and campus operations before acting.",
+      "Explore how organizational decisions may affect people, operations, and resources before acting.",
   },
 };
 
@@ -42,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
+        <Toaster position="top-right" richColors closeButton />
         <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
           <AppShell>{children}</AppShell>
         </Suspense>

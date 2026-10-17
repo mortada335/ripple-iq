@@ -123,7 +123,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           <div className="space-y-1 text-amber-900 dark:text-amber-200">
             <strong>MANDATORY HUMAN REVIEW REQUIRED</strong>
             <p className="text-xs">
-              AI-generated estimate for discussion. University leaders and affected teams make the final decision.
+              AI-generated estimate for discussion. Organization leaders and affected teams make the final decision.
             </p>
           </div>
         </div>

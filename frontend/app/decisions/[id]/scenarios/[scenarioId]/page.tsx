@@ -11,12 +11,12 @@ import {
   ChevronRight,
   Calendar,
   Download,
-  Check,
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
 import { saveLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { SimulationResult } from "@/types/decision";
+import { toast } from "sonner";
 
 export default function ScenarioDetailsPage({
   params,
@@ -28,7 +28,6 @@ export default function ScenarioDetailsPage({
   const scenarioNumber = Number(resolvedParams.scenarioId);
 
   const [result, setResult] = useState<SimulationResult | null>(null);
-  const [preferredToast, setPreferredToast] = useState<string | null>(null);
 
   useEffect(() => {
     getSimulationResult(Number(decisionId)).then(setResult).catch(() => null);
@@ -54,8 +53,7 @@ export default function ScenarioDetailsPage({
     };
     setResult(updated);
     saveLocalSimulationResult(Number(decisionId), updated);
-    setPreferredToast(`Scenario ${scenarioNumber} designated as preferred institutional path`);
-    setTimeout(() => setPreferredToast(null), 3000);
+    toast.success("Preferred scenario updated", { description: "Saved in the local demo only." });
   };
 
   const handleExportBreakdown = () => {
@@ -84,6 +82,7 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
     a.download = `decision-${decisionId}-scenario-${scenarioNumber}-breakdown.md`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Scenario breakdown downloaded");
   };
 
   if (!result || !scenario) {
@@ -110,13 +109,6 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
   return (
     <div className="space-y-4">
       <DecisionNavTabs decisionId={decisionId} />
-
-      {preferredToast && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-          <Check className="h-4 w-4 text-emerald-600" />
-          <span>{preferredToast}</span>
-        </div>
-      )}
 
       {/* Back button */}
       <div>

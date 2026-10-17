@@ -10,12 +10,12 @@ import {
   Square,
   Download,
   ArrowUpDown,
-  Check,
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
 import { saveLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RiskItem, SimulationResult } from "@/types/decision";
+import { toast } from "sonner";
 
 const SEVERITY_ORDER: Record<string, number> = {
   CRITICAL: 4,
@@ -44,7 +44,6 @@ export default function RiskRegisterPage({
   const searchParams = useSearchParams();
   const sortBy = searchParams.get("sort") === "likelihood" ? "likelihood" : "severity";
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     getSimulationResult(Number(decisionId))
@@ -112,8 +111,7 @@ export default function RiskRegisterPage({
     a.download = `decision-${decisionId}-risk-register.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    setToast("Risk register exported to CSV");
-    setTimeout(() => setToast(null), 2500);
+    toast.success("Risk register exported", { description: "CSV file downloaded." });
   };
 
   if (loading || !result) {
@@ -128,13 +126,6 @@ export default function RiskRegisterPage({
   return (
     <div className="space-y-4 sm:space-y-5">
       <DecisionNavTabs decisionId={decisionId} />
-
-      {toast && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-          <Check className="h-4 w-4 text-emerald-600" />
-          <span>{toast}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
