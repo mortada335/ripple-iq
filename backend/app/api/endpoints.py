@@ -26,10 +26,11 @@ from app.dependencies import (
     get_current_user,
     organization_header,
     require_decision_access,
+    require_role,
     resolve_membership,
 )
 from app.models import User
-from app.models.models import Impact, Scenario
+from app.models.models import Impact, KnowledgeSubmission, Scenario
 from app.schemas.schemas import (
     AnalysisStatusResponse,
     ApiV1HealthResponse,
@@ -41,6 +42,10 @@ from app.schemas.schemas import (
     DecisionUpdate,
     ExtractedDocumentResponse,
     ImpactResponse,
+    KnowledgeSubmissionCreate,
+    KnowledgeSubmissionDetail,
+    KnowledgeSubmissionResponse,
+    KnowledgeSubmissionReview,
     ProviderStatusResponse,
     RecommendationRefineRequest,
     RecommendationViewResponse,
@@ -59,6 +64,84 @@ from app.services.report_service import ReportService
 from app.services.simulation_service import AnalysisExecutionError, SimulationService
 
 router = APIRouter()
+
+
+@router.post(
+    "/api/v1/knowledge-submissions",
+    response_model=KnowledgeSubmissionResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Knowledge"],
+    summary="Submit institutional knowledge for human review",
+)
+def submit_knowledge(
+    data: KnowledgeSubmissionCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    organization_id: int | None = Depends(organization_header),
+):
+    membership = resolve_membership(db, user, organization_id)
+    submission = KnowledgeSubmission(
+        organization_id=membership.organization_id,
+        submitted_by_user_id=user.id,
+        scenario_key=data.scenario_key.strip(),
+        contributor_role=data.contributor_role.strip(),
+        answers=data.answers,
+        source_name=data.source_name.strip() if data.source_name else None,
+        source_date=data.source_date.strip() if data.source_date else None,
+        consent_to_review=True,
+        status="pending",
+    )
+    db.add(submission)
+    db.commit()
+    db.refresh(submission)
+    return submission
+
+
+@router.get("/api/v1/knowledge-submissions", response_model=list[KnowledgeSubmissionDetail], tags=["Knowledge"])
+def list_knowledge_submissions(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    organization_id: int | None = Depends(organization_header),
+):
+    membership = resolve_membership(db, user, organization_id)
+    require_role(membership, {"owner", "admin", "reviewer"})
+    return (
+        db.query(KnowledgeSubmission)
+        .filter(KnowledgeSubmission.organization_id == membership.organization_id)
+        .order_by(KnowledgeSubmission.created_at.desc())
+        .limit(200)
+        .all()
+    )
+
+
+@router.patch(
+    "/api/v1/knowledge-submissions/{submission_id}", response_model=KnowledgeSubmissionResponse, tags=["Knowledge"]
+)
+def review_knowledge_submission(
+    submission_id: int,
+    data: KnowledgeSubmissionReview,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    organization_id: int | None = Depends(organization_header),
+):
+    membership = resolve_membership(db, user, organization_id)
+    require_role(membership, {"owner", "admin", "reviewer"})
+    submission = (
+        db.query(KnowledgeSubmission)
+        .filter(
+            KnowledgeSubmission.id == submission_id,
+            KnowledgeSubmission.organization_id == membership.organization_id,
+        )
+        .first()
+    )
+    if submission is None:
+        raise HTTPException(
+            status_code=404, detail={"code": "SUBMISSION_NOT_FOUND", "message": "Submission was not found."}
+        )
+    submission.status = data.status
+    db.commit()
+    db.refresh(submission)
+    return submission
 
 
 @router.get("/api/v1/ai/status", response_model=ProviderStatusResponse, tags=["AI"])

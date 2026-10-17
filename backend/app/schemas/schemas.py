@@ -376,6 +376,43 @@ class RecommendationRefineRequest(BaseModel):
     selected_scenario_number: int | None = Field(default=None, ge=1, le=3)
 
 
+class KnowledgeSubmissionCreate(BaseModel):
+    scenario_key: str = Field(min_length=3, max_length=100)
+    contributor_role: str = Field(min_length=2, max_length=100)
+    answers: dict[str, str] = Field(min_length=1, max_length=20)
+    source_name: str | None = Field(default=None, max_length=255)
+    source_date: str | None = Field(default=None, max_length=30)
+    consent_to_review: Literal[True]
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answers(cls, value: dict[str, str]) -> dict[str, str]:
+        cleaned = {key.strip(): answer.strip() for key, answer in value.items() if key.strip() and answer.strip()}
+        if not cleaned or any(len(answer) > 4000 for answer in cleaned.values()):
+            raise ValueError("Provide at least one answer, with each answer no longer than 4,000 characters.")
+        return cleaned
+
+
+class KnowledgeSubmissionResponse(BaseModel):
+    id: int
+    scenario_key: str
+    status: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class KnowledgeSubmissionReview(BaseModel):
+    status: Literal["approved", "rejected"]
+
+
+class KnowledgeSubmissionDetail(KnowledgeSubmissionResponse):
+    contributor_role: str
+    answers: dict[str, str]
+    source_name: str | None = None
+    source_date: str | None = None
+
+
 class RecommendationRefinementResponse(BaseModel):
     id: int
     selected_scenario_number: int
