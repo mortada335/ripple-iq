@@ -12,20 +12,20 @@ const emptySubscribe = () => () => {};
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, organizations, activeOrganizationId, isDemo, loading } = useAuth();
+  const { user, organizations, activeOrganizationId, isDemo, loading, authError, refresh, signOut } = useAuth();
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const isPublicPage = pathname === "/" || pathname === "/login" || pathname === "/register";
   const needsOnboarding = Boolean(user && organizations.length === 0 && !activeOrganizationId);
 
   useEffect(() => {
-    if (!isMounted || loading || isPublicPage) return;
+    if (!isMounted || loading || authError || isPublicPage) return;
     if (!user && !isDemo) {
       router.replace("/login");
     } else if (needsOnboarding && pathname !== "/onboarding") {
       router.replace("/onboarding");
     }
-  }, [isMounted, isDemo, isPublicPage, loading, needsOnboarding, pathname, router, user]);
+  }, [isMounted, isDemo, isPublicPage, loading, authError, needsOnboarding, pathname, router, user]);
 
   useEffect(() => {
     try {
@@ -48,17 +48,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isPublicPage) {
+  if (isPublicPage && !authError) {
     return <main className="min-h-screen flex flex-col">{children}</main>;
   }
 
-  if (loading || (!user && !isDemo) || (needsOnboarding && pathname !== "/onboarding")) {
+  if (loading || (!user && !isDemo && !authError) || (needsOnboarding && pathname !== "/onboarding")) {
     return (
       <main
         className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-600 dark:bg-slate-950 dark:text-slate-300"
         aria-live="polite"
       >
         Loading your workspace…
+      </main>
+    );
+  }
+
+  if (authError && !user && !isDemo) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-slate-50 p-6 text-sm dark:bg-slate-950" role="alert">
+        <div className="max-w-md space-y-3 rounded-xl border border-amber-200 bg-white p-5 text-slate-700 shadow-sm dark:border-amber-900 dark:bg-slate-900 dark:text-slate-200">
+          <h1 className="font-semibold">Could not verify your session</h1>
+          <p className="text-xs">{authError} Your saved sign-in was kept. Retry when the API is available.</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void refresh()} className="min-h-10 rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white">Retry connection</button>
+            <button type="button" onClick={signOut} className="min-h-10 rounded-lg border border-slate-300 px-3 text-xs font-semibold dark:border-slate-700">Sign out</button>
+          </div>
+        </div>
       </main>
     );
   }

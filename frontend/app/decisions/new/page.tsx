@@ -64,8 +64,8 @@ export default function CreateDecisionPage() {
         priority,
       });
       router.push("/dashboard");
-    } catch {
-      toast.error("Could not save the draft", { description: "The demo may be offline or the API request failed." });
+    } catch (cause) {
+      toast.error("Could not save the draft", { description: cause instanceof Error ? cause.message : "Try again." });
       setSavingDraft(false);
     }
   };
@@ -78,8 +78,8 @@ export default function CreateDecisionPage() {
       setError("Title must be at least 5 characters.");
       return;
     }
-    if (description.trim().length < 20) {
-      setError("Description must be at least 20 characters to provide sufficient context.");
+    if (description.trim().length < 10) {
+      setError("Description must be at least 10 characters.");
       return;
     }
 
@@ -93,8 +93,8 @@ export default function CreateDecisionPage() {
         priority,
       });
       router.push(`/decisions/${decision.id}/context`);
-    } catch {
-      toast.error("Could not create the decision", { description: "Check the details and try again." });
+    } catch (cause) {
+      toast.error("Could not create the decision", { description: cause instanceof Error ? cause.message : "Check the details and try again." });
       setLoading(false);
     }
   };
@@ -144,7 +144,7 @@ export default function CreateDecisionPage() {
           </FormField>
 
           <FormField id="decision-description" label="What are you considering?" required hint="Include the context, intended change, and important constraints.">
-            <textarea id="decision-description" aria-describedby="decision-description-hint" required minLength={20} rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Explain the options or change being considered and why it matters to your organization..." className={`${fieldClass} resize-y`} />
+            <textarea id="decision-description" aria-describedby="decision-description-hint" required minLength={10} maxLength={10000} rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Explain the options or change being considered and why it matters to your organization..." className={`${fieldClass} resize-y`} />
             <VoiceInputButton onTranscript={(text) => setDescription((current) => `${current}${current.trim() ? " " : ""}${text}`)} />
           </FormField>
 

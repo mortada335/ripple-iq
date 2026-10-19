@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useCallback, useEffect, useState, use } from "react";
 import Link from "next/link";
 import {
   Award,
@@ -8,10 +8,9 @@ import {
   ChevronRight,
   Sparkles,
 } from "lucide-react";
-import { getSimulationResult } from "@/lib/api";
-import { saveLocalSimulationResult } from "@/lib/mock-data";
+import { getRecommendation, getSimulationResult, refineRecommendation } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
-import { SimulationResult } from "@/types/decision";
+import { RecommendationView, SimulationResult } from "@/types/decision";
 import { ComparisonBarChart } from "@/components/ComparisonBarChart";
 import { toast } from "sonner";
 
@@ -24,46 +23,75 @@ export default function ScenarioComparisonPage({
   const decisionId = resolvedParams.id;
 
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const [recommendation, setRecommendation] = useState<RecommendationView | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [savingScenario, setSavingScenario] = useState<number | null>(null);
 
   const stakeholderMap = React.useMemo(() => {
     if (!result?.stakeholders) return new Map<string, string>();
     return new Map(result.stakeholders.map((s) => [s.key, s.name]));
   }, [result]);
 
-  useEffect(() => {
-    getSimulationResult(Number(decisionId))
-      .then((data) => {
-        setResult(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+  const loadAnalysis = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [analysis, currentRecommendation] = await Promise.all([
+        getSimulationResult(Number(decisionId)),
+        getRecommendation(Number(decisionId)),
+      ]);
+      setResult(analysis);
+      setRecommendation(currentRecommendation);
+    } catch (cause) {
+      setLoadError(cause instanceof Error ? cause.message : "Could not load the analysis.");
+    } finally {
+      setLoading(false);
+    }
   }, [decisionId]);
 
-  const handleSetPreferred = (scenarioNum: number) => {
-    if (!result) return;
-    const updated = {
-      ...result,
-      scenarios: result.scenarios.map((s) => ({
-        ...s,
-        is_recommended: s.scenario_number === scenarioNum,
-      })),
-      recommendation: {
-        ...result.recommendation,
+  useEffect(() => {
+    void Promise.resolve().then(loadAnalysis);
+  }, [loadAnalysis]);
+
+  const handleSetPreferred = async (scenarioNum: number) => {
+    if (!result || savingScenario !== null) return;
+    setSavingScenario(scenarioNum);
+    try {
+      const updated = await refineRecommendation(Number(decisionId), {
         selected_scenario_number: scenarioNum,
-        title: `Adopt Scenario ${scenarioNum}: ${result.scenarios.find((s) => s.scenario_number === scenarioNum)?.title}`,
-      },
-    };
-    setResult(updated);
-    saveLocalSimulationResult(Number(decisionId), updated);
-    toast.success(`Scenario ${scenarioNum} selected as the preferred path`, { description: "Saved in the local demo only." });
+        feedback: `Reviewer selected Scenario ${scenarioNum} as the preferred decision path.`,
+      });
+      setRecommendation(updated);
+      toast.success(`Scenario ${scenarioNum} saved as your preferred path`, {
+        description: "The original analysis recommendation remains preserved.",
+      });
+    } catch (cause) {
+      toast.error("Could not save the preferred scenario", {
+        description: cause instanceof Error ? cause.message : "Try again.",
+      });
+    } finally {
+      setSavingScenario(null);
+    }
   };
 
-  if (loading || !result) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <DecisionNavTabs decisionId={decisionId} />
         <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
+      </div>
+    );
+  }
+
+  if (loadError || !result || !recommendation) {
+    return (
+      <div className="space-y-4">
+        <DecisionNavTabs decisionId={decisionId} />
+        <div role="alert" className="rounded-xl border border-rose-200 bg-white p-6 text-center text-sm dark:border-rose-900 dark:bg-slate-900">
+          <p className="text-rose-700 dark:text-rose-300">{loadError ?? "Analysis results are not available yet."}</p>
+          <button type="button" onClick={() => void loadAnalysis()} className="mt-3 min-h-10 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white">Retry</button>
+        </div>
       </div>
     );
   }
@@ -73,14 +101,14 @@ export default function ScenarioComparisonPage({
       <DecisionNavTabs decisionId={decisionId} />
 
       <ComparisonBarChart
-        title="Scenario feasibility comparison"
+        title="Scenario heuristic score comparison"
         maxValue={100}
         valueSuffix="%"
         items={result.scenarios.map((scenario) => ({
           label: `Scenario ${scenario.scenario_number}: ${scenario.title}`,
           value: Math.round(scenario.feasibility_score * 100),
-          tone: scenario.is_recommended ? "indigo" as const : "emerald" as const,
-          detail: scenario.is_recommended ? "recommended" : undefined,
+          tone: recommendation.current.selected_scenario_number === scenario.scenario_number ? "indigo" as const : "emerald" as const,
+          detail: recommendation.current.selected_scenario_number === scenario.scenario_number ? "selected" : undefined,
         }))}
       />
 
@@ -94,7 +122,7 @@ export default function ScenarioComparisonPage({
             Comparative Scenario Matrix
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Side-by-side trade-off synthesis across 3 alternative policy implementations.
+            Side-by-side trade-offs. Scores are transparent heuristic estimates, not measured outcomes or success probabilities.
           </p>
         </div>
 
@@ -116,10 +144,17 @@ export default function ScenarioComparisonPage({
         </div>
       </div>
 
+      {result.scenarios.some((scenario) => !scenario.rationale?.trim()) && (
+        <div role="note" className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+          Scenario reasoning was not stored with this analysis. The saved analysis, any human refinement, and any existing report remain unchanged. A new analysis run creates a separate version with scenario-specific reasoning.
+        </div>
+      )}
+
       {/* 3-Column Comparison Grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {result.scenarios.map((scenario) => {
-          const isWinner = scenario.is_recommended;
+          const isWinner = recommendation.current.selected_scenario_number === scenario.scenario_number;
+          const isModelRecommendation = recommendation.original.selected_scenario_number === scenario.scenario_number;
           const scorePercent = Math.round(scenario.feasibility_score * 100);
           const scenarioImpacts = result.impacts.filter(
             (impact) => impact.scenario_number === scenario.scenario_number
@@ -153,9 +188,10 @@ export default function ScenarioComparisonPage({
               {isWinner && (
                 <div className="absolute -top-2.5 start-5 inline-flex items-center gap-1 rounded-full bg-indigo-600 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs">
                   <Sparkles className="h-2.5 w-2.5" />
-                  <span>Recommended Path</span>
+                  <span>{recommendation.refinement ? "Your preferred path" : "Model recommendation"}</span>
                 </div>
               )}
+              {!isWinner && isModelRecommendation && recommendation.refinement && <span className="mb-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Original model recommendation</span>}
 
               <div className="space-y-3 pt-1">
                 <div className="flex items-center justify-between">
@@ -171,7 +207,7 @@ export default function ScenarioComparisonPage({
                         : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
                     }`}
                   >
-                    {scorePercent}% Feasibility
+                    {scorePercent}% Heuristic score
                   </span>
                 </div>
 
@@ -182,6 +218,15 @@ export default function ScenarioComparisonPage({
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   {scenario.description}
                 </p>
+
+                <details className="rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-xs dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                  <summary className="cursor-pointer font-semibold text-indigo-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-indigo-200">
+                    Scenario rationale
+                  </summary>
+                  <p className="mt-2 text-slate-700 dark:text-slate-300">
+                    {scenario.rationale?.trim() || "No scenario-specific rationale was stored for this scenario."}
+                  </p>
+                </details>
 
                 <details className="rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-xs dark:border-indigo-900/50 dark:bg-indigo-950/20">
                   <summary className="cursor-pointer font-semibold text-indigo-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-indigo-200">
@@ -230,7 +275,7 @@ export default function ScenarioComparisonPage({
                 {/* Score bar */}
                 <div className="space-y-1 pt-1">
                   <div className="flex justify-between text-[10px] font-medium text-slate-400">
-                    <span>Feasibility Rating</span>
+                    <span>Heuristic score (not a probability)</span>
                     <span className="font-bold text-slate-700 dark:text-slate-300">
                       {scorePercent} / 100
                     </span>
@@ -244,6 +289,18 @@ export default function ScenarioComparisonPage({
                     />
                   </div>
                 </div>
+
+                <details className="rounded-lg border border-slate-200 px-3 py-2 text-[11px] dark:border-slate-700">
+                  <summary className="cursor-pointer font-semibold text-slate-700 dark:text-slate-200">Heuristic score breakdown</summary>
+                  <p className="mt-2 text-slate-500 dark:text-slate-400">{scenario.score_method ?? "The analyzer did not provide its score method."}</p>
+                  {scenario.score_components && Object.keys(scenario.score_components).length > 0 ? (
+                    <ul className="mt-2 space-y-1 text-slate-600 dark:text-slate-300">
+                      {Object.entries(scenario.score_components).map(([name, value]) => (
+                        <li key={name} className="flex justify-between gap-3"><span>{name.replaceAll("_", " ")}</span><span>{Math.round(value * 100)} / 100</span></li>
+                      ))}
+                    </ul>
+                  ) : <p className="mt-2 text-slate-500 dark:text-slate-400">No component scores were returned.</p>}
+                </details>
 
                 {/* Key Tradeoff */}
                 <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-800/40">
@@ -260,7 +317,8 @@ export default function ScenarioComparisonPage({
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => handleSetPreferred(scenario.scenario_number)}
+                  onClick={() => void handleSetPreferred(scenario.scenario_number)}
+                  disabled={savingScenario !== null}
                   className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
                     isWinner
                       ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
@@ -268,7 +326,7 @@ export default function ScenarioComparisonPage({
                   }`}
                   title="Choose this as the preferred decision path"
                 >
-                  {isWinner ? "✓ Preferred" : "Select Path"}
+                  {savingScenario === scenario.scenario_number ? "Saving…" : isWinner ? "✓ Preferred" : "Select Path"}
                 </button>
 
                 <Link

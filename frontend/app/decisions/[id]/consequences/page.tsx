@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useCallback, useEffect, useState, use } from "react";
 import Link from "next/link";
 import {
   Users2,
@@ -18,6 +18,7 @@ import { getSimulationResult } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { SimulationResult } from "@/types/decision";
 import { ComparisonBarChart } from "@/components/ComparisonBarChart";
+import { ApiLoadError } from "@/components/ApiLoadError";
 
 export default function ConsequencesPage({
   params,
@@ -32,15 +33,23 @@ export default function ConsequencesPage({
   const [directionFilter, setDirectionFilter] = useState<string>("all");
   const [expandedImpacts, setExpandedImpacts] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadResult = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      setResult(await getSimulationResult(Number(decisionId)));
+    } catch (cause) {
+      setLoadError(cause instanceof Error ? cause.message : "Could not load impact results.");
+    } finally {
+      setLoading(false);
+    }
+  }, [decisionId]);
 
   useEffect(() => {
-    getSimulationResult(Number(decisionId))
-      .then((data) => {
-        setResult(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [decisionId]);
+    void Promise.resolve().then(loadResult);
+  }, [loadResult]);
 
   const toggleExpand = (idx: number) => {
     setExpandedImpacts((prev) => ({
@@ -85,13 +94,17 @@ export default function ConsequencesPage({
     return { maxValue, items };
   }, [result]);
 
-  if (loading || !result) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <DecisionNavTabs decisionId={decisionId} />
         <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
       </div>
     );
+  }
+
+  if (loadError || !result) {
+    return <div className="space-y-4"><DecisionNavTabs decisionId={decisionId} /><ApiLoadError message={loadError ?? "Analysis results are not available yet."} onRetry={() => void loadResult()} /></div>;
   }
 
   const getStakeholderIcon = (key: string) => {

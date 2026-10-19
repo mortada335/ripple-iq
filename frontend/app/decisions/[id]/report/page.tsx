@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useCallback, useEffect, useState, use } from "react";
 import Link from "next/link";
 import {
   Copy,
@@ -17,6 +17,7 @@ import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { ReportResponse } from "@/types/decision";
 import { toast } from "sonner";
 import { downloadReportDocx } from "@/lib/report-export";
+import { ApiLoadError } from "@/components/ApiLoadError";
 
 export default function ReportPreviewPage({
   params,
@@ -29,15 +30,23 @@ export default function ReportPreviewPage({
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [viewMode, setViewMode] = useState<"PREVIEW" | "RAW">("PREVIEW");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadReport = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      setReport(await getReport(Number(decisionId)));
+    } catch (cause) {
+      setLoadError(cause instanceof Error ? cause.message : "Could not load the report.");
+    } finally {
+      setLoading(false);
+    }
+  }, [decisionId]);
 
   useEffect(() => {
-    getReport(Number(decisionId))
-      .then((data) => {
-        setReport(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [decisionId]);
+    void Promise.resolve().then(loadReport);
+  }, [loadReport]);
 
   const handleCopy = async () => {
     if (!report) return;
@@ -76,13 +85,17 @@ export default function ReportPreviewPage({
     window.print();
   };
 
-  if (loading || !report) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <DecisionNavTabs decisionId={decisionId} />
         <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
       </div>
     );
+  }
+
+  if (loadError || !report) {
+    return <div className="space-y-4"><DecisionNavTabs decisionId={decisionId} /><ApiLoadError message={loadError ?? "A report is not available until analysis is complete."} onRetry={() => void loadReport()} /></div>;
   }
 
   return (

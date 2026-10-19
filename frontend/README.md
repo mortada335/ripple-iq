@@ -85,7 +85,7 @@ frontend/
 │   └── CharterModal.tsx        # First-run charter/terms modal
 │
 ├── lib/                        # Utilities and data services
-│   ├── api.ts                  # API client (live backend + mock fallback)
+│   ├── api.ts                  # API client (live backend + explicit demo mode)
 │   ├── mock-data.ts            # Local mock data & localStorage persistence
 │   └── utils.ts                # Shared utility functions (cn, etc.)
 │
@@ -173,25 +173,25 @@ One-time modal displayed on first visit, explaining the AI-advisory charter and 
 ## Data Layer
 
 ### `lib/api.ts` — API Client
-All backend calls go through this module. It automatically detects whether the backend is available:
-- **Backend available** → calls real API at `NEXT_PUBLIC_API_URL`
-- **Backend unavailable** → transparently falls back to `lib/mock-data.ts`
+All backend calls go through this module. Live API failures are shown to the user instead of silently switching to mock data. Browser-local mock mode is available only when explicitly enabled with `NEXT_PUBLIC_USE_MOCK=true` or when the user explicitly enters the demo workspace:
 
 Key functions:
 
 ```ts
-api.getDecisions()           // GET /decisions
-api.createDecision(data)     // POST /decisions
-api.getDecision(id)          // GET /decisions/:id
-api.submitContext(id, ctx)   // POST /decisions/:id/context
-api.runSimulation(id)        // POST /decisions/:id/simulate
-api.getSimulationResult(id)  // GET /decisions/:id/result
-api.generateReport(id)       // POST /decisions/:id/report
-api.getHealth()              // GET /health
+getDecisions(offset, limit)             // GET /api/v1/decisions
+createDecision(data)                    // POST /api/v1/decisions
+getDecisionContext(id)                  // GET /api/v1/decisions/:id/context
+attachDecisionContext(id, data)         // POST /api/v1/decisions/:id/context
+runSimulation(id)                       // POST /api/v1/decisions/:id/simulate
+getAnalysisStatus(id)                   // GET /api/v1/decisions/:id/analysis
+getSimulationResult(id)                 // GET /api/v1/decisions/:id/result
+refineRecommendation(id, feedback)      // POST /api/v1/decisions/:id/refine
+getReport(id)                           // GET /api/v1/decisions/:id/report
+extractDecisionDocument(id, file, ...)  // POST /api/v1/decisions/:id/documents/extract
 ```
 
-### `lib/mock-data.ts` — Mock Engine
-Pre-built demo data based on the university attendance decision example. All mock decisions are persisted in `localStorage` so state survives page refresh during development.
+### `lib/mock-data.ts` — Explicit Browser Demo
+Pre-built demo data based on the university attendance decision example. Demo decisions are persisted in `localStorage`; live API requests do not silently fall back to this data.
 
 ### `types/decision.ts` — Domain Types
 Complete TypeScript interfaces for all domain models:
@@ -224,7 +224,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-> The app runs fully in **mock mode** with no backend required. All decisions are stored in your browser's `localStorage`.
+> Live use requires the backend API. The explicit demo workspace uses browser-local data stored in `localStorage`.
 
 ### Build for production
 
@@ -256,7 +256,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_USE_MOCK=false
 ```
 
-The login and registration pages require the API. Use **Explore demo workspace** to enter the browser-local demo. Authenticated API errors are shown instead of being replaced with demo data.
+The login and registration pages require the API. Use **Explore demo workspace** to explicitly enter the browser-local demo. Network and backend errors during live use remain visible and are not replaced with demo results.
 
 ---
 
@@ -270,10 +270,14 @@ The frontend is designed to integrate with the RippleIQ FastAPI backend. The ful
 - [x] Bearer token and organization selection are attached to private API requests
 - [x] Decision lists use the API's `offset` and `limit` paging parameters
 - [x] Organization profile extras are included per decision via the documented `raw_metadata` field
+- [x] Scenario preferences use backend refinement while preserving the original analysis
+- [x] Document extraction uses the organization-protected API (preview only; not persisted)
 - [ ] Set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_APP_URL` for the target deployment
 - [ ] Verify auth, CORS, organization roles, and report behavior against the deployed backend
 
 The documented simulation endpoint is synchronous and has no progress-stream contract; the progress screen is a frontend status sequence, not streamed backend progress.
+
+For the complete operation-to-endpoint mapping and unsupported actions, see [`../docs/frontend-backend-compatibility.md`](../docs/frontend-backend-compatibility.md).
 
 ### Key API endpoints
 
@@ -286,7 +290,8 @@ The documented simulation endpoint is synchronous and has no progress-stream con
 | `POST` | `/decisions/{id}/context` | Context tab |
 | `POST` | `/decisions/{id}/simulate` | Progress tab |
 | `GET` | `/decisions/{id}/result` | Consequences, Risks, Scenarios, Recommendation tabs |
-| `POST` | `/decisions/{id}/report` | Report tab |
+| `GET` | `/decisions/{id}/report` | Report tab (JSON report) |
+| `GET` | `/decisions/{id}/report.md` | Download Markdown report |
 
 ---
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { getCurrentUser, getOrganizations } from "@/lib/api";
+import { ApiRequestError, getCurrentUser, getOrganizations } from "@/lib/api";
 import {
   clearAuthSession, clearDemoSession, getActiveOrganizationId, getAuthSession,
   isDemoSession, setActiveOrganizationId, startDemoSession,
@@ -15,6 +15,7 @@ type AuthState = {
   activeOrganizationId: number | null;
   isDemo: boolean;
   loading: boolean;
+  authError: string | null;
   refresh: () => Promise<boolean>;
   selectOrganization: (id: number) => void;
   startDemo: () => void;
@@ -29,9 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [activeOrganizationId, setActiveId] = useState<number | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setAuthError(null);
     const demo = isDemoSession();
     setIsDemo(demo);
     if (demo) {
@@ -57,11 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setActiveId(activeId);
       if (activeId !== storedId) setActiveOrganizationId(activeId);
       return orgs.length > 0;
-    } catch {
-      clearAuthSession();
-      setUser(null);
-      setOrganizations([]);
-      setActiveId(null);
+    } catch (cause) {
+      if (cause instanceof ApiRequestError && cause.status === 401) {
+        clearAuthSession();
+        setUser(null);
+        setOrganizations([]);
+        setActiveId(null);
+        return false;
+      }
+      setAuthError(cause instanceof Error ? cause.message : "Could not verify the saved session.");
       return false;
     } finally {
       setLoading(false);
@@ -93,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [activeOrganizationId]);
 
   const value = useMemo<AuthState>(() => ({
-    user, organizations, activeOrganizationId, isDemo, loading, refresh,
+    user, organizations, activeOrganizationId, isDemo, loading, authError, refresh,
     selectOrganization(id) {
       if (organizations.some((org) => org.id === id)) {
         setActiveId(id);
@@ -102,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     startDemo() { startDemoSession(); },
     signOut() { clearAuthSession(); clearDemoSession(); setActiveOrganizationId(null); },
-  }), [user, organizations, activeOrganizationId, isDemo, loading, refresh]);
+  }), [user, organizations, activeOrganizationId, isDemo, loading, authError, refresh]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

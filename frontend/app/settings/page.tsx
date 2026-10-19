@@ -6,7 +6,7 @@ import { Activity, Building2, CheckCircle2, Globe2, RefreshCw, RotateCcw, Save }
 import { toast } from "sonner";
 import { FormField } from "@/components/FormField";
 import { formatCurrency, getCurrencyCodes, getCurrencyLabel } from "@/lib/currency";
-import { checkApiHealth } from "@/lib/api";
+import { checkApiHealth, getAIProviderStatus, type AIProviderStatus } from "@/lib/api";
 import type { HealthResponse } from "@/types/decision";
 import type { Locale } from "@/lib/locale";
 import { translate } from "@/lib/locale";
@@ -24,15 +24,17 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<{ currency: string; language: Locale }>(DEFAULT_SETTINGS);
   const t = (key: Parameters<typeof translate>[1]) => translate(settings.language, key);
   const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [providerStatus, setProviderStatus] = useState<AIProviderStatus | null>(null);
+  const [providerStatusUnavailable, setProviderStatusUnavailable] = useState(false);
   const [checkingHealth, setCheckingHealth] = useState(true);
 
   const fetchHealth = async () => {
     setCheckingHealth(true);
-    try {
-      setHealth(await checkApiHealth());
-    } finally {
-      setCheckingHealth(false);
-    }
+    const [healthResult, providerResult] = await Promise.allSettled([checkApiHealth(), getAIProviderStatus()]);
+    setHealth(healthResult.status === "fulfilled" ? healthResult.value : null);
+    setProviderStatus(providerResult.status === "fulfilled" ? providerResult.value : null);
+    setProviderStatusUnavailable(providerResult.status === "rejected");
+    setCheckingHealth(false);
   };
 
   useEffect(() => {
@@ -64,12 +66,12 @@ export default function SettingsPage() {
 
     void init();
 
-    checkApiHealth().then((data) => {
-      if (active) setHealth(data);
-    }).catch(() => {
-      if (active) setHealth(null);
-    }).finally(() => {
-      if (active) setCheckingHealth(false);
+    Promise.allSettled([checkApiHealth(), getAIProviderStatus()]).then(([healthResult, providerResult]) => {
+      if (!active) return;
+      setHealth(healthResult.status === "fulfilled" ? healthResult.value : null);
+      setProviderStatus(providerResult.status === "fulfilled" ? providerResult.value : null);
+      setProviderStatusUnavailable(providerResult.status === "rejected");
+      setCheckingHealth(false);
     });
 
     return () => {
@@ -126,8 +128,27 @@ export default function SettingsPage() {
         </div>
         <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm dark:bg-slate-800/60">
           {health?.status === "healthy" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" /> : <Activity className="h-4 w-4 text-amber-600" aria-hidden="true" />}
-          <span className="font-medium text-slate-800 dark:text-slate-200">{health?.status === "healthy" ? "Backend reachable" : health?.status === "degraded" ? "Backend is degraded" : "Demo mode — backend not reachable"}</span>
+          <span className="font-medium text-slate-800 dark:text-slate-200">{health?.status === "healthy" ? "Backend reachable" : health?.status === "degraded" ? "Backend is degraded" : "Backend unavailable"}</span>
           {health?.analyzer_mode && <span className="ms-auto hidden text-xs text-slate-500 sm:inline">Analyzer: {health.analyzer_mode}</span>}
+        </div>
+        <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-slate-800" aria-live="polite">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200">AI provider configuration</h3>
+            {providerStatus && <span className="text-[10px] font-medium text-slate-500">Mode: {providerStatus.mode}</span>}
+          </div>
+          {providerStatus ? (
+            <>
+              <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+                {providerStatus.providers.map((provider) => (
+                  <li key={provider.name} className="flex items-center justify-between gap-2 text-[11px] text-slate-600 dark:text-slate-300">
+                    <span>{provider.name.replaceAll("_", " ")}</span>
+                    <span className={provider.configured ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}>{provider.configured ? "Configured" : "Not configured"}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">{providerStatus.note} Configured does not mean reachable. Failover {providerStatus.failover_enabled ? "enabled" : "disabled"}; mock degraded mode {providerStatus.degraded_mode_enabled ? "enabled" : "disabled"}.</p>
+            </>
+          ) : <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">{providerStatusUnavailable ? "Provider configuration status is unavailable." : "Loading provider configuration…"}</p>}
         </div>
       </section>
 
