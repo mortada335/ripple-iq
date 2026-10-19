@@ -8,7 +8,11 @@
   hash. Legacy accounts without a password hash cannot sign in until reset or
   re-registration is implemented.
 - `POST /api/v1/auth/login` returns a signed HS256 bearer token. Tokens expire
-  after `ACCESS_TOKEN_EXPIRE_MINUTES` (30 by default). Send them in the
+  after `ACCESS_TOKEN_EXPIRE_MINUTES` (10,080 minutes, or 7 days, by default).
+  Set this server-side environment variable to a positive number of minutes to
+  change the session duration. The frontend follows the `expires_in` value in
+  the login response. Existing tokens keep their original expiration; users must
+  sign in again after deployment to receive a longer-lived token. Send tokens in the
   `Authorization: Bearer <token>` header. `GET /api/v1/auth/me` returns the
   authenticated user's public account fields.
 - `SECRET_KEY` comes from the environment. Production startup rejects the
@@ -41,13 +45,16 @@ analysis run, is not written to application logs, and does not overwrite the
 original analysis result.
 
 Authentication registration, successful/failed login attempts, decision and
-context mutations, analysis attempts, and report downloads create audit log
-records. Failed-login entries do not store the submitted email or password.
-`/api/v1/health` returns only connected/disconnected database state; SQL errors
-are not included in API responses. Production configuration rejects wildcard
-CORS origins and placeholder/short signing keys. Context assumption strings
-are capped at 500 characters and custom JSON metadata at 50 top-level fields
-and 10,000 serialized characters. There are no file-upload routes in this MVP.
+context mutations, analysis attempts, report downloads, and document extraction
+create audit log records. Failed-login entries do not store the submitted email
+or password. Unexpected API errors return a generic response; logs retain the
+request method/path and exception type without exception messages or tracebacks,
+which may contain SQL or configuration details. `/api/v1/health` reports
+database connectivity and analyzer mode, but not credentials or provider
+reachability. Production configuration rejects wildcard CORS origins and
+placeholder/short signing keys. Context assumption strings are capped at 500
+characters and custom JSON metadata at 50 top-level fields and 10,000 serialized
+characters.
 
 ## Deployment and remaining work
 
@@ -55,15 +62,29 @@ Set `DATABASE_URL` and `SECRET_KEY` in the backend process environment. The
 connection URI is not stored in the repository. The current Neon connection can
 be replaced later with a VPC-private PostgreSQL URI without a code change.
 
-The optional document extraction service accepts in-memory bytes only and has
-no upload or document retrieval endpoint. Callers must authorize each document
-against its organization before invoking the service. Extraction returns the
-document ID, organization, version, and page numbers; it does not persist
-documents or send them to an external service. Marker runs offline in a separate
-worker. See `docs/ai-provider-ocr.md` for limits and setup. Provider keys belong
-in environment configuration or a secret manager. Logs and API errors expose
-sanitized provider categories only.
+The document extraction endpoint accepts authenticated raw bytes for an
+existing decision and checks organization access before processing. It enforces
+file-size, page-count, processing-time, and local concurrency limits. It returns
+per-page extracted text and provenance but does not persist the source or text;
+OCR runs locally. Optional Marker processing is isolated and may require a
+separate worker. Voice transcription is a separate authenticated feature that
+sends user-recorded audio to the configured Google Gemini API; audio is not
+persisted by RippleIQ. See `docs/ai-provider-ocr.md` and `docs/api-contract.md`
+for operational limits. Provider keys belong in environment configuration or a
+secret manager. Logs and API errors expose sanitized provider categories only.
+
+The browser currently stores the bearer access token in `localStorage` so a
+session survives refresh. This keeps the token accessible to same-origin
+JavaScript; a successful cross-site scripting attack could steal it. A future
+session design should consider short-lived access tokens with an `HttpOnly`,
+`Secure`, `SameSite` refresh cookie and CSRF protection, without placing secrets
+in browser storage.
 
 Email verification, password reset, invitation workflows, token revocation,
-and rate limiting are outside the current auth endpoints. Add rate limiting at
-the API gateway or application layer before exposing login publicly.
+Email verification, password reset, invitation workflows, and token revocation
+are not implemented. Sensitive endpoints have database-backed per-IP and/or
+per-user request limits; see `docs/rate-limiting.md` for exact policies and
+deployment requirements. These limits do not mitigate volumetric or distributed
+denial-of-service attacks. Current tests cover selected authorization boundaries
+and error sanitization, but do not establish a complete penetration test or
+production threat assessment.

@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
     SECRET_KEY: str = _DEVELOPMENT_SECRET
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days; override per deployment as needed.
     PORT: int = 8000
     API_V1_PREFIX: str = "/api/v1"
 
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     LLM_PRIMARY_MODEL: str = ""
     GEMINI_API_KEY_1: str = Field(default="", repr=False)
     GEMINI_API_KEY_2: str = Field(default="", repr=False)
-    GEMINI_MODEL: str = "gemini-3.1-flash-lite"
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
     LLM_REQUEST_TIMEOUT_SECONDS: float = 45.0
     LLM_MAX_RETRIES: int = 1
     LLM_FAILOVER_ENABLED: bool = True
@@ -47,6 +47,28 @@ class Settings(BaseSettings):
     OCR_MAX_PAGES: int = 100
     OCR_MAX_PROCESSING_SECONDS: float = 30.0
     OCR_BACKEND: str = "tesseract"
+    VOICE_TRANSCRIPTION_ENABLED: bool = True
+    VOICE_TRANSCRIPTION_MODEL: str = "gemini-3.5-transcribe"
+    VOICE_TRANSCRIPTION_MAX_BYTES: int = 8_388_608
+
+    # Database-backed rate limits. Windows use fixed UTC epochs.
+    RATE_LIMIT_LOGIN_IP_MAX: int = 30
+    RATE_LIMIT_LOGIN_ACCOUNT_IP_MAX: int = 8
+    RATE_LIMIT_LOGIN_WINDOW_SECONDS: int = 900
+    RATE_LIMIT_REGISTER_IP_MAX: int = 10
+    RATE_LIMIT_REGISTER_WINDOW_SECONDS: int = 3600
+    RATE_LIMIT_ANALYSIS_USER_MAX: int = 5
+    RATE_LIMIT_ANALYSIS_IP_MAX: int = 15
+    RATE_LIMIT_ANALYSIS_WINDOW_SECONDS: int = 3600
+    RATE_LIMIT_RETRY_USER_MAX: int = 3
+    RATE_LIMIT_RETRY_IP_MAX: int = 10
+    RATE_LIMIT_RETRY_WINDOW_SECONDS: int = 3600
+    RATE_LIMIT_DOCUMENT_USER_MAX: int = 10
+    RATE_LIMIT_DOCUMENT_IP_MAX: int = 30
+    RATE_LIMIT_DOCUMENT_WINDOW_SECONDS: int = 3600
+    RATE_LIMIT_VOICE_USER_MAX: int = 20
+    RATE_LIMIT_VOICE_IP_MAX: int = 60
+    RATE_LIMIT_VOICE_WINDOW_SECONDS: int = 3600
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[1] / ".env",
@@ -78,6 +100,29 @@ class Settings(BaseSettings):
             raise ValueError("OCR resource limits must be positive.")
         if self.OCR_BACKEND not in {"tesseract", "marker"}:
             raise ValueError("OCR_BACKEND must be tesseract or marker.")
+        if self.VOICE_TRANSCRIPTION_MAX_BYTES < 1:
+            raise ValueError("Voice transcription size limit must be positive.")
+        rate_limit_values = (
+            self.RATE_LIMIT_LOGIN_IP_MAX,
+            self.RATE_LIMIT_LOGIN_ACCOUNT_IP_MAX,
+            self.RATE_LIMIT_LOGIN_WINDOW_SECONDS,
+            self.RATE_LIMIT_REGISTER_IP_MAX,
+            self.RATE_LIMIT_REGISTER_WINDOW_SECONDS,
+            self.RATE_LIMIT_ANALYSIS_USER_MAX,
+            self.RATE_LIMIT_ANALYSIS_IP_MAX,
+            self.RATE_LIMIT_ANALYSIS_WINDOW_SECONDS,
+            self.RATE_LIMIT_RETRY_USER_MAX,
+            self.RATE_LIMIT_RETRY_IP_MAX,
+            self.RATE_LIMIT_RETRY_WINDOW_SECONDS,
+            self.RATE_LIMIT_DOCUMENT_USER_MAX,
+            self.RATE_LIMIT_DOCUMENT_IP_MAX,
+            self.RATE_LIMIT_DOCUMENT_WINDOW_SECONDS,
+            self.RATE_LIMIT_VOICE_USER_MAX,
+            self.RATE_LIMIT_VOICE_IP_MAX,
+            self.RATE_LIMIT_VOICE_WINDOW_SECONDS,
+        )
+        if any(value < 1 for value in rate_limit_values):
+            raise ValueError("Rate-limit counts and window durations must be positive.")
         if self.ENVIRONMENT.lower() in {"production", "prod"}:
             if self.sqlalchemy_database_url.startswith("sqlite:"):
                 raise ValueError(

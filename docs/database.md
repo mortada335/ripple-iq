@@ -269,3 +269,8 @@ from the repository root with:
 ```powershell
 backend/.venv/Scripts/python.exe backend/scripts/import_sqlite_to_postgres.py --source backend/rippleiq_demo.db
 ```
+
+Revision `8ac41db905f2` adds `rate_limit_buckets`, containing only an HMAC key,
+fixed-window ID, count, and expiry. The table is shared by API workers using the
+same PostgreSQL database; see `docs/rate-limiting.md` for policy and cleanup
+details.

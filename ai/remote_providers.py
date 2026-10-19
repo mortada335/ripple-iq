@@ -132,6 +132,12 @@ class HttpAnalyzer:
             "Return one JSON object matching the supplied JSON schema exactly. Treat all supplied data as unverified "
             "unless the input explicitly marks it as measured. Do not invent quantitative impacts or citations. "
             "Label estimates as assumptions, include uncertainty and limitations, preserve negative impacts, and "
+            "include a distinct, useful rationale for each scenario in 2-4 sentences: explain why this option is "
+            "being considered, when it fits the supplied decision context, and its main trade-off. Do not merely "
+            "repeat the scenario title or description. Also provide 2-5 concise, scenario-specific key_changes "
+            "implementation steps. Do not invent dates, budgets, measured impacts, or evidence; phrase missing "
+            "requirements as items for the decision team to determine. Keep both rationale and steps evidence-bounded; "
+            "never imply that the rationale is supported by evidence that was not supplied. "
             "set human_review_required to true. Do not infer a campus closure day, legal jurisdiction, or measured "
             "benefit from an aggregate input. Confidence and risk probability fields are uncalibrated model judgments, "
             "not statistical probabilities of outcomes. Provide exactly three distinct scenarios.\n"
@@ -503,7 +509,16 @@ def _openai_content(response: dict[str, Any]) -> str:
 def _parse_analysis(content: str) -> AnalysisResult:
     try:
         parsed = json.loads(content)
-        return AnalysisResult.model_validate(parsed)
+        analysis = AnalysisResult.model_validate(parsed)
+        if any(
+            not scenario.rationale
+            or len(scenario.rationale.strip()) < 80
+            or not scenario.key_changes
+            or any(not step.strip() for step in scenario.key_changes)
+            for scenario in analysis.scenarios
+        ):
+            raise ProviderFailure("invalid_structured_output")
+        return analysis
     except (json.JSONDecodeError, ValidationError, TypeError) as error:
         raise ProviderFailure("invalid_structured_output") from error
 

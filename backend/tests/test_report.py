@@ -40,6 +40,7 @@ def test_generate_and_retrieve_markdown_report(client, db_session):
     assert "Scenario 1" in md_content
     assert "Scenario 2" in md_content
     assert "Scenario 3" in md_content
+    assert "Scenario rationale" in md_content
     assert "Fairness Review Questions" in md_content
     assert "not measured outcomes" in md_content
     assert "MANDATORY HUMAN REVIEW REQUIRED" in md_content

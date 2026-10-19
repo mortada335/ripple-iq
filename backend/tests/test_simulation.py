@@ -69,6 +69,8 @@ def test_full_simulation_flow_for_demo_decision(client, db_session):
 
     # Verify 3 scenarios
     assert len(res["scenarios"]) == 3
+    assert all(scenario["rationale"] for scenario in res["scenarios"])
+    assert all(scenario["key_changes"] for scenario in res["scenarios"])
     sc_titles = [sc["title"] for sc in res["scenarios"]]
     assert any("as written" in t.lower() for t in sc_titles)
     assert any("protects laboratories" in t.lower() for t in sc_titles)
@@ -99,6 +101,8 @@ def test_full_simulation_flow_for_demo_decision(client, db_session):
     scenario = client.get(f"/api/v1/scenarios/{scenario_id}")
     assert scenario.status_code == 200
     assert scenario.json()["score_method"]
+    assert scenario.json()["rationale"]
+    assert scenario.json()["key_changes"]
     assert client.get(f"/api/v1/scenarios/{scenario.json()['id']}/impacts").json()
     assert client.get(f"/api/v1/scenarios/{scenario.json()['id']}/risks").json()
 

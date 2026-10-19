@@ -318,6 +318,8 @@ class ScenarioResponse(BaseModel):
     scenario_number: int
     title: str
     description: str
+    rationale: str | None = None
+    key_changes: list[str] = Field(default_factory=list, max_length=10)
     feasibility_score: float
     score_components: dict[str, float] = Field(default_factory=dict)
     score_method: str | None = None
@@ -450,6 +452,12 @@ class SimulationResultResponse(BaseModel):
     limitations: list[str]
     recommendation: RecommendationResponse | None = None
     provenance: AnalysisProvenance = Field(default_factory=AnalysisProvenance)
+
+
+class VoiceTranscriptionResponse(BaseModel):
+    transcript: str
+    provider: str
+    model: str
 
 
 # ==========================================

@@ -1,3 +1,4 @@
+from app.config import settings
 from app.models import AuditLog, Decision, Organization, OrganizationMember, User
 
 
@@ -19,6 +20,7 @@ def test_register_login_and_current_user(client, db_session):
     assert login.status_code == 200
     token = login.json()["access_token"]
     assert login.json()["token_type"] == "bearer"
+    assert login.json()["expires_in"] == settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
     current_user = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert current_user.status_code == 200

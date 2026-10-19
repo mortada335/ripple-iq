@@ -15,6 +15,7 @@ from ai.remote_providers import (
     _gemini_schema,
     create_analyzer,
 )
+from ai.schemas import AnalysisResult
 
 
 def _valid_result() -> dict:
@@ -46,6 +47,34 @@ def test_proxy_success_returns_validated_provenance():
     assert result.provenance.provider == "openai_compatible_proxy"
     assert result.provenance.model == "verified-model"
     assert result.provenance.is_mock is False
+
+
+def test_old_saved_analysis_without_scenario_rationale_remains_readable():
+    result = _valid_result()
+    for scenario in result["scenarios"]:
+        scenario.pop("rationale")
+
+    parsed = AnalysisResult.model_validate(result)
+
+    assert all(scenario.rationale is None for scenario in parsed.scenarios)
+
+
+def test_provider_rejects_new_output_without_scenario_rationale():
+    result = _valid_result()
+    result["scenarios"][1].pop("rationale")
+    provider = _provider(OpenAICompatibleAnalyzer, "proxy", result)
+
+    with pytest.raises(ProviderFailure, match="invalid_structured_output"):
+        provider.analyze("Review university attendance policy")
+
+
+def test_provider_rejects_new_output_without_scenario_steps():
+    result = _valid_result()
+    result["scenarios"][1]["key_changes"] = []
+    provider = _provider(OpenAICompatibleAnalyzer, "proxy", result)
+
+    with pytest.raises(ProviderFailure, match="invalid_structured_output"):
+        provider.analyze("Review university attendance policy")
 
 
 @pytest.mark.parametrize("failed_credentials", [1, 2])
