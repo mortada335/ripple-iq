@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <a
         href="#main-content"
-        className="absolute start-2 top-2 z-50 -translate-y-16 rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow focus:translate-y-0"
+        className="absolute inset-s-2 top-2 z-50 -translate-y-16 rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow focus:translate-y-0"
       >
         Skip to content
       </a>

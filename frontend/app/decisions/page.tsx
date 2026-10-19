@@ -160,7 +160,7 @@ export default function HistoricalDecisionsPage() {
 
       {/* Search Filter */}
       <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+        <Search className="pointer-events-none absolute inset-s-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
         <input
           type="text"
           value={search}

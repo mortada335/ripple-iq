@@ -114,7 +114,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
           </button>
 
           {profileDropdownOpen && (
-            <div id="profile-menu" className="absolute end-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900">
+            <div id="profile-menu" className="absolute inset-e-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900">
               <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800">
                 <p className="font-bold text-slate-900 dark:text-white">{isDemo ? "Demo workspace" : user?.full_name}</p>
                 <p className="text-[11px] text-slate-500">{isDemo ? "Demo data is stored locally" : user?.email}</p>
