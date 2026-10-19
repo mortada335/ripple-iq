@@ -81,5 +81,10 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Raggie
+.raggie/
 .raggie/*
-.raggie/.raggie.chat
+.raggie.chat
+*.raggie.chat
+
