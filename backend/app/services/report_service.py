@@ -136,6 +136,12 @@ class ReportService:
                 lines.append(f"- **Score components:** {components}")
                 lines.append(f"- **Scoring method:** {sc.score_method}")
             lines.append(f"- **Operational Overview:** {sc.description}")
+            if sc.rationale:
+                lines.append(f"- **Scenario rationale:** {sc.rationale}")
+            else:
+                lines.append(
+                    "- **Scenario rationale:** Not available in this saved analysis; rerun analysis to generate it."
+                )
             if sc.tradeoff_summary:
                 lines.append(f"- **Strategic Trade-offs:** {sc.tradeoff_summary}")
             lines.append("")

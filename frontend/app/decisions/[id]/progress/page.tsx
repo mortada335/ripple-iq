@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useRef, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,7 +10,8 @@ import {
   XCircle,
   RotateCcw,
 } from "lucide-react";
-import { runSimulation } from "@/lib/api";
+import { getAnalysisStatus, retryFailedAnalysis, runSimulation } from "@/lib/api";
+import type { AnalysisStatus, SimulateResponse } from "@/types/decision";
 
 const STEPS = [
   {
@@ -20,7 +21,7 @@ const STEPS = [
   },
   {
     id: 2,
-    title: "Mapping 5 Affected Stakeholder Groups",
+    title: "Mapping affected stakeholder groups",
     desc: "Considering the stakeholder groups and operational areas described for this decision.",
   },
   {
@@ -47,7 +48,9 @@ export default function AnalysisProgressPage({
   const [activeStep, setActiveStep] = useState(1);
   const [complete, setComplete] = useState(false);
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("Analysis could not be completed. Please retry.");
   const [attempt, setAttempt] = useState(0);
+  const jobs = useRef(new Map<number, Promise<AnalysisStatus | SimulateResponse>>());
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +66,36 @@ export default function AnalysisProgressPage({
       if (!cancelled) setActiveStep(4);
     }, 2200);
 
-    runSimulation(Number(decisionId))
+    let job = jobs.current.get(attempt);
+    if (!job) {
+      job = (async () => {
+        let currentStatus = await getAnalysisStatus(Number(decisionId));
+        if (currentStatus.analysis_status === "completed") return currentStatus;
+        if (currentStatus.analysis_status === "failed" && attempt === 0) {
+          throw new Error("The previous analysis failed. Retry it to start another run.");
+        }
+        if (currentStatus.analysis_status === "failed") {
+          return retryFailedAnalysis(Number(decisionId));
+        }
+        if (currentStatus.analysis_status === "running") {
+          const deadline = Date.now() + 115_000;
+          while (currentStatus.analysis_status === "running" && Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 1_000));
+            currentStatus = await getAnalysisStatus(Number(decisionId));
+          }
+          if (currentStatus.analysis_status === "completed") return currentStatus;
+          if (currentStatus.analysis_status === "failed") {
+            if (attempt === 0) throw new Error("The previous analysis failed. Retry it to start another run.");
+            return retryFailedAnalysis(Number(decisionId));
+          }
+          throw new Error("Analysis is still running. Return to this page shortly to check its status.");
+        }
+        return runSimulation(Number(decisionId));
+      })();
+      jobs.current.set(attempt, job);
+    }
+
+    job
       .then(() => {
         if (cancelled) return;
         setComplete(true);
@@ -72,8 +104,11 @@ export default function AnalysisProgressPage({
           if (!cancelled) router.push(`/decisions/${decisionId}/scenarios`);
         }, 800);
       })
-      .catch(() => {
-        if (!cancelled) setError(true);
+      .catch((cause) => {
+        if (!cancelled) {
+          setError(true);
+          setErrorMessage(cause instanceof Error ? cause.message : "Analysis could not be completed. Please retry.");
+        }
       });
 
     return () => {
@@ -108,7 +143,7 @@ export default function AnalysisProgressPage({
       <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4" aria-live="polite">
         {error && (
           <div role="alert" className="flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
-            <span>Simulation encountered an issue. Please retry.</span>
+            <span>{errorMessage}</span>
             <button
               type="button"
               onClick={() => {
@@ -204,11 +239,11 @@ export default function AnalysisProgressPage({
         {/* Action controls */}
         <div className="flex items-center justify-between pt-2">
           <Link
-          href={`/decisions/${decisionId}`}
+            href={`/decisions/${decisionId}`}
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           >
             <XCircle className="h-3.5 w-3.5" />
-            <span>Cancel Simulation</span>
+            <span>Back to decision</span>
           </Link>
 
           <span className="text-[11px] text-slate-500" role="status">

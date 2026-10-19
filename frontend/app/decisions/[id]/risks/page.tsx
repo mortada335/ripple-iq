@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useCallback, useEffect, useState, use } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,10 +12,10 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
-import { saveLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RiskItem, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
+import { ApiLoadError } from "@/components/ApiLoadError";
 
 const SEVERITY_ORDER: Record<string, number> = {
   CRITICAL: 4,
@@ -45,16 +45,25 @@ export default function RiskRegisterPage({
   const initialSort = searchParams.get("sort") === "likelihood" ? "likelihood" : "severity";
   const [sortBy, setSortBy] = useState<"severity" | "likelihood">(initialSort);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadResult = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await getSimulationResult(Number(decisionId));
+      setResult(data);
+      setRisks(data.risks || []);
+    } catch (cause) {
+      setLoadError(cause instanceof Error ? cause.message : "Could not load risk results.");
+    } finally {
+      setLoading(false);
+    }
+  }, [decisionId]);
 
   useEffect(() => {
-    getSimulationResult(Number(decisionId))
-      .then((data) => {
-        setResult(data);
-        setRisks(data.risks || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [decisionId]);
+    void Promise.resolve().then(loadResult);
+  }, [loadResult]);
 
   const toggleSort = () => {
     setSortBy((prev) => {
@@ -76,14 +85,7 @@ export default function RiskRegisterPage({
     };
     setRisks(updated);
 
-    if (result) {
-      const updatedResult = {
-        ...result,
-        risks: updated,
-      };
-      setResult(updatedResult);
-      saveLocalSimulationResult(Number(decisionId), updatedResult);
-    }
+    if (result) setResult({ ...result, risks: updated });
   };
 
   const acknowledgedCount = risks.filter((r) => r.acknowledged).length;
@@ -105,10 +107,10 @@ export default function RiskRegisterPage({
 
   const handleExportRisks = () => {
     const csvContent = [
-      "Title,Severity,Likelihood,Affected Stakeholders,Mitigation Strategy,Status",
+      "Title,Severity,Likelihood,Affected Stakeholders,Mitigation Strategy,Local Review Status",
       ...risks.map(
         (r) =>
-          `"${r.title}","${r.severity}","${r.likelihood}","${r.affected_stakeholders.join("; ")}","${r.mitigation_strategy}","${r.acknowledged ? "ACKNOWLEDGED" : "PENDING"}"`
+          `"${r.title}","${r.severity}","${r.likelihood}","${r.affected_stakeholders.join("; ")}","${r.mitigation_strategy}","${r.acknowledged ? "LOCAL REVIEW MARK" : "NOT MARKED"}"`
       ),
     ].join("\n");
 
@@ -122,13 +124,17 @@ export default function RiskRegisterPage({
     toast.success("Risk register exported", { description: "CSV file downloaded." });
   };
 
-  if (loading || !result) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <DecisionNavTabs decisionId={decisionId} />
         <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
       </div>
     );
+  }
+
+  if (loadError || !result) {
+    return <div className="space-y-4"><DecisionNavTabs decisionId={decisionId} /><ApiLoadError message={loadError ?? "Analysis results are not available yet."} onRetry={() => void loadResult()} /></div>;
   }
 
   return (
@@ -180,7 +186,7 @@ export default function RiskRegisterPage({
               Risk Review
             </div>
             <div className="text-[11px] text-slate-500">
-              {acknowledgedCount} of {risks.length} critical risks formally acknowledged.
+              {acknowledgedCount} of {risks.length} risks locally marked reviewed. This mark is not saved to the organization API.
             </div>
           </div>
         </div>
@@ -240,8 +246,8 @@ export default function RiskRegisterPage({
                   className="mt-0.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer"
                   title={
                     risk.acknowledged
-                      ? "Mark unacknowledged"
-                      : "Acknowledge risk for audit tracking"
+                      ? "Remove local review mark"
+                      : "Mark reviewed in this browser only; not shared or audited"
                   }
                 >
                   {risk.acknowledged ? (
@@ -271,7 +277,7 @@ export default function RiskRegisterPage({
 
                     {risk.acknowledged && (
                       <span className="rounded-full bg-emerald-100 px-2 py-0.2 text-[9px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        ✓ Acknowledged
+                        Locally reviewed
                       </span>
                     )}
                   </div>

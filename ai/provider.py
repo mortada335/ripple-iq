@@ -19,6 +19,28 @@ _SCORE_WEIGHTS = {
 }
 
 
+def _scenario_key_changes(scenario: dict[str, Any]) -> list[str]:
+    """Return clearly illustrative planning steps for deterministic mock results."""
+    scenario_text = f"{scenario.get('title', '')} {scenario.get('description', '')}".casefold()
+    if any(term in scenario_text for term in ("pilot", "trial", "limited rollout")):
+        return [
+            "Agree the pilot scope, success criteria, and review owner before starting.",
+            "Collect baseline and follow-up measures that match the stated objectives.",
+            "Review outcomes and risks with affected stakeholders before deciding whether to expand.",
+        ]
+    if any(term in scenario_text for term in ("exemption", "exception", "protect")):
+        return [
+            "Define eligible protections or exceptions from the supplied constraints and get owner approval.",
+            "Assign responsible teams and communicate the approved process to affected groups.",
+            "Monitor whether the protections work and review reported impacts after implementation.",
+        ]
+    return [
+        "Confirm scope, affected groups, and implementation criteria with the decision owner.",
+        "Assign responsible teams and communicate the approved change before implementation.",
+        "Review outcomes and reported risks at agreed checkpoints; adjust if evidence warrants it.",
+    ]
+
+
 def _interpret_decision(title: str, description: str | None) -> DecisionInterpretation:
     source_text = f"{title} {description or ''}".strip()
     normalized = source_text.casefold()
@@ -96,6 +118,16 @@ class DeterministicMockProvider:
                     **{
                         **scenario,
                         "feasibility_score": score,
+                        "rationale": (
+                            "This option is included to compare a distinct implementation path for the decision. "
+                            "Its relative fit depends on the context and constraints supplied by the user. "
+                            "The comparative score combines "
+                            f"implementation feasibility ({feasibility:.2f}), stakeholder protection "
+                            f"({protection:.2f}), and reversibility ({reversibility:.2f}) using weights "
+                            "0.60, 0.30, and 0.10. These are qualitative estimates, not measured outcomes. "
+                            f"Key trade-off: {scenario['tradeoff_summary']}"
+                        ),
+                        "key_changes": _scenario_key_changes(scenario),
                         "score_components": ScoreComponents(
                             implementation_feasibility=feasibility,
                             stakeholder_protection=protection,

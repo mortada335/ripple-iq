@@ -18,8 +18,25 @@ function readSessionValue(key: string): string | null {
   }
 }
 
+function readAuthSessionValue(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const persisted = window.localStorage.getItem(SESSION_KEY);
+    if (persisted) return persisted;
+    // Keep sessions created by older builds and migrate them for reloads/new tabs.
+    const legacy = window.sessionStorage.getItem(SESSION_KEY);
+    if (legacy) {
+      window.localStorage.setItem(SESSION_KEY, legacy);
+      window.sessionStorage.removeItem(SESSION_KEY);
+    }
+    return legacy;
+  } catch {
+    return readSessionValue(SESSION_KEY);
+  }
+}
+
 export function getAuthSession(): AuthSession | null {
-  const raw = readSessionValue(SESSION_KEY);
+  const raw = readAuthSessionValue();
   if (!raw) return null;
   try {
     const session = JSON.parse(raw) as Partial<AuthSession>;
@@ -39,20 +56,36 @@ export function getAuthSession(): AuthSession | null {
 }
 
 export function saveAuthSession(accessToken: string, expiresIn: number) {
+  const session = JSON.stringify({ accessToken, expiresAt: Date.now() + expiresIn * 1000 });
+  let saved = false;
   try {
-    window.sessionStorage.setItem(
-      SESSION_KEY,
-      JSON.stringify({ accessToken, expiresAt: Date.now() + expiresIn * 1000 }),
-    );
-    window.sessionStorage.removeItem(DEMO_KEY);
-    window.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
+    window.localStorage.setItem(SESSION_KEY, session);
+    saved = true;
   } catch {
-    throw new Error("Browser session storage is unavailable. Enable it and try again.");
+    // Fall back to tab-only storage if persistent browser storage is blocked.
   }
+  if (!saved) {
+    try {
+      window.sessionStorage.setItem(SESSION_KEY, session);
+    } catch {
+      throw new Error("Browser storage is unavailable. Enable it and try again.");
+    }
+  }
+  try {
+    window.sessionStorage.removeItem(DEMO_KEY);
+  } catch {
+    // The authenticated token was saved; a stale demo marker does not invalidate it.
+  }
+  window.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
 }
 
 export function clearAuthSession() {
   if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Continue clearing the legacy tab-scoped session.
+  }
   try {
     window.sessionStorage.removeItem(SESSION_KEY);
   } catch {

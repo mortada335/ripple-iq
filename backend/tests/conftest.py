@@ -14,6 +14,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from ai.provider import DeterministicMockProvider
+
 # Ensure backend and workspace root are in sys.path
 backend_dir = Path(__file__).resolve().parent.parent
 workspace_dir = backend_dir.parent
@@ -22,6 +24,8 @@ if str(backend_dir) not in sys.path:
 if str(workspace_dir) not in sys.path:
     sys.path.insert(0, str(workspace_dir))
 
+import app.services.simulation_service as simulation_service
+from app.config import settings
 from app.database import Base, get_db
 from app.main import app
 from app.models import Organization, OrganizationMember, User
@@ -37,6 +41,13 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def isolate_analyzer_from_configured_providers(monkeypatch):
+    """Keep test analysis deterministic and never call configured real providers."""
+    monkeypatch.setattr(settings, "ANALYZER_BACKEND", "mock_deterministic")
+    monkeypatch.setattr(simulation_service, "default_analyzer", DeterministicMockProvider())
 
 
 @pytest.fixture(scope="session", autouse=True)

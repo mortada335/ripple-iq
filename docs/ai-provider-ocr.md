@@ -94,8 +94,9 @@ startup.
 The proxy model list was fetched without sending an API key. A real analysis
 request using Google Gemini completed successfully through the API in the
 current environment; its stored provenance identified `google_gemini` and
-`gemini-3.1-flash-lite`. The second Gemini credential and proxy inference
-endpoint were not tested. Automated provider failover tests use
+`gemini-3.5-flash-lite`. The previously configured `gemini-3.1-flash-lite`
+returned HTTP 503 during verification. The second Gemini credential and proxy
+inference endpoint were not tested. Automated provider failover tests use
 `httpx.MockTransport`; OCR unit tests stub OCR engines. The endpoint test also
 generates a local digital PDF and exercises real PyMuPDF text extraction when
 the optional OCR extra is installed. There is no Tesseract executable or

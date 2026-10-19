@@ -9,6 +9,7 @@ export const DEMO_DECISION: Decision = {
   title: "Reduce in-person university attendance from five days to four days per week",
   description:
     "Evaluate institutional shift from traditional 5-day on-campus instruction to a 4-day condensed week (Monday through Thursday) with Friday designated for asynchronous digital learning, grading, and faculty research.",
+  decision_type: "attendance",
   department: "Academic Affairs",
   time_horizon: "1 Academic Year",
   priority: "HIGH",
@@ -44,6 +45,14 @@ export const DEMO_CONTEXT: ContextData = {
 export const DEMO_SIMULATION_RESULT: SimulationResult = {
   decision_id: 1,
   decision_title: "Reduce in-person university attendance from five days to four days per week",
+  schema_version: "0.1.0",
+  analysis_status: "completed",
+  interpretation: {},
+  fairness: {
+    potential_concerns: [],
+    affected_groups_to_review: [],
+    note: "Demo example only. Review fairness with institutional evidence.",
+  },
   is_estimate: true,
   human_review_required: true,
   confidence: {
@@ -51,6 +60,7 @@ export const DEMO_SIMULATION_RESULT: SimulationResult = {
     level: "HIGH",
     rationale:
       "High confidence based on structured operational context and verified university scheduling precedents.",
+    is_calibrated_probability: false,
   },
   stakeholders: [
     {
@@ -263,6 +273,13 @@ export const DEMO_SIMULATION_RESULT: SimulationResult = {
       "Proceed with Scenario 2: Compress general lecture courses into a 4-day block (Mon-Thu) while designating Friday as dedicated asynchronous study, while granting full operational exemption and dedicated staffing for wet research laboratories and clinical facilities.",
     rationale:
       "Scenario 2 achieves 88% of intended energy, commuting, and student satisfaction benefits while completely mitigating the critical risk of research grant disruption and experiment spoilage.",
+  },
+  provenance: {
+    provider: "deterministic_mock",
+    model: null,
+    attempt_count: 1,
+    fallback_used: false,
+    is_mock: true,
   },
 };
 

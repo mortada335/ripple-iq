@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     Column,
@@ -304,3 +305,14 @@ class AuditLog(Base):
     organization = relationship("Organization", back_populates="audit_logs")
     actor = relationship("User", back_populates="audit_logs")
     decision = relationship("Decision", back_populates="audit_logs")
+
+
+class RateLimitBucket(Base):
+    """Atomic fixed-window counters; identities are keyed hashes, not raw IPs/emails."""
+
+    __tablename__ = "rate_limit_buckets"
+
+    key_hash = Column(String(64), primary_key=True)
+    window_id = Column(BigInteger, nullable=False, index=True)
+    count = Column(Integer, nullable=False)
+    expires_at = Column(BigInteger, nullable=False, index=True)

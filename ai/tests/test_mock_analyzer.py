@@ -71,6 +71,15 @@ def test_analyzer_determinism():
     assert run1 == run2
 
 
+def test_deterministic_provider_includes_scenario_reasoning_and_steps():
+    result = DeterministicMockProvider().analyze("Review a university attendance policy")
+
+    assert len(result.scenarios) == 3
+    assert all(scenario.rationale and len(scenario.rationale) >= 80 for scenario in result.scenarios)
+    assert all(scenario.key_changes for scenario in result.scenarios)
+    assert any("pilot" in step.casefold() for step in result.scenarios[2].key_changes)
+
+
 def test_analyzer_recommendation_and_risks():
     analyzer = MockAnalyzer()
     decision_title = "Reduce in-person university attendance from five days to four days per week"

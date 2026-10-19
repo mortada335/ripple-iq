@@ -33,7 +33,7 @@ class JsonLogFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
         }
-        for field in ("request_id", "path", "method", "status_code"):
+        for field in ("request_id", "path", "method", "status_code", "error_type"):
             if hasattr(record, field):
                 entry[field] = getattr(record, field)
         if record.exc_info:
@@ -114,6 +114,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         },
+        headers=exc.headers,
     )
 
 
@@ -138,7 +139,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    logger.exception("unhandled request error", extra={"method": request.method, "path": request.url.path})
+    # Exception messages and tracebacks can include SQL, paths, or configured
+    # connection details. Keep the operational signal without logging them.
+    logger.error(
+        "unhandled request error",
+        extra={"method": request.method, "path": request.url.path, "error_type": type(exc).__name__},
+    )
     # Sanitize stack traces — never leak internal traces to production clients
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useCallback, useEffect, useState, use } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,10 +12,9 @@ import {
   Calendar,
   Download,
 } from "lucide-react";
-import { getSimulationResult } from "@/lib/api";
-import { saveLocalSimulationResult } from "@/lib/mock-data";
+import { getRecommendation, getSimulationResult, refineRecommendation } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
-import { SimulationResult } from "@/types/decision";
+import { RecommendationView, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
 
 export default function ScenarioDetailsPage({
@@ -28,52 +27,77 @@ export default function ScenarioDetailsPage({
   const scenarioNumber = Number(resolvedParams.scenarioId);
 
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const [recommendation, setRecommendation] = useState<RecommendationView | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [savingPreferred, setSavingPreferred] = useState(false);
+
+  const loadScenario = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [analysis, currentRecommendation] = await Promise.all([
+        getSimulationResult(Number(decisionId)),
+        getRecommendation(Number(decisionId)),
+      ]);
+      setResult(analysis);
+      setRecommendation(currentRecommendation);
+    } catch (cause) {
+      setLoadError(cause instanceof Error ? cause.message : "Could not load scenario details.");
+    } finally {
+      setLoading(false);
+    }
+  }, [decisionId]);
 
   useEffect(() => {
-    getSimulationResult(Number(decisionId)).then(setResult).catch(() => null);
-  }, [decisionId]);
+    void Promise.resolve().then(loadScenario);
+  }, [loadScenario]);
 
   const scenario = result?.scenarios.find(
     (s) => s.scenario_number === scenarioNumber
   );
 
-  const handleSetPreferred = () => {
-    if (!result || !scenario) return;
-    const updated = {
-      ...result,
-      scenarios: result.scenarios.map((s) => ({
-        ...s,
-        is_recommended: s.scenario_number === scenarioNumber,
-      })),
-      recommendation: {
-        ...result.recommendation,
+  const handleSetPreferred = async () => {
+    if (!scenario || savingPreferred) return;
+    setSavingPreferred(true);
+    try {
+      setRecommendation(await refineRecommendation(Number(decisionId), {
         selected_scenario_number: scenarioNumber,
-        title: `Adopt Scenario ${scenarioNumber}: ${scenario.title}`,
-      },
-    };
-    setResult(updated);
-    saveLocalSimulationResult(Number(decisionId), updated);
-    toast.success("Preferred scenario updated", { description: "Saved in the local demo only." });
+        feedback: `Reviewer selected Scenario ${scenarioNumber} as the preferred decision path.`,
+      }));
+      toast.success("Preferred scenario saved", { description: "The original analysis recommendation remains preserved." });
+    } catch (cause) {
+      toast.error("Could not save the preferred scenario", { description: cause instanceof Error ? cause.message : "Try again." });
+    } finally {
+      setSavingPreferred(false);
+    }
   };
 
   const handleExportBreakdown = () => {
     if (!scenario) return;
     const content = `# Scenario ${scenario.scenario_number} Operational Breakdown
 Title: ${scenario.title}
-Feasibility: ${Math.round(scenario.feasibility_score * 100)}%
-Status: ${scenario.is_recommended ? "RECOMMENDED PATH" : "ALTERNATIVE"}
+Heuristic feasibility score: ${Math.round(scenario.feasibility_score * 100)}% (not a measured probability)
+Original model recommendation: ${scenario.is_recommended ? "yes" : "no"}
+Current human preference: ${recommendation?.current.selected_scenario_number === scenarioNumber ? "yes" : "no"}
 
 ## Description
 ${scenario.description}
 
+## Scenario rationale
+${scenario.rationale?.trim() || "Scenario reasoning was not stored with this analysis. The saved analysis, any human refinement, and any existing report remain unchanged. A new analysis run creates a separate version with scenario-specific reasoning."}
+
 ## Trade-off Summary
-${scenario.tradeoff_summary}
+${scenario.tradeoff_summary ?? "No trade-off summary was provided by the analysis."}
 
-## Key Operational Changes
-${(scenario.key_changes || []).map((k) => `- ${k}`).join("\n")}
+## Scenario-specific implementation steps and timeline
+Not provided by the analysis.
 
-## Assumptions
-${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
+## Decision-level assumptions
+${result?.assumptions.map((item) => `- ${item}`).join("\n") || "Not provided."}
+
+## Limitations
+${result?.limitations.map((item) => `- ${item}`).join("\n") || "Not provided."}
 `;
     const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -85,13 +109,17 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
     toast.success("Scenario breakdown downloaded");
   };
 
-  if (!result || !scenario) {
+  if (loading) {
+    return <div className="space-y-4"><DecisionNavTabs decisionId={decisionId} /><div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" aria-label="Loading scenario details" /></div>;
+  }
+
+  if (loadError || !result || !scenario || !recommendation) {
     return (
       <div className="space-y-4">
         <DecisionNavTabs decisionId={decisionId} />
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Scenario {scenarioNumber} details loading or not found.
+            {loadError ?? `Scenario ${scenarioNumber} was not found or the analysis is not available.`}
           </p>
           <Link
             href={`/decisions/${decisionId}/scenarios`}
@@ -105,6 +133,8 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
   }
 
   const scorePercent = Math.round(scenario.feasibility_score * 100);
+  const isCurrentPreferred = recommendation.current.selected_scenario_number === scenarioNumber;
+  const scenarioAssumptions = scenario.assumptions ?? result.assumptions;
 
   return (
     <div className="space-y-4">
@@ -129,10 +159,10 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
               <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Scenario 0{scenario.scenario_number} Deep Dive
               </span>
-              {scenario.is_recommended && (
+              {isCurrentPreferred && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                   <Sparkles className="h-3 w-3" />
-                  Recommended Alternative
+                  {recommendation.refinement ? "Human-preferred option" : "Model-recommended option"}
                 </span>
               )}
             </div>
@@ -146,15 +176,25 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
 
           <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-center dark:border-slate-800 dark:bg-slate-800/40 shrink-0">
             <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-              Feasibility Score
+              Heuristic Feasibility Score
             </span>
             <div className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-0.5">
               {scorePercent}%
             </div>
             <span className="text-[10px] font-medium text-slate-500">
-              Organizational Viability
+              Not a measured probability
             </span>
           </div>
+        </div>
+
+        {/* Scenario rationale */}
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 text-xs dark:border-indigo-900/60 dark:bg-indigo-950/30">
+          <h2 className="font-bold uppercase tracking-wider text-indigo-900 text-[10px] dark:text-indigo-300">
+            Scenario rationale
+          </h2>
+          <p className="mt-1 text-indigo-950 leading-relaxed dark:text-indigo-100">
+            {scenario.rationale?.trim() || "Scenario reasoning was not stored with this analysis. The saved analysis, any human refinement, and any existing report remain unchanged. A new analysis run creates a separate version with scenario-specific reasoning."}
+          </p>
         </div>
 
         {/* Detailed Sections Grid */}
@@ -165,16 +205,12 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
               <span>Operational Changes</span>
             </div>
             <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
-              {(scenario.key_changes || [
-                "Adjust operating schedules to support the proposed change",
-                "Update team coverage and responsibilities during implementation",
-                "Review service capacity before expanding the change",
-              ]).map((change, idx) => (
+              {scenario.key_changes?.length ? scenario.key_changes.map((change, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
                   <span>{change}</span>
                 </li>
-              ))}
+              )) : <li className="text-xs text-slate-500">Scenario-specific implementation steps were not provided by the analysis. See the description above.</li>}
             </ul>
           </div>
 
@@ -184,15 +220,12 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
               <span>Assumptions & Decision Conditions</span>
             </div>
             <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
-              {(scenario.assumptions || [
-                "Required service levels remain available during implementation",
-                "Affected teams can provide feedback before organization-wide rollout",
-              ]).map((assump, idx) => (
+              {scenarioAssumptions.length ? scenarioAssumptions.map((assump, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
                   <span>{assump}</span>
                 </li>
-              ))}
+              )) : <li className="text-xs text-slate-500">No assumptions were provided by the analysis.</li>}
             </ul>
           </div>
         </div>
@@ -203,7 +236,7 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
             Decision Review Note
           </span>
           <p className="mt-0.5 text-amber-950 dark:text-amber-200 leading-relaxed text-[11px]">
-            {scenario.tradeoff_summary}
+            {scenario.tradeoff_summary ?? "No trade-off summary was provided by the analysis."}
           </p>
         </div>
 
@@ -212,16 +245,17 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleSetPreferred}
+              onClick={() => void handleSetPreferred()}
+              disabled={savingPreferred}
               className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition cursor-pointer ${
-                scenario.is_recommended
+                isCurrentPreferred
                   ? "bg-emerald-600 text-white"
                   : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500"
               }`}
             >
               <Award className="h-3.5 w-3.5" />
               <span>
-                {scenario.is_recommended ? "✓ Preferred option" : "Set as preferred option"}
+                {savingPreferred ? "Saving…" : isCurrentPreferred ? "✓ Preferred option" : "Set as preferred option"}
               </span>
             </button>
 

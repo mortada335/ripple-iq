@@ -39,6 +39,10 @@ class AnalysisScenario(BaseModel):
     scenario_number: int = Field(ge=1)
     title: str = Field(min_length=1, max_length=300)
     description: str = Field(min_length=1, max_length=4000)
+    # Optional for compatibility with analyses persisted before scenario reasoning was added.
+    rationale: str | None = Field(default=None, max_length=3000)
+    # Optional for compatibility with results saved before implementation steps were added.
+    key_changes: list[str] = Field(default_factory=list, max_length=10)
     feasibility_score: float = Field(ge=0, le=1)
     score_components: ScoreComponents
     score_method: str = Field(min_length=1, max_length=1000)

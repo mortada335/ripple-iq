@@ -62,6 +62,12 @@ backend/
 | `POST` | `/api/v1/organizations/{organization_id}/members` | Add a registered user with a role |
 
 Interactive Swagger documentation is available at `/docs`.
+
+Sensitive route throttling uses atomic counters in the configured database.
+Apply migrations before starting updated instances and see
+[`docs/rate-limiting.md`](../docs/rate-limiting.md) for default policies,
+configuration, proxy assumptions, and failure behavior. Production instances
+must share PostgreSQL for consistent limits across workers.
 The simulation result response includes non-secret provenance fields identifying
 the provider/model, attempt count, fallback use, and whether a deterministic mock
 was returned. This is an additive API field; no database schema change is needed.
@@ -143,3 +149,12 @@ Private API routes require `Authorization: Bearer <access_token>`. See
 
 Health checks are available at `http://localhost:8000/health` and
 `http://localhost:8000/api/v1/health`; Swagger is at `http://localhost:8000/docs`.
+
+Voice dictation records only after the user selects **Record description** and
+posts the short recording to `POST /api/v1/voice/transcribe`. Configure
+`VOICE_TRANSCRIPTION_ENABLED=true`, `GEMINI_API_KEY_1` (and optionally key 2),
+and the `VOICE_TRANSCRIPTION_*` limits in `backend/.env`. The backend uses
+Google's `gemini-3.5-transcribe` API, requires an authenticated organization
+member, and does not persist audio. Browser recording is limited to 55 seconds;
+the default backend payload limit is 8 MiB. See `docs/api-contract.md` for the
+request headers and response shape.

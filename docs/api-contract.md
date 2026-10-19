@@ -43,7 +43,12 @@ In the event of client (4xx) or server (5xx) errors, the API guarantees a consis
 | `403` | `INSUFFICIENT_ROLE` | Organization role does not permit the requested action |
 | `404` | `NOT_FOUND` | Requested entity (Decision, Result, etc.) does not exist |
 | `409` | `STATE_CONFLICT` | Action invalid in current state (e.g., retrieving result before simulation) |
+| `429` | `RATE_LIMIT_EXCEEDED` | Sensitive-route request limit reached; includes `Retry-After` |
+| `503` | `RATE_LIMIT_UNAVAILABLE` | Rate-limit storage unavailable; request fails closed and includes `Retry-After` |
 | `500` | `INTERNAL_SERVER_ERROR` | Sanitized server error (no stack traces leaked) |
+
+Sensitive route policies, storage guarantees, and proxy trust assumptions are
+documented in [`rate-limiting.md`](rate-limiting.md).
 
 ---
 
@@ -145,13 +150,17 @@ exposing driver errors, credentials, or SQL details.
   "error_code": null, "human_review_required": true, ... }`.
 - `GET /api/v1/decisions/{id}/result` serves the persisted completed result,
   including schema version, fairness notes, confidence, score components, and
-  limitations. A missing or failed run returns `409 SIMULATION_NOT_RUN`.
+  limitations. Each scenario includes an evidence-bounded `rationale` and a
+  `key_changes` list of scenario-specific planning steps. Older saved results
+  may have a null rationale or an empty `key_changes` list until analyzed again.
+  A missing
+  or failed run returns `409 SIMULATION_NOT_RUN`.
 - `POST /api/v1/decisions/{id}/analysis/retry` starts a fresh run only when the
   latest run failed. Provider errors return a generic `500 ANALYSIS_FAILED`;
   diagnostic details are not sent to the caller.
 - `GET /api/v1/scenarios/{scenario_id}`, `/impacts`, and `/risks` return the
-  selected scenario, its impacts, and decision-level risks. All reads enforce
-  organization access.
+  selected scenario (including its rationale when available), its impacts, and
+  decision-level risks. All reads enforce organization access.
 
 ### Recommendations and reports (Phase 7)
 
@@ -166,6 +175,7 @@ exposing driver errors, credentials, or SQL details.
   attachment. Reports contain decision/context, assumptions, stakeholders,
   scenarios, impact comparison, risks and mitigations, fairness review,
   recommendation history, confidence, limitations, and the human-review notice.
+  Each scenario's rationale is included when available in the saved analysis.
 
 ### 2.1 Health Check (Root)
 Provides rapid uptime checks for container orchestrators and load balancers.
@@ -317,7 +327,11 @@ Attaches university operational parameters to ground the simulation model.
 ---
 
 ### 2.6 Run Simulation
-Executes the deterministic AI simulation engine across the decision and context.
+Executes the configured decision analyzer across the decision and context. The
+analyzer can use configured remote providers with failover; deterministic mock
+output is used only when mock mode or permitted degraded mode is configured.
+The response provenance identifies the provider, model, attempts, fallback use,
+and whether the saved result is a mock.
 
 - **Method / Path:** `POST /api/v1/decisions/{id}/simulate`
 - **Parameters:** `id` (integer, Path)
@@ -545,3 +559,15 @@ Retrieves a formatted, audit-ready Markdown document summarizing the decision an
 }
 ```
 *(Also supports `Accept: text/markdown` returning the raw `.md` stream directly).*
+# Voice transcription
+
+`POST /api/v1/voice/transcribe` accepts a short raw audio body (`audio/webm`,
+`audio/ogg`, `audio/mp4`, `audio/mpeg`, `audio/mp3`, `audio/wav`, or `audio/aac`).
+It requires a bearer token and organization membership (`X-Organization-ID` is
+required when the user belongs to more than one organization). Send the selected
+BCP-47 language in `X-Transcription-Language` (`en-US`, `ar-IQ`, or `ar-SA`).
+The successful JSON response contains `transcript`, `provider`, and `model`.
+The authenticated backend sends audio to Google's Gemini transcription API;
+RippleIQ does not persist the audio. The default maximum is 8 MiB, with a 55
+second browser recording limit. Configure `VOICE_TRANSCRIPTION_ENABLED` and the
+Gemini credentials in the backend environment.

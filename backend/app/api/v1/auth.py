@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -10,12 +10,14 @@ from app.schemas.schemas import LoginRequest, TokenResponse, UserRegister, UserR
 from app.security.passwords import hash_password, verify_password
 from app.security.tokens import create_access_token
 from app.services.audit_service import record_audit_event
+from app.services.rate_limiting import enforce_limits, login_rules, registration_rules
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(data: UserRegister, db: Session = Depends(get_db)) -> User:
+def register(data: UserRegister, request: Request, db: Session = Depends(get_db)) -> User:
+    enforce_limits(db, registration_rules(request))
     user = User(email=data.email, full_name=data.full_name, password_hash=hash_password(data.password))
     db.add(user)
     try:
@@ -41,7 +43,8 @@ def register(data: UserRegister, db: Session = Depends(get_db)) -> User:
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)) -> TokenResponse:
+    enforce_limits(db, login_rules(request, data.email))
     user = db.query(User).filter(User.email == data.email).first()
     if (
         user is None

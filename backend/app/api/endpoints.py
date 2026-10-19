@@ -55,15 +55,63 @@ from app.schemas.schemas import (
     ScenarioDetailResponse,
     SimulateResponse,
     SimulationResultResponse,
+    VoiceTranscriptionResponse,
 )
 from app.services.audit_service import record_audit_event
 from app.services.decision_service import DecisionService
 from app.services.document_processing import DocumentProcessingError, process_document
+from app.services.rate_limiting import (
+    analysis_rules,
+    document_rules,
+    enforce_limits,
+    voice_rules,
+)
 from app.services.recommendation_service import RecommendationService
 from app.services.report_service import ReportService
 from app.services.simulation_service import AnalysisExecutionError, SimulationService
+from app.services.voice_transcription import TranscriptionError, transcribe_audio
 
 router = APIRouter()
+
+
+@router.post("/api/v1/voice/transcribe", response_model=VoiceTranscriptionResponse, tags=["Voice"])
+async def transcribe_voice(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    organization_id: int | None = Depends(organization_header),
+):
+    """Transcribe a short recording after confirming the caller belongs to an organization."""
+    resolve_membership(db, user, organization_id)
+    enforce_limits(db, voice_rules(request, user))
+    mime_type = request.headers.get("content-type", "").split(";", maxsplit=1)[0].strip().lower()
+    if mime_type not in {"audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/wav", "audio/aac"}:
+        raise HTTPException(
+            status_code=415,
+            detail={"code": "UNSUPPORTED_AUDIO_TYPE", "message": "This audio format is not supported."},
+        )
+    audio = bytearray()
+    async for chunk in request.stream():
+        audio.extend(chunk)
+        if len(audio) > settings.VOICE_TRANSCRIPTION_MAX_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail={"code": "AUDIO_TOO_LARGE", "message": "The recording exceeds the size limit."},
+            )
+    language = request.headers.get("x-transcription-language", "en-US")
+    try:
+        return await run_in_threadpool(
+            transcribe_audio,
+            bytes(audio),
+            mime_type,
+            language,
+            config=settings,
+        )
+    except TranscriptionError as error:
+        raise HTTPException(
+            status_code=error.status_code,
+            detail={"code": error.code, "message": error.message},
+        ) from None
 
 
 @router.post(
@@ -413,6 +461,7 @@ async def extract_decision_document(
     user: User = Depends(get_current_user),
 ):
     decision = require_decision_access(db, user, id)
+    enforce_limits(db, document_rules(request, user))
     content = bytearray()
     content_length = request.headers.get("content-length")
     if content_length and content_length.isdigit() and int(content_length) > settings.OCR_MAX_FILE_SIZE_BYTES:
@@ -479,12 +528,18 @@ async def extract_decision_document(
     tags=["Simulation"],
     summary="Execute Decision Impact Simulation",
 )
-def simulate_decision(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def simulate_decision(
+    id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """
     Runs the deterministic AI Mock Analyzer across the decision and context data,
     generating 5 stakeholder profiles, 3 comparative scenarios, risks, and recommendation.
     """
     require_decision_access(db, user, id, write=True)
+    enforce_limits(db, analysis_rules(request, user))
     try:
         return SimulationService.run_simulation(db, id, actor_user_id=user.id)
     except ValueError as e:
@@ -509,8 +564,14 @@ def get_analysis_status(id: int, db: Session = Depends(get_db), user: User = Dep
 
 
 @router.post("/api/v1/decisions/{id}/analysis/retry", response_model=SimulateResponse, tags=["Simulation"])
-def retry_analysis(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def retry_analysis(
+    id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     require_decision_access(db, user, id, write=True)
+    enforce_limits(db, analysis_rules(request, user, retry=True))
     try:
         return SimulationService.retry_failed_analysis(db, id, user.id)
     except ValueError as error:
@@ -552,6 +613,8 @@ def get_scenario(scenario_id: int, db: Session = Depends(get_db), user: User = D
         scenario_number=scenario.scenario_number,
         title=scenario.title,
         description=scenario.description,
+        rationale=item.get("rationale"),
+        key_changes=item.get("key_changes", []),
         feasibility_score=scenario.feasibility_score,
         score_components=item.get("score_components", {}),
         score_method=item.get("score_method"),
