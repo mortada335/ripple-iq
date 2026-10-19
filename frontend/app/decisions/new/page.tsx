@@ -14,6 +14,7 @@ import { createDecision } from "@/lib/api";
 import { Priority } from "@/types/decision";
 import { FormField } from "@/components/FormField";
 import { toast } from "sonner";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
 
 const TIME_HORIZONS = [
   "1 month",
@@ -37,11 +38,11 @@ export default function CreateDecisionPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handlePreFillDemo = () => {
-    setTitle("Reduce in-person university attendance from five days to four days per week");
+    setTitle("Move the organization to a four-day operating week");
     setDescription(
-      "Evaluate institutional shift from traditional 5-day on-campus instruction to a 4-day condensed week (Monday through Thursday) with Friday designated for asynchronous digital learning, grading, and faculty research."
+      "Evaluate a four-day operating schedule, including expected effects on service coverage, team capacity, customer access, operating costs, and implementation risks."
     );
-    setDepartment("Academic Affairs (demo example)");
+    setDepartment("Operations (sample)");
     setTimeHorizon(TIME_HORIZONS[2]);
     setPriority("HIGH");
     setError(null);
@@ -124,7 +125,7 @@ export default function CreateDecisionPage() {
           className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Load university demo example</span>
+          <span>Load sample decision</span>
         </button>
       </div>
 
@@ -143,7 +144,8 @@ export default function CreateDecisionPage() {
           </FormField>
 
           <FormField id="decision-description" label="What are you considering?" required hint="Include the context, intended change, and important constraints.">
-            <textarea required minLength={20} rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Explain the options or change being considered and why it matters to your organization..." className={`${fieldClass} resize-y`} />
+            <textarea id="decision-description" aria-describedby="decision-description-hint" required minLength={20} rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Explain the options or change being considered and why it matters to your organization..." className={`${fieldClass} resize-y`} />
+            <VoiceInputButton onTranscript={(text) => setDescription((current) => `${current}${current.trim() ? " " : ""}${text}`)} />
           </FormField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

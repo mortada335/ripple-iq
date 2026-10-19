@@ -4,10 +4,6 @@ import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Users,
-  GraduationCap,
-  FlaskConical,
-  Bus,
   Sparkles,
   ArrowRight,
   Loader2,
@@ -20,6 +16,8 @@ import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { DEMO_CONTEXT } from "@/lib/mock-data";
 import { Decision } from "@/types/decision";
 import { toast } from "sonner";
+import { readSavedOrganizationContext } from "@/lib/organization";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function DecisionContextPage({
   params,
@@ -29,19 +27,20 @@ export default function DecisionContextPage({
   const resolvedParams = use(params);
   const decisionId = resolvedParams.id;
   const router = useRouter();
+  const { activeOrganizationId } = useAuth();
 
   const [decision, setDecision] = useState<Decision | null>(null);
-  const [studentPopulation, setStudentPopulation] = useState(28000);
-  const [facultyCount, setFacultyCount] = useState(1400);
-  const [activeLaboratories, setActiveLaboratories] = useState(85);
-  const [transitRate, setTransitRate] = useState(68.5);
+  const [studentPopulation, setStudentPopulation] = useState("");
+  const [facultyCount, setFacultyCount] = useState("");
+  const [activeLaboratories, setActiveLaboratories] = useState("");
+  const [transitRate, setTransitRate] = useState("");
   const [assumptions, setAssumptions] = useState<string>([
-    "Fridays designated as asynchronous remote learning day",
-    "Campus dining and auxiliary services operate on a reduced footprint on remote days",
-    "Total accreditation contact hours per course remain unchanged via 15% longer class periods",
+    "Critical services need uninterrupted coverage during implementation",
+    "The change should be reviewed with affected teams before organization-wide rollout",
+    "Success will be measured against the agreed operational goals",
   ].join("\n"));
   const [constraints, setConstraints] = useState(
-    "Wet laboratories, live animal research facilities, and biosafety level 2/3 labs require continuous daily temperature controls, monitoring, and researcher physical access."
+    "Describe legal, operational, budget, staffing, timeline, or service constraints that must be respected."
   );
 
   const [loading, setLoading] = useState(false);
@@ -53,13 +52,13 @@ export default function DecisionContextPage({
   }, [decisionId]);
 
   const handleLoadDemoProfile = () => {
-    setStudentPopulation(DEMO_CONTEXT.student_population);
-    setFacultyCount(DEMO_CONTEXT.faculty_count);
-    setActiveLaboratories(DEMO_CONTEXT.active_laboratories);
-    setTransitRate(DEMO_CONTEXT.transit_dependency_rate);
+    setStudentPopulation(String(DEMO_CONTEXT.student_population ?? ""));
+    setFacultyCount(String(DEMO_CONTEXT.faculty_count ?? ""));
+    setActiveLaboratories(String(DEMO_CONTEXT.active_laboratories ?? ""));
+    setTransitRate(String(DEMO_CONTEXT.transit_dependency_rate ?? ""));
     setAssumptions(DEMO_CONTEXT.key_assumptions.join("\n"));
-    setConstraints(DEMO_CONTEXT.constraints);
-    toast.success("University demo context loaded", { description: "This is sample data. Review it before continuing." });
+    setConstraints(DEMO_CONTEXT.constraints ?? "");
+    toast.success("Education example loaded", { description: "This sample uses optional education-specific baseline fields. Review or clear them before continuing." });
   };
 
   const saveContextPayload = async () => {
@@ -67,14 +66,28 @@ export default function DecisionContextPage({
       .split("\n")
       .map((a) => a.trim())
       .filter((a) => a.length > 0);
+    const organization = readSavedOrganizationContext(activeOrganizationId);
+    const organizationMetadata = organization ? Object.fromEntries(
+      Object.entries({
+        organization_name: organization.name,
+        organization_type: organization.kind,
+        industry: organization.industry,
+        country: organization.country,
+        description: organization.description,
+        goals: organization.goals,
+        operating_context: organization.context,
+        website: organization.website,
+      }).filter(([, value]) => typeof value === "string" && value.trim().length > 0)
+    ) : undefined;
 
     return attachDecisionContext(Number(decisionId), {
-      student_population: Number(studentPopulation),
-      faculty_count: Number(facultyCount),
-      active_laboratories: Number(activeLaboratories),
-      transit_dependency_rate: Number(transitRate),
+      ...(studentPopulation ? { student_population: Number(studentPopulation) } : {}),
+      ...(facultyCount ? { faculty_count: Number(facultyCount) } : {}),
+      ...(activeLaboratories ? { active_laboratories: Number(activeLaboratories) } : {}),
+      ...(transitRate ? { transit_dependency_rate: Number(transitRate) } : {}),
       key_assumptions: parsedAssumptions,
       constraints,
+      ...(organizationMetadata ? { raw_metadata: organizationMetadata } : {}),
     });
   };
 
@@ -85,7 +98,7 @@ export default function DecisionContextPage({
       await saveContextPayload();
       toast.success("Context saved", { description: "Demo mode stores the context in this browser." });
     } catch {
-      setError("Failed to attach institutional context.");
+      setError("Could not save the context. Check the entered values and try again.");
     } finally {
       setSavingOnly(false);
     }
@@ -100,7 +113,7 @@ export default function DecisionContextPage({
       await saveContextPayload();
       router.push(`/decisions/${decisionId}/progress`);
     } catch {
-      setError("Failed to attach institutional context. Please verify values.");
+      setError("Could not save the context. Check the entered values and try again.");
       setLoading(false);
     }
   };
@@ -108,10 +121,6 @@ export default function DecisionContextPage({
   return (
     <div className="space-y-4">
       <DecisionNavTabs decisionId={decisionId} />
-
-      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-        The numeric fields below match the university demo schema. General organization context is captured in assumptions and constraints until the backend supports organization-specific context fields.
-      </p>
 
       {/* Page Title & Demo Preset */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -133,7 +142,7 @@ export default function DecisionContextPage({
           className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition cursor-pointer"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Load Demo Campus Data</span>
+            <span>Load education example</span>
         </button>
       </div>
 
@@ -142,7 +151,7 @@ export default function DecisionContextPage({
         <div className="rounded-xl border border-slate-200 bg-white p-3.5 text-xs dark:border-slate-800 dark:bg-slate-900 flex items-center justify-between">
           <div>
             <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px] block">
-              Target Policy Proposal:
+              Decision:
             </span>
             <p className="font-bold text-slate-900 dark:text-white">
               {decision.title}
@@ -164,93 +173,42 @@ export default function DecisionContextPage({
             </div>
           )}
 
-          {/* Metric input cards */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                <Users className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>Student Body</span>
-              </div>
-              <input
-                type="number"
-                min={1}
-                required
-                value={studentPopulation}
-                onChange={(e) => setStudentPopulation(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <span className="mt-1 block text-[10px] text-slate-400">
-                Total enrollment
-              </span>
-            </div>
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-4 text-sm leading-6 text-indigo-950 dark:border-indigo-950 dark:bg-indigo-950/30 dark:text-indigo-100">
+            Add assumptions and constraints that apply to your organization. The saved organization details are included with this decision through the API&apos;s context metadata field; they are not saved as a reusable server-side organization profile. Optional education-specific baseline fields can be left blank for other organizations.
+          </div>
 
+          <details className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">Optional education-specific baseline metrics</summary>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>Faculty Members</span>
-              </div>
-              <input
-                type="number"
-                min={1}
-                required
-                value={facultyCount}
-                onChange={(e) => setFacultyCount(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <span className="mt-1 block text-[10px] text-slate-400">
-                Instructional staff
-              </span>
+              <label htmlFor="student-population" className="text-xs font-semibold text-slate-700 dark:text-slate-300">Student population</label>
+              <input id="student-population" type="number" min={1} value={studentPopulation} onChange={(e) => setStudentPopulation(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
             </div>
-
             <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                <FlaskConical className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>Active Labs</span>
-              </div>
-              <input
-                type="number"
-                min={0}
-                required
-                value={activeLaboratories}
-                onChange={(e) => setActiveLaboratories(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <span className="mt-1 block text-[10px] text-slate-400">
-                Continuous wet labs
-              </span>
+              <label htmlFor="faculty-count" className="text-xs font-semibold text-slate-700 dark:text-slate-300">Faculty count</label>
+              <input id="faculty-count" type="number" min={1} value={facultyCount} onChange={(e) => setFacultyCount(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
             </div>
-
             <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                <Bus className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>Transit %</span>
-              </div>
-              <input
-                type="number"
-                step="0.1"
-                min={0}
-                max={100}
-                required
-                value={transitRate}
-                onChange={(e) => setTransitRate(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <span className="mt-1 block text-[10px] text-slate-400">
-                Commuter dependency
-              </span>
+              <label htmlFor="active-labs" className="text-xs font-semibold text-slate-700 dark:text-slate-300">Active laboratories</label>
+              <input id="active-labs" type="number" min={0} value={activeLaboratories} onChange={(e) => setActiveLaboratories(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/50">
+              <label htmlFor="transit-rate" className="text-xs font-semibold text-slate-700 dark:text-slate-300">Transit dependency (%)</label>
+              <input id="transit-rate" type="number" step="0.1" min={0} max={100} value={transitRate} onChange={(e) => setTransitRate(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
             </div>
           </div>
+          </details>
 
           {/* Key Assumptions */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-              Key Policy Assumptions (One per line)
+              Key assumptions (one per line)
             </label>
             <textarea
               rows={3}
               value={assumptions}
               onChange={(e) => setAssumptions(e.target.value)}
-              placeholder="e.g. Fridays designated as asynchronous remote learning day"
+              placeholder="e.g. Existing customer support hours must remain available during the transition"
               className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white font-mono"
             />
           </div>
@@ -258,13 +216,13 @@ export default function DecisionContextPage({
           {/* Operational Constraints */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-              Hard Operational Constraints & Biosafety Regulations
+              Operational constraints
             </label>
             <textarea
               rows={2}
               value={constraints}
               onChange={(e) => setConstraints(e.target.value)}
-              placeholder="e.g. Wet laboratories, live animal facilities cannot be left unattended..."
+              placeholder="e.g. Regulatory requirements, team capacity, service coverage, or fixed budget limits"
               className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>

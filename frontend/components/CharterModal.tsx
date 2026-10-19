@@ -62,8 +62,8 @@ export function CharterModal({ isOpen, onClose }: CharterModalProps) {
               <div className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800/80 dark:bg-slate-800/40">
                 <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-bold text-slate-900 dark:text-white">2. Continuous Research Specimen Protection</div>
-                  <div className="text-[11px] text-slate-500">Wet laboratories, continuous cultures, and funded grant experiments receive protected operational exemption status.</div>
+                  <div className="font-bold text-slate-900 dark:text-white">2. Respect Operational Constraints</div>
+                  <div className="text-[11px] text-slate-500">Teams should surface essential services, safety requirements, staffing limits, and other constraints before acting on an analysis.</div>
                 </div>
               </div>
 

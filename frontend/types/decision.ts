@@ -27,12 +27,12 @@ export interface DecisionCreate {
 export interface ContextData {
   id?: number;
   decision_id: number;
-  student_population: number;
-  faculty_count: number;
-  active_laboratories: number;
-  transit_dependency_rate: number;
+  student_population: number | null;
+  faculty_count: number | null;
+  active_laboratories: number | null;
+  transit_dependency_rate: number | null;
   key_assumptions: string[];
-  constraints: string;
+  constraints: string | null;
   raw_metadata?: Record<string, unknown>;
   created_at?: string;
 }

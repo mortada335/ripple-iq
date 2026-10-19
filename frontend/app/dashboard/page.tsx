@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   PlusCircle,
@@ -12,13 +12,13 @@ import {
   ChevronRight,
   Download,
   Archive,
-  ArchiveRestore,
   Trash2,
 } from "lucide-react";
 import { getDecisions, getReport, toggleArchiveDecision, deleteDecision } from "@/lib/api";
 import { Decision } from "@/types/decision";
-import { Pagination } from "@/components/Pagination";
+import { LoadMore } from "@/components/LoadMore";
 import { toast } from "sonner";
+import { useAuth } from "@/components/AuthProvider";
 
 const PAGE_SIZE = 20;
 
@@ -27,23 +27,66 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const { isDemo, activeOrganizationId } = useAuth();
 
-  const loadDecisions = () => {
-    getDecisions()
-      .then((data) => {
-        setDecisions(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-        toast.error("Could not load decisions");
-      });
-  };
+  const reloadDecisions = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const data = await getDecisions(0, PAGE_SIZE);
+      setDecisions(data);
+      setHasMore(data.length === PAGE_SIZE);
+    } catch {
+      setLoadError(true);
+      toast.error("Could not load decisions");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      const data = await getDecisions(decisions.length, PAGE_SIZE);
+      setDecisions((current) => [
+        ...current,
+        ...data.filter((item) => !current.some((existing) => existing.id === item.id)),
+      ]);
+      setHasMore(data.length === PAGE_SIZE);
+    } catch {
+      toast.error("Could not load more decisions");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [decisions.length]);
 
   useEffect(() => {
-    loadDecisions();
-  }, []);
+    let ignore = false;
+    getDecisions(0, PAGE_SIZE)
+      .then((data) => {
+        if (!ignore) {
+          setDecisions(data);
+          setHasMore(data.length === PAGE_SIZE);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setLoadError(true);
+          toast.error("Could not load decisions");
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [activeOrganizationId]);
 
   const counts = useMemo(() => ({
     total: decisions.length,
@@ -52,17 +95,18 @@ export default function DashboardPage() {
     inProgress: decisions.filter((d) => d.status === "SIMULATING").length,
   }), [decisions]);
 
-  const filteredDecisions = decisions.filter((d) => {
-    const matchesSearch =
-      d.title.toLowerCase().includes(search.toLowerCase()) ||
-      d.department?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus =
-      statusFilter === "ALL" || d.status.toUpperCase() === statusFilter.toUpperCase();
-    return matchesSearch && matchesStatus;
-  });
-  const pageCount = Math.max(1, Math.ceil(filteredDecisions.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
-  const visibleDecisions = filteredDecisions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const filteredDecisions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return decisions.filter((d) => {
+      const matchesSearch =
+        !query ||
+        d.title.toLowerCase().includes(query) ||
+        Boolean(d.department?.toLowerCase().includes(query));
+      const matchesStatus =
+        statusFilter === "ALL" || d.status.toUpperCase() === statusFilter.toUpperCase();
+      return matchesSearch && matchesStatus;
+    });
+  }, [decisions, search, statusFilter]);
 
   const handleDownloadReport = async (e: React.MouseEvent, id: number, title: string) => {
     e.preventDefault();
@@ -87,8 +131,8 @@ export default function DashboardPage() {
     e.stopPropagation();
     try {
       await toggleArchiveDecision(id);
-      toast.success("Decision archive status updated");
-      loadDecisions();
+      toast.success("Decision archived");
+      void reloadDecisions();
     } catch {
       toast.error("Could not update the decision");
     }
@@ -97,11 +141,11 @@ export default function DashboardPage() {
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this proposal from the local session?")) {
+    if (isDemo && confirm("Permanently remove this decision from local demo data?")) {
       try {
         await deleteDecision(id);
         toast.success("Decision deleted");
-        loadDecisions();
+        void reloadDecisions();
       } catch {
         toast.error("Could not delete the decision");
       }
@@ -133,10 +177,10 @@ export default function DashboardPage() {
 
       <section aria-label="Decision summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
-          { label: "Total decisions", value: counts.total, icon: Layers, iconClass: "text-indigo-600 dark:text-indigo-400" },
-          { label: "Completed analyses", value: counts.completed, icon: FileCheck2, iconClass: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Drafts", value: counts.drafts, icon: FileClock, iconClass: "text-amber-600 dark:text-amber-400" },
-          { label: "In progress", value: counts.inProgress, icon: CircleAlert, iconClass: "text-violet-600 dark:text-violet-400" },
+          { label: "Loaded decisions", value: counts.total, icon: Layers, iconClass: "text-indigo-600 dark:text-indigo-400" },
+          { label: "Completed (loaded)", value: counts.completed, icon: FileCheck2, iconClass: "text-emerald-600 dark:text-emerald-400" },
+          { label: "Drafts (loaded)", value: counts.drafts, icon: FileClock, iconClass: "text-amber-600 dark:text-amber-400" },
+          { label: "In progress (loaded)", value: counts.inProgress, icon: CircleAlert, iconClass: "text-violet-600 dark:text-violet-400" },
         ].map(({ label, value, icon: Icon, iconClass }) => (
           <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between gap-3"><span className="text-xs font-medium text-slate-500">{label}</span><Icon className={`h-4 w-4 ${iconClass}`} aria-hidden="true" /></div>
@@ -152,18 +196,19 @@ export default function DashboardPage() {
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by decision or responsible team..."
             className="w-full rounded-xl border border-slate-200 bg-white py-1.5 ps-9 pe-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
           />
         </div>
+        <p className="text-[11px] text-slate-500 sm:ms-3">Search covers loaded decisions. Load more to search additional results.</p>
 
         {/* Status Pills with Dynamic Counts */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           {(["ALL", "COMPLETED", "DRAFT", "ARCHIVED"] as const).map((status) => (
             <button
               key={status}
-              onClick={() => { setStatusFilter(status); setPage(1); }}
+              onClick={() => setStatusFilter(status)}
               className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
                 statusFilter === status
                   ? "bg-slate-900 text-white dark:bg-indigo-600"
@@ -187,6 +232,8 @@ export default function DashboardPage() {
             />
           ))}
         </div>
+      ) : loadError ? (
+        <div role="alert" className="rounded-2xl border border-rose-200 bg-white p-8 text-center dark:border-rose-900 dark:bg-slate-900"><p className="text-sm text-rose-700 dark:text-rose-300">Decisions could not be loaded.</p><button type="button" onClick={() => void reloadDecisions()} className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Retry</button></div>
       ) : filteredDecisions.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
           <Layers className="mx-auto h-8 w-8 text-slate-400" />
@@ -206,7 +253,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {visibleDecisions.map((decision) => {
+          {filteredDecisions.map((decision) => {
             const isArchived = decision.status === "ARCHIVED";
 
             return (
@@ -283,26 +330,21 @@ export default function DashboardPage() {
                       <span>Report</span>
                     </button>
 
-                    <button
+                    {!isArchived && <button
                       type="button"
                       onClick={(e) => handleToggleArchive(e, decision.id)}
                       className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer ms-1"
                       title={isArchived ? "Restore to Active" : "Soft-archive decision"}
                     >
-                      {isArchived ? (
-                        <>
-                          <ArchiveRestore className="h-3.5 w-3.5" />
-                          <span>Restore</span>
-                        </>
-                      ) : (
+                      {isArchived ? <><Archive className="h-3.5 w-3.5" /><span>Archived</span></> : (
                         <>
                           <Archive className="h-3.5 w-3.5" />
                           <span>Archive</span>
                         </>
                       )}
-                    </button>
+                    </button>}
 
-                    {decision.id > 1 && (
+                    {isDemo && decision.id > 1 && (
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, decision.id)}
@@ -335,12 +377,7 @@ export default function DashboardPage() {
           })}
         </div>
       )}
-      {!loading && filteredDecisions.length > 0 && (
-        <>
-          <p className="text-center text-[11px] text-slate-500">Local demo pagination. Server-side paging will be connected when the API is ready.</p>
-          <Pagination page={currentPage} pageSize={PAGE_SIZE} totalItems={filteredDecisions.length} onPageChange={(nextPage) => setPage(Math.min(Math.max(1, nextPage), pageCount))} />
-        </>
-      )}
+      {!loading && <LoadMore loaded={decisions.length} hasMore={hasMore} loading={loadingMore} onLoadMore={handleLoadMore} />}
     </div>
   );
 }

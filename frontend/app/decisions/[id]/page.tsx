@@ -78,7 +78,7 @@ export default function DecisionDetailsPage({
         </div>
         <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
           <button type="button" onClick={() => router.push(nextHref)} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-700 px-4 text-sm font-semibold text-white hover:bg-indigo-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-            {decision.simulation_ready ? "Review analysis" : decision.context_attached ? "Continue to simulation" : "Add institutional context"}
+            {decision.simulation_ready ? "Review analysis" : decision.context_attached ? "Continue to simulation" : "Add decision context"}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
           <Link href="/decisions" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">

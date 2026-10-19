@@ -42,7 +42,8 @@ export default function RiskRegisterPage({
   const [risks, setRisks] = useState<RiskItem[]>([]);
   const [filterSeverity, setFilterSeverity] = useState<string>("ALL");
   const searchParams = useSearchParams();
-  const sortBy = searchParams.get("sort") === "likelihood" ? "likelihood" : "severity";
+  const initialSort = searchParams.get("sort") === "likelihood" ? "likelihood" : "severity";
+  const [sortBy, setSortBy] = useState<"severity" | "likelihood">(initialSort);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,10 +57,15 @@ export default function RiskRegisterPage({
   }, [decisionId]);
 
   const toggleSort = () => {
-    const nextSort = sortBy === "severity" ? "likelihood" : "severity";
-    const url = new URL(window.location.href);
-    url.searchParams.set("sort", nextSort);
-    window.history.replaceState(null, "", url);
+    setSortBy((prev) => {
+      const nextSort = prev === "severity" ? "likelihood" : "severity";
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("sort", nextSort);
+        window.history.replaceState(null, "", url);
+      }
+      return nextSort;
+    });
   };
 
   const toggleAcknowledge = (idx: number) => {
@@ -82,18 +88,20 @@ export default function RiskRegisterPage({
 
   const acknowledgedCount = risks.filter((r) => r.acknowledged).length;
 
-  const sortedAndFilteredRisks = [...risks]
-    .filter((r) => {
-      if (filterSeverity === "ALL") return true;
-      return r.severity.toUpperCase() === filterSeverity;
-    })
-    .sort((a, b) => {
-      if (sortBy === "severity") {
-        return (SEVERITY_ORDER[b.severity] || 0) - (SEVERITY_ORDER[a.severity] || 0);
-      } else {
-        return (LIKELIHOOD_ORDER[b.likelihood] || 0) - (LIKELIHOOD_ORDER[a.likelihood] || 0);
-      }
-    });
+  const sortedAndFilteredRisks = React.useMemo(() => {
+    return risks
+      .filter((r) => {
+        if (filterSeverity === "ALL") return true;
+        return r.severity.toUpperCase() === filterSeverity;
+      })
+      .sort((a, b) => {
+        if (sortBy === "severity") {
+          return (SEVERITY_ORDER[b.severity] || 0) - (SEVERITY_ORDER[a.severity] || 0);
+        } else {
+          return (LIKELIHOOD_ORDER[b.likelihood] || 0) - (LIKELIHOOD_ORDER[a.likelihood] || 0);
+        }
+      });
+  }, [risks, filterSeverity, sortBy]);
 
   const handleExportRisks = () => {
     const csvContent = [
@@ -134,7 +142,7 @@ export default function RiskRegisterPage({
             Step 4 of Decision Analysis
           </span>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-            Institutional Risk Register
+            Decision Risk Register
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Audit-ready risk evaluation, severity modeling, and actionable operational countermeasures.

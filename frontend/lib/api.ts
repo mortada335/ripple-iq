@@ -16,6 +16,14 @@ import {
   saveLocalDecision,
   saveLocalSimulationResult,
 } from "./mock-data";
+import {
+  clearAuthSession,
+  getActiveOrganizationId,
+  getAuthSession,
+  isDemoSession,
+  saveAuthSession,
+} from "./session";
+import type { LoginResponse, Organization, OrganizationCreate, UserAccount } from "@/types/auth";
 
 export const API_BASE_URL = 
 process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -26,7 +34,8 @@ async function fetchWithFallback<T>(
   options?: RequestInit,
   fallback?: () => T | Promise<T>
 ): Promise<T> {
-  const isMockOnly = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  const isMockOnly = process.env.NEXT_PUBLIC_USE_MOCK === "true" || isDemoSession();
+  const session = getAuthSession();
 
   if (!isMockOnly) {
     const controller = new AbortController();
@@ -39,19 +48,21 @@ async function fetchWithFallback<T>(
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          ...(session ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+          ...(getActiveOrganizationId() ? { "X-Organization-ID": String(getActiveOrganizationId()) } : {}),
           ...options?.headers,
         },
       });
     } catch {
-      // An unreachable API can use local demo data. HTTP errors below are
-      // returned to the caller so auth/validation failures are not hidden.
-      if (fallback) return await fallback();
+      // Never show mock organization data in an authenticated session.
+      if (fallback && !session) return await fallback();
       throw new Error(`Could not reach the API for ${url}.`);
     } finally {
       clearTimeout(timeoutId);
     }
 
     if (!res.ok) {
+      if (res.status === 401) clearAuthSession();
       throw new Error(`API request failed (${res.status}) for ${url}.`);
     }
     return (await res.json()) as T;
@@ -64,12 +75,68 @@ async function fetchWithFallback<T>(
   throw new Error(`Failed to request ${url} and no fallback provided.`);
 }
 
+async function requestJson<T>(path: string, options: RequestInit = {}, authenticated = true): Promise<T> {
+  const session = authenticated ? getAuthSession() : null;
+  const organizationId = authenticated ? getActiveOrganizationId() : null;
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(session ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      ...(organizationId ? { "X-Organization-ID": String(organizationId) } : {}),
+      ...options.headers,
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    if (response.status === 401 && authenticated) clearAuthSession();
+    let message = `Request failed (${response.status}).`;
+    try {
+      const body = await response.json();
+      message = body?.detail?.message ?? body?.error?.message ?? body?.detail ?? message;
+      if (typeof message !== "string") message = `Request failed (${response.status}).`;
+    } catch {
+      // Keep the status-based message for non-JSON errors.
+    }
+    throw new Error(message);
+  }
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
+}
+
+export async function registerAccount(data: { email: string; full_name: string; password: string }): Promise<UserAccount> {
+  return requestJson<UserAccount>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(data) }, false);
+}
+
+export async function loginAccount(email: string, password: string): Promise<UserAccount> {
+  const token = await requestJson<LoginResponse>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  }, false);
+  saveAuthSession(token.access_token, token.expires_in);
+  return getCurrentUser();
+}
+
+export async function getCurrentUser(): Promise<UserAccount> {
+  return requestJson<UserAccount>("/api/v1/auth/me");
+}
+
+export async function getOrganizations(): Promise<Organization[]> {
+  return requestJson<Organization[]>("/api/v1/organizations");
+}
+
+export async function createOrganization(data: OrganizationCreate): Promise<Organization> {
+  return requestJson<Organization>("/api/v1/organizations", { method: "POST", body: JSON.stringify(data) });
+}
+
 export async function checkApiHealth(): Promise<HealthResponse> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/health`, {
       method: "GET",
       headers: { Accept: "application/json" },
       cache: "no-store",
+      signal: AbortSignal.timeout(3000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -94,11 +161,11 @@ export async function checkApiHealth(): Promise<HealthResponse> {
   };
 }
 
-export async function getDecisions(): Promise<Decision[]> {
+export async function getDecisions(offset = 0, limit = 20): Promise<Decision[]> {
   return fetchWithFallback<Decision[]>(
-    "/api/v1/decisions",
+    `/api/v1/decisions?offset=${offset}&limit=${limit}`,
     { method: "GET" },
-    () => getLocalDecisions()
+    () => getLocalDecisions().slice(offset, offset + limit)
   );
 }
 
@@ -161,14 +228,13 @@ export async function attachDecisionContext(
     () => {
       const context: ContextData = {
         decision_id: decisionId,
-        student_population: Number(data.student_population) || 28000,
-        faculty_count: Number(data.faculty_count) || 1400,
-        active_laboratories: Number(data.active_laboratories) || 85,
-        transit_dependency_rate: Number(data.transit_dependency_rate) || 68.5,
-        key_assumptions: data.key_assumptions || [
-          "Friday designated as remote asynchronous day",
-        ],
-        constraints: data.constraints || "Wet lab continuous operation required",
+        student_population: data.student_population ?? null,
+        faculty_count: data.faculty_count ?? null,
+        active_laboratories: data.active_laboratories ?? null,
+        transit_dependency_rate: data.transit_dependency_rate ?? null,
+        key_assumptions: data.key_assumptions ?? [],
+        constraints: data.constraints ?? null,
+        raw_metadata: data.raw_metadata,
         created_at: new Date().toISOString(),
       };
       saveLocalContext(context);
@@ -233,12 +299,19 @@ export async function getReport(decisionId: number): Promise<ReportResponse> {
 }
 
 export async function toggleArchiveDecision(id: number): Promise<Decision | null> {
-  const { archiveLocalDecision, getLocalDecision } = await import("./mock-data");
-  archiveLocalDecision(id);
-  return getLocalDecision(id);
+  if (process.env.NEXT_PUBLIC_USE_MOCK === "true" || isDemoSession()) {
+    const { archiveLocalDecision, getLocalDecision } = await import("./mock-data");
+    archiveLocalDecision(id);
+    return getLocalDecision(id);
+  }
+  await requestJson<void>(`/api/v1/decisions/${id}`, { method: "DELETE" });
+  return null;
 }
 
 export async function deleteDecision(id: number): Promise<void> {
+  if (!isDemoSession() && process.env.NEXT_PUBLIC_USE_MOCK !== "true") {
+    throw new Error("Permanent deletion is not available in the organization API.");
+  }
   const { deleteLocalDecision } = await import("./mock-data");
   deleteLocalDecision(id);
 }

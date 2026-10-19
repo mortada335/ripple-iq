@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -8,13 +8,13 @@ import {
   ChevronRight,
   Download,
   Archive,
-  ArchiveRestore,
   Trash2,
 } from "lucide-react";
 import { getDecisions, getReport, toggleArchiveDecision, deleteDecision } from "@/lib/api";
 import { Decision } from "@/types/decision";
-import { Pagination } from "@/components/Pagination";
+import { LoadMore } from "@/components/LoadMore";
 import { toast } from "sonner";
+import { useAuth } from "@/components/AuthProvider";
 
 const PAGE_SIZE = 20;
 
@@ -22,23 +22,66 @@ export default function HistoricalDecisionsPage() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const { isDemo, activeOrganizationId } = useAuth();
 
-  const loadDecisions = () => {
-    getDecisions()
-      .then((data) => {
-        setDecisions(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-        toast.error("Could not load decisions");
-      });
-  };
+  const reloadDecisions = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const data = await getDecisions(0, PAGE_SIZE);
+      setDecisions(data);
+      setHasMore(data.length === PAGE_SIZE);
+    } catch {
+      setLoadError(true);
+      toast.error("Could not load decisions");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      const data = await getDecisions(decisions.length, PAGE_SIZE);
+      setDecisions((current) => [
+        ...current,
+        ...data.filter((item) => !current.some((existing) => existing.id === item.id)),
+      ]);
+      setHasMore(data.length === PAGE_SIZE);
+    } catch {
+      toast.error("Could not load more decisions");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [decisions.length]);
 
   useEffect(() => {
-    loadDecisions();
-  }, []);
+    let ignore = false;
+    getDecisions(0, PAGE_SIZE)
+      .then((data) => {
+        if (!ignore) {
+          setDecisions(data);
+          setHasMore(data.length === PAGE_SIZE);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setLoadError(true);
+          toast.error("Could not load decisions");
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [activeOrganizationId]);
 
   const handleDownload = async (e: React.MouseEvent, id: number) => {
     e.preventDefault();
@@ -64,7 +107,7 @@ export default function HistoricalDecisionsPage() {
     try {
       await toggleArchiveDecision(id);
       toast.success("Decision archive status updated");
-      loadDecisions();
+      void reloadDecisions();
     } catch {
       toast.error("Could not update the decision");
     }
@@ -77,21 +120,22 @@ export default function HistoricalDecisionsPage() {
       try {
         await deleteDecision(id);
         toast.success("Decision deleted");
-        loadDecisions();
+        void reloadDecisions();
       } catch {
         toast.error("Could not delete the decision");
       }
     }
   };
 
-  const filtered = decisions.filter(
-    (d) =>
-      d.title.toLowerCase().includes(search.toLowerCase()) ||
-      d.department.toLowerCase().includes(search.toLowerCase())
-  );
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
-  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const filteredDecisions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return decisions.filter(
+      (d) =>
+        !query ||
+        d.title.toLowerCase().includes(query) ||
+        (d.department ?? "").toLowerCase().includes(query)
+    );
+  }, [decisions, search]);
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -120,7 +164,7 @@ export default function HistoricalDecisionsPage() {
         <input
           type="text"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Filter decisions by title or responsible team..."
           className="w-full rounded-xl border border-slate-200 bg-white py-1.5 ps-9 pe-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
         />
@@ -133,12 +177,14 @@ export default function HistoricalDecisionsPage() {
             <div className="p-6 text-center text-xs text-slate-400 animate-pulse">
               Loading decisions...
             </div>
-          ) : filtered.length === 0 ? (
+          ) : loadError ? (
+            <div role="alert" className="p-6 text-center"><p className="text-sm text-rose-700 dark:text-rose-300">Decisions could not be loaded.</p><button type="button" onClick={() => void reloadDecisions()} className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Retry</button></div>
+          ) : filteredDecisions.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate-400">
               No historical decisions found.
             </div>
           ) : (
-            visible.map((d) => {
+            filteredDecisions.map((d: Decision) => {
               const isArchived = d.status === "ARCHIVED";
 
               return (
@@ -196,25 +242,15 @@ export default function HistoricalDecisionsPage() {
                       <span>.md</span>
                     </button>
 
-                    <button
+                    {!isArchived && <button
                       onClick={(e) => handleToggleArchive(e, d.id)}
                       className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
-                      title={isArchived ? "Restore to Active" : "Archive"}
+                      title="Archive"
                     >
-                      {isArchived ? (
-                        <>
-                          <ArchiveRestore className="h-3 w-3" />
-                          <span>Restore</span>
-                        </>
-                      ) : (
-                        <>
-                          <Archive className="h-3 w-3" />
-                          <span>Archive</span>
-                        </>
-                      )}
-                    </button>
+                      <><Archive className="h-3 w-3" /><span>Archive</span></>
+                    </button>}
 
-                    {d.id > 1 && (
+                    {isDemo && d.id > 1 && (
                       <button
                         onClick={(e) => handleDelete(e, d.id)}
                         className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
@@ -242,12 +278,7 @@ export default function HistoricalDecisionsPage() {
           )}
         </div>
       </div>
-      {!loading && filtered.length > 0 && (
-        <>
-          <p className="text-center text-[11px] text-slate-500">Pagination is local to this demo until server-side paging is connected.</p>
-          <Pagination page={currentPage} pageSize={PAGE_SIZE} totalItems={filtered.length} onPageChange={(nextPage) => setPage(Math.min(Math.max(1, nextPage), pageCount))} />
-        </>
-      )}
+      {!loading && <LoadMore loaded={decisions.length} hasMore={hasMore} loading={loadingMore} onLoadMore={handleLoadMore} />}
     </div>
   );
 }

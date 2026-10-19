@@ -49,6 +49,42 @@ export default function ConsequencesPage({
     }));
   };
 
+  const filteredImpacts = React.useMemo(() => {
+    if (!result) return [];
+    return result.impacts.filter((impact) => {
+      const matchesStakeholder =
+        selectedStakeholder === "all" || impact.stakeholder_key === selectedStakeholder;
+      const matchesDirection =
+        directionFilter === "all" || impact.direction.toLowerCase() === directionFilter;
+      return matchesStakeholder && matchesDirection;
+    });
+  }, [result, selectedStakeholder, directionFilter]);
+
+  const overviewChart = React.useMemo(() => {
+    if (!result) return { maxValue: 1, items: [] };
+    const countsByKey: Record<string, { pos: number; neg: number }> = {};
+    for (const impact of result.impacts) {
+      if (!countsByKey[impact.stakeholder_key]) {
+        countsByKey[impact.stakeholder_key] = { pos: 0, neg: 0 };
+      }
+      if (impact.direction === "POSITIVE") countsByKey[impact.stakeholder_key].pos++;
+      else countsByKey[impact.stakeholder_key].neg++;
+    }
+    const maxVals = result.stakeholders.map((s) => {
+      const c = countsByKey[s.key] ?? { pos: 0, neg: 0 };
+      return Math.max(c.pos, c.neg);
+    });
+    const maxValue = Math.max(1, ...maxVals);
+    const items = result.stakeholders.flatMap((stakeholder) => {
+      const counts = countsByKey[stakeholder.key] ?? { pos: 0, neg: 0 };
+      return [
+        { label: `${stakeholder.name} · Positive`, value: counts.pos, tone: "emerald" as const },
+        { label: `${stakeholder.name} · Negative`, value: counts.neg, tone: "rose" as const },
+      ];
+    });
+    return { maxValue, items };
+  }, [result]);
+
   if (loading || !result) {
     return (
       <div className="space-y-4">
@@ -57,14 +93,6 @@ export default function ConsequencesPage({
       </div>
     );
   }
-
-  const filteredImpacts = result.impacts.filter((impact) => {
-    const matchesStakeholder =
-      selectedStakeholder === "all" || impact.stakeholder_key === selectedStakeholder;
-    const matchesDirection =
-      directionFilter === "all" || impact.direction.toLowerCase() === directionFilter;
-    return matchesStakeholder && matchesDirection;
-  });
 
   const getStakeholderIcon = (key: string) => {
     switch (key) {
@@ -165,14 +193,8 @@ export default function ConsequencesPage({
       {selectedStakeholder === "all" && (
         <ComparisonBarChart
           title="Reported positive and negative impacts by stakeholder"
-          maxValue={Math.max(1, ...result.impacts.map((impact) => result.impacts.filter((candidate) => candidate.stakeholder_key === impact.stakeholder_key).length))}
-          items={result.stakeholders.flatMap((stakeholder) => {
-            const stakeholderImpacts = result.impacts.filter((impact) => impact.stakeholder_key === stakeholder.key);
-            return [
-              { label: `${stakeholder.name} · Positive`, value: stakeholderImpacts.filter((impact) => impact.direction === "POSITIVE").length, tone: "emerald" as const },
-              { label: `${stakeholder.name} · Negative`, value: stakeholderImpacts.filter((impact) => impact.direction === "NEGATIVE").length, tone: "rose" as const },
-            ];
-          })}
+          maxValue={overviewChart.maxValue}
+          items={overviewChart.items}
         />
       )}
 
@@ -242,10 +264,10 @@ export default function ConsequencesPage({
                 {isExpanded && (
                   <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 space-y-1 animate-in fade-in duration-150">
                     <p>
-                      <strong>Operational Check:</strong> Review these impacts against campus constraints and the assumptions entered for this analysis.
+                      <strong>Operational check:</strong> Review these impacts against the constraints and assumptions entered for this decision.
                     </p>
                     <p>
-                      <strong>Follow-up:</strong> The responsible academic team should review and plan mitigations for these impacts.
+                      <strong>Follow-up:</strong> The decision owner and affected teams should review these impacts and plan mitigations.
                     </p>
                   </div>
                 )}

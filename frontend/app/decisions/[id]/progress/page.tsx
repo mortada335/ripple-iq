@@ -15,23 +15,23 @@ import { runSimulation } from "@/lib/api";
 const STEPS = [
   {
     id: 1,
-    title: "Parsing Institutional Context & Baseline Data",
-    desc: "Ingesting student enrollment, lab constraints, and commuter transit profiles.",
+    title: "Preparing decision context",
+    desc: "Collecting the decision details, assumptions, constraints, and organization context you provided.",
   },
   {
     id: 2,
     title: "Mapping 5 Affected Stakeholder Groups",
-    desc: "Evaluating students, instructional faculty, wet laboratories, administration, and transportation.",
+    desc: "Considering the stakeholder groups and operational areas described for this decision.",
   },
   {
     id: 3,
-    title: "Simulating 3 Comparative Policy Scenarios",
-    desc: "Generating direct compression, lab exemption hybrid, and single-faculty pilot models.",
+    title: "Comparing possible scenarios",
+    desc: "Estimating potential outcomes and trade-offs across the available options.",
   },
   {
     id: 4,
     title: "Synthesizing Risk Register & Explainable Recommendation",
-    desc: "Calculating feasibility ratings, confidence score (82%), and review notes.",
+    desc: "Preparing risks, assumptions, confidence information, and recommendations for human review.",
   },
 ];
 
@@ -51,6 +51,7 @@ export default function AnalysisProgressPage({
 
   useEffect(() => {
     let cancelled = false;
+    let redirectTimer: ReturnType<typeof setTimeout> | undefined;
 
     const t1 = setTimeout(() => {
       if (!cancelled) setActiveStep(2);
@@ -67,7 +68,7 @@ export default function AnalysisProgressPage({
         if (cancelled) return;
         setComplete(true);
         setActiveStep(4);
-        setTimeout(() => {
+        redirectTimer = setTimeout(() => {
           if (!cancelled) router.push(`/decisions/${decisionId}/scenarios`);
         }, 800);
       })
@@ -80,6 +81,7 @@ export default function AnalysisProgressPage({
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      if (redirectTimer) clearTimeout(redirectTimer);
     };
   }, [decisionId, router, attempt]);
 
@@ -91,11 +93,14 @@ export default function AnalysisProgressPage({
           <Compass className="h-5 w-5 animate-spin text-indigo-600 dark:text-indigo-400" />
         </div>
         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-          Executing Policy Impact Simulation
+          Running decision analysis
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Decision Reference:{" "}
           <span className="font-mono font-semibold">D-{String(decisionId).padStart(4, "0")}</span>
+        </p>
+        <p className="max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">
+          The current API reports completion when the analysis request finishes; it does not stream live progress. The steps below are an approximate interface indicator.
         </p>
       </div>
 

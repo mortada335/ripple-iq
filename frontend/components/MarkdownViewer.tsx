@@ -6,6 +6,8 @@ interface MarkdownViewerProps {
   content: string;
 }
 
+const INLINE_TOKEN_REGEX = /(\*\*.*?\*\*|`.*?`)/g;
+
 export function MarkdownViewer({ content }: MarkdownViewerProps) {
   // A clean, robust markdown-to-visual renderer for the executive report
   const lines = content.split("\n");
@@ -50,7 +52,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
 
   const renderInline = (text: string): React.ReactNode => {
     // Basic bold/code/badge matching
-    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+    const parts = text.split(INLINE_TOKEN_REGEX);
     return parts.map((part, i) => {
       if (part.startsWith("**") && part.endsWith("**")) {
         return (
@@ -175,5 +177,5 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
     flushTable(lines.length);
   }
 
-  return <div className="space-y-1 font-sans">{elements}</div>;
+  return <div className="space-y-1">{elements}</div>;
 }

@@ -16,12 +16,13 @@ import {
   UserRound,
 } from "lucide-react";
 import { checkApiHealth } from "@/lib/api";
-import { useOrganizationProfile } from "@/lib/use-organization";
 import type { HealthResponse } from "@/types/decision";
+import { useAuth } from "@/components/AuthProvider";
 
 export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
   const router = useRouter();
-  const organization = useOrganizationProfile();
+  const { user, organizations, activeOrganizationId, isDemo, selectOrganization, signOut } = useAuth();
+  const activeOrganization = organizations.find((item) => item.id === activeOrganizationId);
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [refreshingHealth, setRefreshingHealth] = useState(true);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -79,11 +80,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
         </Link>
 
         <span className="hidden h-7 w-px bg-slate-200 dark:bg-slate-800 md:block" aria-hidden="true" />
-        <Link href="/onboarding" className="hidden min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:text-slate-200 dark:hover:bg-slate-800 sm:flex">
-          <Building2 className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-          <span className="max-w-48 truncate">{organization.name}</span>
-          <span className="hidden rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800 lg:inline dark:bg-amber-950 dark:text-amber-200">Demo</span>
-        </Link>
+        {isDemo ? <Link href="/onboarding" className="hidden min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:flex dark:text-slate-200 dark:hover:bg-slate-800"><Building2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" /><span className="max-w-48 truncate">Demo organization</span><span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-800 dark:bg-amber-950 dark:text-amber-200">Demo</span></Link> : organizations.length > 1 ? <label className="hidden items-center gap-2 sm:flex"><span className="sr-only">Active organization</span><Building2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" /><select aria-label="Active organization" value={activeOrganizationId ?? ""} onChange={(event) => selectOrganization(Number(event.target.value))} className="max-w-48 rounded-lg border-0 bg-transparent py-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}</select></label> : activeOrganization ? <span className="hidden max-w-48 truncate items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-slate-700 sm:flex dark:text-slate-200"><Building2 className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />{activeOrganization.name}</span> : null}
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -112,15 +109,15 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             className="inline-flex min-h-10 items-center gap-2 rounded-xl px-2 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:hover:bg-slate-900"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200"><UserRound className="h-4 w-4" aria-hidden="true" /></span>
-            <span className="hidden text-start sm:block"><span className="block text-xs font-semibold text-slate-900 dark:text-white">Demo user</span><span className="block text-[10px] text-slate-500">Local prototype</span></span>
+                <span className="hidden text-start sm:block"><span className="block max-w-36 truncate text-xs font-semibold text-slate-900 dark:text-white">{isDemo ? "Demo workspace" : user?.full_name ?? "Account"}</span><span className="block max-w-36 truncate text-[10px] text-slate-500">{isDemo ? "Local demo" : user?.email}</span></span>
             <ChevronDown className="hidden h-3.5 w-3.5 text-slate-400 sm:block" aria-hidden="true" />
           </button>
 
           {profileDropdownOpen && (
             <div id="profile-menu" className="absolute end-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900">
               <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800">
-                <p className="font-bold text-slate-900 dark:text-white">Demo account</p>
-                <p className="text-[11px] text-slate-500">Account features need backend auth</p>
+                <p className="font-bold text-slate-900 dark:text-white">{isDemo ? "Demo workspace" : user?.full_name}</p>
+                <p className="text-[11px] text-slate-500">{isDemo ? "Demo data is stored locally" : user?.email}</p>
               </div>
               <Link href="/onboarding" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
                 <Building2 className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> Organization profile
@@ -132,8 +129,8 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
                 <Archive className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> Decision history
               </Link>
               <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-              <button type="button" onClick={() => { setProfileDropdownOpen(false); router.push("/login"); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30">
-                <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> Leave demo
+              <button type="button" onClick={() => { setProfileDropdownOpen(false); signOut(); router.replace("/login"); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30">
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> Sign out
               </button>
             </div>
           )}

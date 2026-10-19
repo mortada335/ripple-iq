@@ -152,7 +152,7 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
               {scorePercent}%
             </div>
             <span className="text-[10px] font-medium text-slate-500">
-              Institutional Viability
+              Organizational Viability
             </span>
           </div>
         </div>
@@ -166,9 +166,9 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
             </div>
             <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
               {(scenario.key_changes || [
-                "Classroom schedules lengthened by 15-20 min per lecture",
-                "Friday designated as asynchronous remote learning day",
-                "Auxiliary facilities shift to weekend setbacks",
+                "Adjust operating schedules to support the proposed change",
+                "Update team coverage and responsibilities during implementation",
+                "Review service capacity before expanding the change",
               ]).map((change, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
@@ -185,8 +185,8 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
             </div>
             <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
               {(scenario.assumptions || [
-                "Accreditation contact hours preserved via lengthened daily sessions",
-                "Transit authority maintains standard Monday-Thursday bus schedules",
+                "Required service levels remain available during implementation",
+                "Affected teams can provide feedback before organization-wide rollout",
               ]).map((assump, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
@@ -221,7 +221,7 @@ ${(scenario.assumptions || []).map((a) => `- ${a}`).join("\n")}
             >
               <Award className="h-3.5 w-3.5" />
               <span>
-                {scenario.is_recommended ? "✓ Preferred Institutional Path" : "Set as Preferred Path"}
+                {scenario.is_recommended ? "✓ Preferred option" : "Set as preferred option"}
               </span>
             </button>
 

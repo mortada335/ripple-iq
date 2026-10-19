@@ -247,11 +247,16 @@ Create a `.env.local` file in the `frontend/` directory:
 
 ```env
 # URL of the RippleIQ backend API
-# Leave empty or unset to use mock data (no backend needed)
 NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# Public website origin used by metadata, robots.txt, and sitemap.xml
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Set to true to use mock data for the demo workspace
+NEXT_PUBLIC_USE_MOCK=false
 ```
 
-If `NEXT_PUBLIC_API_URL` is not set or the backend is unreachable, the app automatically uses mock data with no additional configuration.
+The login and registration pages require the API. Use **Explore demo workspace** to enter the browser-local demo. Authenticated API errors are shown instead of being replaced with demo data.
 
 ---
 
@@ -259,14 +264,16 @@ If `NEXT_PUBLIC_API_URL` is not set or the backend is unreachable, the app autom
 
 The frontend is designed to integrate with the RippleIQ FastAPI backend. The full API contract is documented in [`../docs/api-contract.md`](../docs/api-contract.md).
 
-### Integration checklist (when backend is ready)
+### Integration status
 
-- [ ] Set `NEXT_PUBLIC_API_URL` in `.env.local`
-- [ ] Connect the login page to the real authentication endpoint
-- [ ] Confirm `SimulationResult` response shape matches `types/decision.ts`
-- [ ] Wire up WebSocket/SSE for real-time simulation progress in `/decisions/[id]/progress`
-- [ ] Test report generation and markdown rendering end-to-end
-- [ ] Validate the `/health` endpoint response for the Header status badge
+- [x] Registration and login use the documented API endpoints
+- [x] Bearer token and organization selection are attached to private API requests
+- [x] Decision lists use the API's `offset` and `limit` paging parameters
+- [x] Organization profile extras are included per decision via the documented `raw_metadata` field
+- [ ] Set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_APP_URL` for the target deployment
+- [ ] Verify auth, CORS, organization roles, and report behavior against the deployed backend
+
+The documented simulation endpoint is synchronous and has no progress-stream contract; the progress screen is a frontend status sequence, not streamed backend progress.
 
 ### Key API endpoints
 

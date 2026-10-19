@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Archive, Building2, LayoutDashboard, PlusCircle, Sliders, X } from "lucide-react";
 import { CharterModal } from "./CharterModal";
 import { useEffect, useRef, useState } from "react";
+import { translate, type Locale } from "@/lib/locale";
 
 const NAV_ITEMS = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -14,10 +15,29 @@ const NAV_ITEMS = [
 
 function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const [locale, setLocale] = useState<Locale>("en");
+  useEffect(() => {
+    const readLocale = () => {
+      try {
+        const settings = JSON.parse(localStorage.getItem("rippleiq_settings") ?? "{}") as { language?: string };
+        setLocale(settings.language === "ar" ? "ar" : "en");
+      } catch {
+        setLocale("en");
+      }
+    };
+    readLocale();
+    window.addEventListener("rippleiq:locale-updated", readLocale);
+    window.addEventListener("storage", readLocale);
+    return () => {
+      window.removeEventListener("rippleiq:locale-updated", readLocale);
+      window.removeEventListener("storage", readLocale);
+    };
+  }, []);
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <nav aria-label="Main navigation" className="space-y-1">
-      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
-      {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("workspace")}</p>
+      {NAV_ITEMS.map(({ href, icon: Icon }) => {
         const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
         return (
           <Link
@@ -30,17 +50,17 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
             }`}
           >
             <Icon className={`h-[18px] w-[18px] ${active ? "text-white" : "text-slate-400 group-hover:text-white"}`} aria-hidden="true" />
-            {label}
+            {href === "/dashboard" ? t("dashboard") : href === "/decisions/new" ? t("newDecision") : t("history")}
           </Link>
         );
       })}
       <div className="my-3 border-t border-white/10" />
-      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Organization</p>
+      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{locale === "ar" ? "المؤسسة" : "Organization"}</p>
       <Link href="/onboarding" onClick={onNavigate} aria-current={pathname === "/onboarding" ? "page" : undefined} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 ${pathname === "/onboarding" ? "bg-indigo-600 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
-        <Building2 className="h-[18px] w-[18px] text-slate-400" aria-hidden="true" /> Organization setup <span className="ms-auto rounded-full bg-amber-400/15 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-200">Demo</span>
+        <Building2 className="h-[18px] w-[18px] text-slate-400" aria-hidden="true" /> {t("organization")}
       </Link>
       <Link href="/settings" onClick={onNavigate} aria-current={pathname === "/settings" ? "page" : undefined} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 ${pathname === "/settings" ? "bg-indigo-600 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
-        <Sliders className="h-[18px] w-[18px] text-slate-400" aria-hidden="true" /> Preferences
+        <Sliders className="h-[18px] w-[18px] text-slate-400" aria-hidden="true" /> {t("settings")}
       </Link>
     </nav>
   );
@@ -111,7 +131,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
               <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close navigation menu" className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-indigo-300"><X className="h-5 w-5" aria-hidden="true" /></button>
             </div>
             <NavigationLinks onNavigate={onClose} />
-            <p className="mt-auto border-t border-white/10 pt-4 text-[11px] leading-relaxed text-slate-400">Demo workspace · Sign-in and organization data are not connected yet.</p>
+            <p className="mt-auto border-t border-white/10 pt-4 text-[11px] leading-relaxed text-slate-400">Review decisions and settings for your current workspace.</p>
           </aside>
         </div>
       )}

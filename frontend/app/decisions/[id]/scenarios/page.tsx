@@ -26,6 +26,11 @@ export default function ScenarioComparisonPage({
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const stakeholderMap = React.useMemo(() => {
+    if (!result?.stakeholders) return new Map<string, string>();
+    return new Map(result.stakeholders.map((s) => [s.key, s.name]));
+  }, [result]);
+
   useEffect(() => {
     getSimulationResult(Number(decisionId))
       .then((data) => {
@@ -124,12 +129,7 @@ export default function ScenarioComparisonPage({
               new Set(
                 scenarioImpacts
                   .filter((impact) => impact.direction === direction)
-                  .map(
-                    (impact) =>
-                      result.stakeholders.find(
-                        (stakeholder) => stakeholder.key === impact.stakeholder_key
-                      )?.name ?? impact.stakeholder_key
-                  )
+                  .map((impact) => stakeholderMap.get(impact.stakeholder_key) ?? impact.stakeholder_key)
               )
             );
           const beneficiaries = stakeholderNames("POSITIVE");

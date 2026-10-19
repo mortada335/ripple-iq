@@ -8,9 +8,11 @@ import { FormField } from "@/components/FormField";
 import { formatCurrency, getCurrencyCodes, getCurrencyLabel } from "@/lib/currency";
 import { checkApiHealth } from "@/lib/api";
 import type { HealthResponse } from "@/types/decision";
+import type { Locale } from "@/lib/locale";
+import { translate } from "@/lib/locale";
 
 const STORAGE_KEY = "rippleiq_settings";
-const DEFAULT_SETTINGS = { currency: "IQD", language: "en" };
+const DEFAULT_SETTINGS: { currency: string; language: Locale } = { currency: "IQD", language: "en" };
 const controlClassName = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 
 function applyLanguageDirection(language: string) {
@@ -19,7 +21,8 @@ function applyLanguageDirection(language: string) {
 }
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<{ currency: string; language: Locale }>(DEFAULT_SETTINGS);
+  const t = (key: Parameters<typeof translate>[1]) => translate(settings.language, key);
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [checkingHealth, setCheckingHealth] = useState(true);
 
@@ -34,25 +37,33 @@ export default function SettingsPage() {
 
   useEffect(() => {
     let active = true;
-    const frame = window.requestAnimationFrame(() => {
+
+    const init = async () => {
+      await Promise.resolve();
+      if (!active) return;
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed: unknown = JSON.parse(saved);
           if (parsed && typeof parsed === "object") {
             const candidate = parsed as Partial<typeof DEFAULT_SETTINGS>;
-            const next = {
+            const next: { currency: string; language: Locale } = {
               currency: typeof candidate.currency === "string" && /^[A-Z]{3}$/.test(candidate.currency) ? candidate.currency : DEFAULT_SETTINGS.currency,
               language: candidate.language === "ar" ? "ar" : "en",
             };
-            setSettings(next);
-            applyLanguageDirection(next.language);
+            if (active) {
+              setSettings(next);
+              applyLanguageDirection(next.language);
+            }
           }
         }
       } catch {
         toast.error("Could not read saved demo preferences");
       }
-    });
+    };
+
+    void init();
+
     checkApiHealth().then((data) => {
       if (active) setHealth(data);
     }).catch(() => {
@@ -60,9 +71,9 @@ export default function SettingsPage() {
     }).finally(() => {
       if (active) setCheckingHealth(false);
     });
+
     return () => {
       active = false;
-      window.cancelAnimationFrame(frame);
     };
   }, []);
 
@@ -71,7 +82,8 @@ export default function SettingsPage() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       applyLanguageDirection(settings.language);
-      toast.success("Preferences saved in this browser", {
+      window.dispatchEvent(new Event("rippleiq:locale-updated"));
+      toast.success(t("saved"), {
         description: "These demo preferences are not synced to an account.",
       });
     } catch {
@@ -84,6 +96,7 @@ export default function SettingsPage() {
     applyLanguageDirection(DEFAULT_SETTINGS.language);
     try {
       localStorage.removeItem(STORAGE_KEY);
+      window.dispatchEvent(new Event("rippleiq:locale-updated"));
       toast.success("Preferences reset");
     } catch {
       toast.error("Could not reset saved preferences");
@@ -93,8 +106,8 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Workspace</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Preferences</h1>
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">{t("workspace")}</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{t("preferences")}</h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Manage local demo preferences and check whether the API is reachable.</p>
       </header>
 
@@ -127,10 +140,10 @@ export default function SettingsPage() {
               {getCurrencyCodes().map((code) => <option key={code} value={code}>{getCurrencyLabel(code, settings.language)}</option>)}
             </select>
           </FormField>
-          <FormField id="preference-language" label="Interface language" hint="Arabic selection switches layout direction; untranslated screens will remain in English for now.">
-            <select className={controlClassName} value={settings.language} onChange={(event) => setSettings({ ...settings, language: event.target.value })}>
-              <option value="en">English · LTR</option>
-              <option value="ar">العربية · RTL preview</option>
+          <FormField id="preference-language" label={t("language")} hint={t("languageNote")}>
+            <select className={controlClassName} value={settings.language} onChange={(event) => setSettings({ ...settings, language: event.target.value === "ar" ? "ar" : "en" })}>
+              <option value="en">{t("english")} · LTR</option>
+              <option value="ar">{t("arabic")} · RTL</option>
             </select>
           </FormField>
         </div>
@@ -139,7 +152,7 @@ export default function SettingsPage() {
           <span className="self-center text-xs text-slate-500">Saved to this browser only</span>
           <div className="flex gap-2 sm:ms-auto">
             <button type="button" onClick={handleReset} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Reset</button>
-            <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-xs font-semibold text-white hover:bg-indigo-500"><Save className="h-3.5 w-3.5" aria-hidden="true" /> Save preferences</button>
+            <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-xs font-semibold text-white hover:bg-indigo-500"><Save className="h-3.5 w-3.5" aria-hidden="true" /> {t("save")}</button>
           </div>
         </div>
       </form>

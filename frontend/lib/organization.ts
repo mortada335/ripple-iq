@@ -14,24 +14,26 @@ export type OrganizationProfile = {
 };
 
 export const ORGANIZATION_STORAGE_KEY = "rippleiq_demo_organization";
+export const getOrganizationStorageKey = (organizationId?: number | null) =>
+  organizationId ? `rippleiq_organization_profile:${organizationId}` : ORGANIZATION_STORAGE_KEY;
 
 export const DEFAULT_ORGANIZATION: OrganizationProfile = {
   name: "Your organization (demo)",
   kind: "other",
   industry: "",
   country: "Iraq",
-  description: "Sample organization for exploring RippleIQ's decision analysis workflow.",
+  description: "",
   goals: "Make better-informed operational decisions while understanding trade-offs.",
-  context: "Demo profile only. Replace with your organization's approved context.",
+  context: "",
   website: "",
   currency: "IQD",
   locale: "en",
 };
 
-export function readDemoOrganization(): OrganizationProfile {
+export function readDemoOrganization(organizationId?: number | null): OrganizationProfile {
   if (typeof window === "undefined") return DEFAULT_ORGANIZATION;
   try {
-    const saved = window.localStorage.getItem(ORGANIZATION_STORAGE_KEY);
+    const saved = window.localStorage.getItem(getOrganizationStorageKey(organizationId));
     if (!saved) return DEFAULT_ORGANIZATION;
     const parsed: unknown = JSON.parse(saved);
     if (!parsed || typeof parsed !== "object") return DEFAULT_ORGANIZATION;
@@ -58,7 +60,16 @@ export function readDemoOrganization(): OrganizationProfile {
   }
 }
 
-export function saveDemoOrganization(profile: OrganizationProfile) {
-  window.localStorage.setItem(ORGANIZATION_STORAGE_KEY, JSON.stringify(profile));
+export function readSavedOrganizationContext(organizationId?: number | null): OrganizationProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(getOrganizationStorageKey(organizationId)) ? readDemoOrganization(organizationId) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveDemoOrganization(profile: OrganizationProfile, organizationId?: number | null) {
+  window.localStorage.setItem(getOrganizationStorageKey(organizationId), JSON.stringify(profile));
   window.dispatchEvent(new Event("rippleiq:organization-updated"));
 }
