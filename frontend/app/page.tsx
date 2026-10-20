@@ -100,12 +100,6 @@ export default function HomePage() {
 
           <nav className="flex items-center gap-3 text-xs sm:gap-4 sm:text-sm">
             <Link
-              href="/dashboard"
-              className="hidden font-medium text-slate-300 hover:text-white sm:inline-block"
-            >
-              Demo Workspace
-            </Link>
-            <Link
               href="/login"
               className="rounded-lg border border-slate-700 px-3.5 py-1.5 font-semibold text-slate-200 hover:bg-slate-900 transition"
             >
@@ -304,13 +298,13 @@ export default function HomePage() {
                     <span>Analysis output is an advisory model. Leadership retains full final review.</span>
                   </div>
 
-                  <Link
+                  {/* <Link
                     href="/decisions/1/scenarios"
                     className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 transition"
                   >
                     <span>Inspect Full 6-Stage Analysis</span>
                     <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
+                  </Link> */}
                 </div>
               </div>
             </div>

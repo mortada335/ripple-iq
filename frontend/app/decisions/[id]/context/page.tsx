@@ -23,7 +23,6 @@ import { ExtractedDocument } from "@/types/decision";
 import { toast } from "sonner";
 import { readSavedOrganizationContext } from "@/lib/organization";
 import { useAuth } from "@/components/AuthProvider";
-import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 
 export default function DecisionContextPage({
   params,
@@ -191,7 +190,6 @@ export default function DecisionContextPage({
     <div className="space-y-6">
       <DecisionNavTabs decisionId={decisionId} />
 
-      <HumanReviewBanner />
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

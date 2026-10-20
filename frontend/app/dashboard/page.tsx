@@ -549,8 +549,8 @@ export default function DashboardPage() {
       ) : (
         /* Executive Table View */
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="overflow-x-auto">
-            <table className="w-full text-start text-xs">
+          <div className="w-full overflow-x-auto no-scrollbar">
+            <table className="w-full min-w-[640px] text-start text-xs">
               <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-950">
                 <tr>
                   <th className="px-4 py-3 text-start">Ref #</th>

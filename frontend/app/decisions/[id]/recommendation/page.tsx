@@ -16,7 +16,6 @@ import { getRecommendation, getSimulationResult, refineRecommendation } from "@/
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RecommendationView, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
-import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 
 export default function RecommendationPage({
   params,
@@ -120,7 +119,6 @@ export default function RecommendationPage({
       <DecisionNavTabs decisionId={decisionId} />
 
       {/* Mandatory Unmissable Sticky Human Review Banner */}
-      <HumanReviewBanner sticky={true} />
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -272,7 +270,7 @@ export default function RecommendationPage({
           Constituency Fairness Audit
         </h2>
         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          {result.fairness.note || "Fairness assessment evaluated potential disproportionate burdens on commuting students and laboratory researchers."}
+          {result?.fairness?.note || "Fairness assessment evaluated potential disproportionate burdens on commuting students and laboratory researchers."}
         </p>
 
         <div className="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -281,7 +279,7 @@ export default function RecommendationPage({
               Groups Flagged for Special Review:
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {result.fairness.affected_groups_to_review.map((group) => (
+              {result?.fairness?.affected_groups_to_review?.map((group) => (
                 <span
                   key={group}
                   className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800 dark:bg-slate-800 dark:text-slate-200"
@@ -297,7 +295,7 @@ export default function RecommendationPage({
               Potential Governance Concerns:
             </span>
             <ul className="list-disc space-y-1 ps-4 text-slate-600 dark:text-slate-400">
-              {result.fairness.potential_concerns.map((concern, idx) => (
+              {result?.fairness?.potential_concerns?.map((concern, idx) => (
                 <li key={idx}>{concern}</li>
               ))}
             </ul>

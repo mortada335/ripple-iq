@@ -13,7 +13,6 @@ import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RecommendationView, SimulationResult } from "@/types/decision";
 import { ComparisonBarChart } from "@/components/ComparisonBarChart";
 import { toast } from "sonner";
-import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 
 export default function ScenarioComparisonPage({
   params,
@@ -112,7 +111,6 @@ export default function ScenarioComparisonPage({
     <div className="space-y-6">
       <DecisionNavTabs decisionId={decisionId} />
 
-      <HumanReviewBanner />
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

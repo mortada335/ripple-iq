@@ -13,7 +13,6 @@ import {
 import { createDecision } from "@/lib/api";
 import { Priority } from "@/types/decision";
 import { toast } from "sonner";
-import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 
 const TIME_HORIZONS = [
   "1 month",
@@ -114,7 +113,6 @@ export default function CreateDecisionPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <HumanReviewBanner />
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

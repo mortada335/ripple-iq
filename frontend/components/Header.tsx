@@ -92,9 +92,9 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/95 sm:px-6 lg:px-8">
-        {/* Left: Brand + Organization Selector */}
-        <div className="flex min-w-0 items-center gap-3 sm:gap-6">
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/95 sm:px-6 lg:px-8">
+        {/* Left: Mobile menu toggle + Brand + Org Selector + Desktop Navigation */}
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-6">
           <button
             type="button"
             onClick={onOpenNavigation}
@@ -104,7 +104,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
 
-          <Link href="/dashboard" className="group flex shrink-0 items-center gap-2.5">
+          <Link href="/dashboard" className="group flex shrink-0 items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-500/20 transition-transform group-hover:scale-105">
               <Compass className="h-5 w-5 text-white transition-transform group-hover:rotate-45" aria-hidden="true" />
             </span>
@@ -118,15 +118,15 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             </span>
           </Link>
 
-          {/* Org Selector Pill */}
-          <div className="hidden items-center lg:flex">
+          {/* Org Selector Pill - Hidden on smaller screens to prevent collision */}
+          <div className="hidden xl:flex items-center">
             {isDemo ? (
               <Link
                 href="/onboarding"
                 className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50/80 px-2.5 py-1 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
               >
                 <Building2 className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" aria-hidden="true" />
-                <span className="max-w-36 truncate">Demo Workspace</span>
+                <span className="max-w-28 truncate">Demo Workspace</span>
                 <span className="rounded-full bg-amber-200/80 px-1.5 py-0.2 text-[9px] font-bold uppercase text-amber-900 dark:bg-amber-900 dark:text-amber-200">
                   Demo
                 </span>
@@ -148,7 +148,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
                 </select>
               </label>
             ) : activeOrganization ? (
-              <span className="inline-flex max-w-44 items-center gap-1.5 truncate rounded-full border border-slate-200 bg-slate-50/80 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              <span className="inline-flex max-w-40 items-center gap-1.5 truncate rounded-full border border-slate-200 bg-slate-50/80 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                 <Building2 className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
                 <span className="truncate">{activeOrganization.name}</span>
               </span>
@@ -160,7 +160,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             <Link
               href="/dashboard"
               aria-current={isDashboardActive ? "page" : undefined}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
                 isDashboardActive
                   ? "bg-slate-900 text-white shadow-xs dark:bg-white dark:text-slate-900"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
@@ -173,7 +173,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             <Link
               href="/decisions"
               aria-current={isDecisionsActive ? "page" : undefined}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
                 isDecisionsActive
                   ? "bg-slate-900 text-white shadow-xs dark:bg-white dark:text-slate-900"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
@@ -186,7 +186,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             <Link
               href="/settings"
               aria-current={isSettingsActive ? "page" : undefined}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
                 isSettingsActive
                   ? "bg-slate-900 text-white shadow-xs dark:bg-white dark:text-slate-900"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
@@ -196,26 +196,27 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
               <span>{t("settings")}</span>
             </Link>
 
-            <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" aria-hidden="true" />
+            <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-800" aria-hidden="true" />
 
             {/* Quick Action: New Decision button */}
             <Link
               href="/decisions/new"
               aria-current={isNewDecisionActive ? "page" : undefined}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all shadow-xs ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all shadow-xs ${
                 isNewDecisionActive
                   ? "bg-indigo-700 text-white ring-2 ring-indigo-500/30"
                   : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow"
               }`}
             >
               <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>{t("newDecision")}</span>
+              <span className="hidden lg:inline">{t("newDecision")}</span>
+              <span className="lg:hidden">New</span>
             </Link>
           </nav>
         </div>
 
         {/* Right: Theme Toggle + Responsible AI Badge + API Health + User Profile */}
-        <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Light / Dark Mode Toggle */}
           <ThemeToggle />
 
@@ -223,14 +224,14 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
           <button
             type="button"
             onClick={() => setCharterOpen(true)}
-            title="Responsible AI Charter: Decision support, not automation"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50/70 px-2.5 py-1 text-[11px] font-semibold text-indigo-800 transition hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300"
+            title="Responsible AI Charter: Advisory Decision Support"
+            className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50/70 px-2.5 py-1 text-[11px] font-semibold text-indigo-800 transition hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300"
           >
             <ShieldCheck className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-            <span>Responsible AI</span>
+            <span>Charter</span>
           </button>
 
-          {/* API Health Indicator */}
+          {/* API Health Indicator - compact on small screens */}
           <button
             type="button"
             onClick={refreshHealth}
@@ -243,7 +244,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             }
             title={health?.status === "healthy" ? "Backend connected" : "Backend offline (local fallback active)"}
             disabled={refreshingHealth}
-            className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-semibold transition hover:opacity-85 ${
+            className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2 text-[11px] font-semibold transition hover:opacity-85 sm:px-2.5 ${
               health?.status === "healthy"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"
                 : "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
@@ -266,7 +267,7 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
               </span>
             )}
             <span className="hidden sm:inline">
-              {refreshingHealth ? "Checking API" : health?.status === "healthy" ? "API Live" : "Offline"}
+              {refreshingHealth ? "Checking" : health?.status === "healthy" ? "API Live" : "Offline"}
             </span>
           </button>
 
@@ -277,13 +278,13 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
               onClick={() => setProfileDropdownOpen((open) => !open)}
               aria-expanded={profileDropdownOpen}
               aria-controls="profile-menu"
-              className="inline-flex min-h-9 items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:hover:bg-slate-900"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl p-1 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:hover:bg-slate-900 sm:p-1.5"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200 font-bold text-xs ring-1 ring-indigo-500/20">
                 <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
-              <span className="hidden text-start sm:block">
-                <span className="block max-w-32 truncate text-xs font-semibold text-slate-900 dark:text-white">
+              <span className="hidden text-start lg:block">
+                <span className="block max-w-28 truncate text-xs font-semibold text-slate-900 dark:text-white">
                   {isDemo ? "Demo User" : user?.full_name ?? "Account"}
                 </span>
               </span>
@@ -293,11 +294,11 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             {profileDropdownOpen && (
               <div
                 id="profile-menu"
-                className="absolute inset-e-0 mt-2 w-60 rounded-xl border border-slate-200 bg-white p-1.5 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900"
+                className="absolute inset-e-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900"
               >
                 <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800">
-                  <p className="font-bold text-slate-900 dark:text-white">{isDemo ? "Demo Workspace" : user?.full_name}</p>
-                  <p className="text-[11px] text-slate-500 truncate">{isDemo ? "Local mode · Client-side preview" : user?.email}</p>
+                  <p className="font-bold text-slate-900 dark:text-white truncate">{isDemo ? "Demo Workspace" : user?.full_name}</p>
+                  <p className="text-[11px] text-slate-500 truncate">{isDemo ? "Local mode preview" : user?.email}</p>
                 </div>
                 <div className="py-1">
                   <Link

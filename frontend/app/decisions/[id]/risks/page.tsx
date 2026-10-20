@@ -15,7 +15,6 @@ import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RiskItem, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
 import { ApiLoadError } from "@/components/ApiLoadError";
-import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 
 const SEVERITY_ORDER: Record<string, number> = {
   CRITICAL: 4,
@@ -159,7 +158,6 @@ export default function RiskRegisterPage({
     <div className="space-y-6">
       <DecisionNavTabs decisionId={decisionId} />
 
-      <HumanReviewBanner />
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -175,7 +173,7 @@ export default function RiskRegisterPage({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleExportRisks}
@@ -196,7 +194,7 @@ export default function RiskRegisterPage({
       </div>
 
       {/* 3x3 Risk Heat Matrix Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -218,9 +216,9 @@ export default function RiskRegisterPage({
           )}
         </div>
 
-        {/* The 3x3 Matrix Grid */}
-        <div className="overflow-x-auto">
-          <div className="min-w-[500px] grid grid-cols-4 gap-2 text-center text-xs">
+        {/* The 3x3 Matrix Grid - fully responsive on all screens */}
+        <div className="w-full overflow-x-auto no-scrollbar">
+          <div className="min-w-[340px] sm:min-w-[480px] grid grid-cols-4 gap-1.5 sm:gap-2 text-center text-xs">
             {/* Header row */}
             <div className="p-2 font-mono text-[11px] font-bold text-slate-400 uppercase">
               Likelihood \ Severity
