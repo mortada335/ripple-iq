@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { Activity, Building2, CheckCircle2, Globe2, RefreshCw, RotateCcw, Save } from "lucide-react";
+import { Activity, Building2, CheckCircle2, Globe2, Moon, RefreshCw, RotateCcw, Save, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { FormField } from "@/components/FormField";
 import { formatCurrency, getCurrencyCodes, getCurrencyLabel } from "@/lib/currency";
@@ -10,6 +10,7 @@ import { checkApiHealth, getAIProviderStatus, type AIProviderStatus } from "@/li
 import type { HealthResponse } from "@/types/decision";
 import type { Locale } from "@/lib/locale";
 import { translate } from "@/lib/locale";
+import { useTheme } from "@/components/ThemeProvider";
 
 const STORAGE_KEY = "rippleiq_settings";
 const DEFAULT_SETTINGS: { currency: string; language: Locale } = { currency: "IQD", language: "en" };
@@ -21,6 +22,7 @@ function applyLanguageDirection(language: string) {
 }
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<{ currency: string; language: Locale }>(DEFAULT_SETTINGS);
   const t = (key: Parameters<typeof translate>[1]) => translate(settings.language, key);
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -149,6 +151,56 @@ export default function SettingsPage() {
               <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">{providerStatus.note} Configured does not mean reachable. Failover {providerStatus.failover_enabled ? "enabled" : "disabled"}; mock degraded mode {providerStatus.degraded_mode_enabled ? "enabled" : "disabled"}.</p>
             </>
           ) : <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">{providerStatusUnavailable ? "Provider configuration status is unavailable." : "Loading provider configuration…"}</p>}
+        </div>
+      </section>
+
+      {/* Appearance Section */}
+      <section aria-labelledby="appearance-title" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
+          <Sun className="h-4 w-4 text-amber-500" aria-hidden="true" />
+          <h2 id="appearance-title" className="text-sm font-semibold text-slate-900 dark:text-white">Interface appearance</h2>
+        </div>
+        <div className="mt-4">
+          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Theme mode</label>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Choose your preferred visual theme or match your system settings.</p>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => setTheme("light")}
+              className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition ${
+                theme === "light"
+                  ? "border-indigo-600 bg-indigo-50/50 text-indigo-700 ring-2 ring-indigo-500/20 dark:bg-indigo-950/40 dark:text-indigo-300"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+              }`}
+            >
+              <Sun className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              <span>Light</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme("dark")}
+              className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition ${
+                theme === "dark"
+                  ? "border-indigo-600 bg-indigo-50/50 text-indigo-700 ring-2 ring-indigo-500/20 dark:bg-indigo-950/40 dark:text-indigo-300"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+              }`}
+            >
+              <Moon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+              <span>Dark</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme("system")}
+              className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition ${
+                theme === "system"
+                  ? "border-indigo-600 bg-indigo-50/50 text-indigo-700 ring-2 ring-indigo-500/20 dark:bg-indigo-950/40 dark:text-indigo-300"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+              }`}
+            >
+              <span className="flex h-5 w-5 items-center justify-center font-bold text-xs">⚡</span>
+              <span>System</span>
+            </button>
+          </div>
         </div>
       </section>
 

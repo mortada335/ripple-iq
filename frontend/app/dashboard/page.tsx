@@ -7,18 +7,30 @@ import {
   Search,
   Layers,
   FileCheck2,
-  FileClock,
   CircleAlert,
   ChevronRight,
   Download,
   Archive,
   Trash2,
+  Sparkles,
+  Users2,
+  GraduationCap,
+  FlaskConical,
+  Building,
+  Bus,
+  ShieldAlert,
+  LayoutGrid,
+  Table as TableIcon,
+  RotateCcw,
 } from "lucide-react";
 import { getDecisions, getReport, toggleArchiveDecision, deleteDecision } from "@/lib/api";
 import { Decision } from "@/types/decision";
 import { LoadMore } from "@/components/LoadMore";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
+import { PageSkeleton } from "@/components/LoadingSkeleton";
+import { EmptyState } from "@/components/EmptyState";
+import { DEMO_DECISION, saveLocalDecision } from "@/lib/mock-data";
 
 const PAGE_SIZE = 20;
 
@@ -26,11 +38,14 @@ export default function DashboardPage() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const { isDemo, activeOrganizationId } = useAuth();
+  const { isDemo, activeOrganizationId, organizations } = useAuth();
+
+  const activeOrg = organizations.find((o) => o.id === activeOrganizationId);
 
   const reloadDecisions = useCallback(async () => {
     setLoading(true);
@@ -88,12 +103,16 @@ export default function DashboardPage() {
     };
   }, [activeOrganizationId]);
 
-  const counts = useMemo(() => ({
-    total: decisions.length,
-    completed: decisions.filter((d) => d.status === "COMPLETED").length,
-    drafts: decisions.filter((d) => d.status === "DRAFT").length,
-    inProgress: decisions.filter((d) => d.status === "SIMULATING").length,
-  }), [decisions]);
+  const counts = useMemo(
+    () => ({
+      total: decisions.length,
+      completed: decisions.filter((d) => d.status === "COMPLETED").length,
+      drafts: decisions.filter((d) => d.status === "DRAFT").length,
+      inProgress: decisions.filter((d) => d.status === "SIMULATING" || d.status === "READY_FOR_ANALYSIS").length,
+      highPriority: decisions.filter((d) => d.priority === "HIGH" || d.priority === "CRITICAL").length,
+    }),
+    [decisions]
+  );
 
   const filteredDecisions = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -120,7 +139,7 @@ export default function DashboardPage() {
       a.download = rep.filename;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Report downloaded", { description: title });
+      toast.success("Board Memorandum downloaded", { description: title });
     } catch {
       toast.error("Failed to download report");
     }
@@ -131,7 +150,7 @@ export default function DashboardPage() {
     e.stopPropagation();
     try {
       await toggleArchiveDecision(id);
-      toast.success("Decision archived");
+      toast.success("Decision updated");
       void reloadDecisions();
     } catch {
       toast.error("Could not update the decision");
@@ -141,7 +160,7 @@ export default function DashboardPage() {
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isDemo && confirm("Permanently remove this decision from local demo data?")) {
+    if (isDemo && confirm("Permanently remove this decision proposal from demo data?")) {
       try {
         await deleteDecision(id);
         toast.success("Decision deleted");
@@ -152,203 +171,358 @@ export default function DashboardPage() {
     }
   };
 
+  const handleResetDemoSample = () => {
+    saveLocalDecision(DEMO_DECISION);
+    toast.success("Reference University 4-Day Attendance Decision loaded!");
+    void reloadDecisions();
+  };
+
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {/* Hero / Executive Command Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6">
+      {/* Executive Command Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-            Decision dashboard
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              {activeOrg?.name ?? (isDemo ? "University Demonstration Workspace" : "Institutional Intelligence")}
+            </span>
+          </div>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+            Executive Decision Cockpit
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Compare possible outcomes of organization decisions before choosing a path forward.
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+            Multi-stakeholder simulation and policy risk intelligence. Review cascading ripples, scenario feasibility, and executive memoranda.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          {decisions.length === 0 && (
+            <button
+              type="button"
+              onClick={handleResetDemoSample}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Load 4-Day Policy Demo</span>
+            </button>
+          )}
+
           <Link
             href="/decisions/new"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-all"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 transition"
           >
             <PlusCircle className="h-4 w-4" />
-            <span>Create New Decision</span>
+            <span>New Decision Analysis</span>
           </Link>
         </div>
       </div>
 
-      <section aria-label="Decision summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      {/* 4 KPI Summary Cards */}
+      <section aria-label="Executive decision KPIs" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
-          { label: "Loaded decisions", value: counts.total, icon: Layers, iconClass: "text-indigo-600 dark:text-indigo-400" },
-          { label: "Completed (loaded)", value: counts.completed, icon: FileCheck2, iconClass: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Drafts (loaded)", value: counts.drafts, icon: FileClock, iconClass: "text-amber-600 dark:text-amber-400" },
-          { label: "In progress (loaded)", value: counts.inProgress, icon: CircleAlert, iconClass: "text-violet-600 dark:text-violet-400" },
-        ].map(({ label, value, icon: Icon, iconClass }) => (
-          <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between gap-3"><span className="text-xs font-medium text-slate-500">{label}</span><Icon className={`h-4 w-4 ${iconClass}`} aria-hidden="true" /></div>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{value}</p>
-          </div>
-        ))}
+          {
+            label: "Total Policy Proposals",
+            value: counts.total,
+            detail: `${counts.completed} completed analysis`,
+            icon: Layers,
+            iconColor: "text-indigo-600 dark:text-indigo-400",
+            bgColor: "bg-indigo-50 dark:bg-indigo-950/50",
+          },
+          {
+            label: "Simulated Analyses",
+            value: counts.completed,
+            detail: "Audit-ready memoranda",
+            icon: FileCheck2,
+            iconColor: "text-emerald-600 dark:text-emerald-400",
+            bgColor: "bg-emerald-50 dark:bg-emerald-950/50",
+          },
+          {
+            label: "Critical / High Risks Flagged",
+            value: counts.highPriority,
+            detail: "Requires human review",
+            icon: ShieldAlert,
+            iconColor: "text-rose-600 dark:text-rose-400",
+            bgColor: "bg-rose-50 dark:bg-rose-950/50",
+          },
+          {
+            label: "Stakeholder Groups Mapped",
+            value: 5,
+            detail: "Students, Faculty, Labs, Admin, Transit",
+            icon: Users2,
+            iconColor: "text-sky-600 dark:text-sky-400",
+            bgColor: "bg-sky-50 dark:bg-sky-950/50",
+          },
+        ].map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <div
+              key={kpi.label}
+              className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all hover:border-indigo-400/50"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{kpi.label}</span>
+                <span className={`flex h-8 w-8 items-center justify-center rounded-xl ${kpi.bgColor}`}>
+                  <Icon className={`h-4 w-4 ${kpi.iconColor}`} />
+                </span>
+              </div>
+              <p className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                {kpi.value}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{kpi.detail}</p>
+            </div>
+          );
+        })}
       </section>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      {/* Search, Filter Tabs & View Toggle */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+          <Search className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by decision or responsible team..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 ps-9 pe-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="Search proposals by title, team, or operational keyword..."
+            className="w-full rounded-xl border border-slate-200 bg-white py-2 ps-10 pe-4 text-xs text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
           />
         </div>
-        <p className="text-[11px] text-slate-500 sm:ms-3">Search covers loaded decisions. Load more to search additional results.</p>
 
-        {/* Status Pills with Dynamic Counts */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {(["ALL", "COMPLETED", "DRAFT", "ARCHIVED"] as const).map((status) => (
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            {(["ALL", "COMPLETED", "DRAFT", "ARCHIVED"] as const).map((status) => {
+              const count = decisions.filter(
+                (d) => status === "ALL" || d.status.toUpperCase() === status
+              ).length;
+              const isActive = statusFilter === status;
+
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    isActive
+                      ? "bg-slate-900 text-white shadow-xs dark:bg-indigo-600"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <span>{status === "ALL" ? "All" : status.charAt(0) + status.slice(1).toLowerCase()}</span>
+                  <span className={`ms-1.5 text-[10px] ${isActive ? "opacity-90" : "opacity-60"}`}>
+                    ({count})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* View Mode Switcher */}
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                statusFilter === status
-                  ? "bg-slate-900 text-white dark:bg-indigo-600"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+              type="button"
+              onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+              className={`rounded-lg p-1.5 transition ${
+                viewMode === "grid"
+                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
-              <span>{status === "ALL" ? "All decisions" : status.charAt(0) + status.slice(1).toLowerCase()}</span>
-              <span className="ms-1.5 opacity-70 text-[10px]">({decisions.filter((decision) => status === "ALL" || decision.status === status).length})</span>
+              <LayoutGrid className="h-4 w-4" />
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              aria-label="Table view"
+              className={`rounded-lg p-1.5 transition ${
+                viewMode === "table"
+                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+              }`}
+            >
+              <TableIcon className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Decisions Grid */}
+      {/* Decisions Content */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-44 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
-            />
-          ))}
-        </div>
+        <PageSkeleton />
       ) : loadError ? (
-        <div role="alert" className="rounded-2xl border border-rose-200 bg-white p-8 text-center dark:border-rose-900 dark:bg-slate-900"><p className="text-sm text-rose-700 dark:text-rose-300">Decisions could not be loaded.</p><button type="button" onClick={() => void reloadDecisions()} className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Retry</button></div>
-      ) : filteredDecisions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
-          <Layers className="mx-auto h-8 w-8 text-slate-400" />
-          <h3 className="mt-2 text-xs font-semibold text-slate-900 dark:text-white">
-            No decisions match current filter
-          </h3>
-          <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-            Create a decision or adjust your search and status filters.
-          </p>
-          <Link
-            href="/decisions/new"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+        <div
+          role="alert"
+          className="rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm dark:border-rose-900 dark:bg-slate-900"
+        >
+          <CircleAlert className="mx-auto h-8 w-8 text-rose-600" />
+          <h3 className="mt-2 text-base font-bold text-slate-900 dark:text-white">Could not load decisions</h3>
+          <p className="mt-1 text-xs text-rose-700 dark:text-rose-300">Check connection and try again.</p>
+          <button
+            type="button"
+            onClick={() => void reloadDecisions()}
+            className="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
           >
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span>Create Decision</span>
-          </Link>
+            Retry Loading
+          </button>
         </div>
-      ) : (
+      ) : filteredDecisions.length === 0 ? (
+        <EmptyState
+          icon={Layers}
+          title="No policy proposals found"
+          description="You haven't created any decision analyses in this filter, or the demo dataset was reset. Launch the university reference decision to explore."
+          action={{
+            label: "Load Reference 4-Day Attendance Decision",
+            onClick: handleResetDemoSample,
+          }}
+        />
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filteredDecisions.map((decision) => {
             const isArchived = decision.status === "ARCHIVED";
+            const isCompleted = decision.status === "COMPLETED";
 
             return (
               <div
                 key={decision.id}
-                className={`group flex flex-col justify-between rounded-xl border p-5 shadow-xs transition-all ${
+                className={`group flex flex-col justify-between rounded-2xl border p-5 shadow-sm transition-all ${
                   isArchived
                     ? "opacity-60 border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50"
-                    : "border-slate-200 bg-white hover:border-indigo-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50"
+                    : "border-slate-200/90 bg-white hover:border-indigo-500/50 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/40"
                 }`}
               >
-                <div className="space-y-2.5">
+                <div className="space-y-3">
+                  {/* Top Bar: ID, Priority, Status */}
                   <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-mono font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                      D-{String(decision.id).padStart(4, "0")}
+                    <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                      REF #{String(decision.id).padStart(4, "0")}
                     </span>
+
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                           decision.priority === "HIGH" || decision.priority === "CRITICAL"
                             ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                            : "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
+                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                       >
                         {decision.priority}
                       </span>
+
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          decision.status === "COMPLETED"
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          isCompleted
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                            : decision.status === "ARCHIVED"
+                            : isArchived
                             ? "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                             : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
                         }`}
                       >
+                        {isCompleted && <Sparkles className="h-2.5 w-2.5" />}
                         {decision.status}
                       </span>
                     </div>
                   </div>
 
-                  <Link
-                    href={
-                      decision.status === "COMPLETED"
-                        ? `/decisions/${decision.id}/scenarios`
-                        : `/decisions/${decision.id}/context`
-                    }
-                    className="block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition"
-                  >
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
-                      {decision.title}
-                    </h3>
-                  </Link>
+                  {/* Title & Description */}
+                  <div>
+                    <Link
+                      href={
+                        isCompleted
+                          ? `/decisions/${decision.id}/scenarios`
+                          : `/decisions/${decision.id}/context`
+                      }
+                      className="block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition"
+                    >
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
+                        {decision.title}
+                      </h3>
+                    </Link>
+                    <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                      {decision.description}
+                    </p>
+                  </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
-                    {decision.description}
-                  </p>
+                  {/* Metadata & Stakeholder Avatars */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                        {decision.department || "Operations"}
+                      </span>
+                      <span>·</span>
+                      <span>{decision.time_horizon || "1 year"}</span>
+                    </div>
 
-                  <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2">
-                    <span>Team: {decision.department}</span>
-                    <span>• ⏳ {decision.time_horizon}</span>
+                    {/* 5 Core Stakeholder Icons */}
+                    <div
+                      className="flex items-center -space-x-1"
+                      title="Monitored Stakeholders: Students, Faculty, Laboratories, Administration, Transit"
+                    >
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 ring-2 ring-white dark:bg-indigo-950 dark:text-indigo-300 dark:ring-slate-900">
+                        <GraduationCap className="h-3 w-3" />
+                      </span>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ring-2 ring-white dark:bg-emerald-950 dark:text-emerald-300 dark:ring-slate-900">
+                        <Users2 className="h-3 w-3" />
+                      </span>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-700 ring-2 ring-white dark:bg-amber-950 dark:text-amber-300 dark:ring-slate-900">
+                        <FlaskConical className="h-3 w-3" />
+                      </span>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-sky-700 ring-2 ring-white dark:bg-sky-950 dark:text-sky-300 dark:ring-slate-900">
+                        <Building className="h-3 w-3" />
+                      </span>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-purple-700 ring-2 ring-white dark:bg-purple-950 dark:text-purple-300 dark:ring-slate-900">
+                        <Bus className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Stage Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono font-medium text-slate-400">
+                      <span>{isCompleted ? "Stage 5/5: Synthesis Complete" : "Stage 1/5: Context Draft"}</span>
+                      <span>{isCompleted ? "100%" : "25%"}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isCompleted ? "bg-emerald-500" : "bg-indigo-500"
+                        }`}
+                        style={{ width: isCompleted ? "100%" : "25%" }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Card Footer Actions */}
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800/80">
+                {/* Card Action Footer */}
+                <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800/80">
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={(e) => handleDownloadReport(e, decision.id, decision.title)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 cursor-pointer"
-                      title="Download Markdown Memorandum"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition"
+                      title="Download Markdown Board Memorandum"
                     >
                       <Download className="h-3.5 w-3.5" />
-                      <span>Report</span>
+                      <span>Memorandum</span>
                     </button>
 
-                    {!isArchived && <button
-                      type="button"
-                      onClick={(e) => handleToggleArchive(e, decision.id)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer ms-1"
-                      title={isArchived ? "Restore to Active" : "Soft-archive decision"}
-                    >
-                      {isArchived ? <><Archive className="h-3.5 w-3.5" /><span>Archived</span></> : (
-                        <>
-                          <Archive className="h-3.5 w-3.5" />
-                          <span>Archive</span>
-                        </>
-                      )}
-                    </button>}
+                    {!isArchived && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleArchive(e, decision.id)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-100 hover:text-amber-600 dark:hover:bg-slate-800 dark:hover:text-amber-400 transition"
+                        title="Archive proposal"
+                      >
+                        <Archive className="h-3.5 w-3.5" />
+                        <span>Archive</span>
+                      </button>
+                    )}
 
                     {isDemo && decision.id > 1 && (
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, decision.id)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-rose-600 cursor-pointer ms-1"
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 transition"
                         title="Delete Proposal"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -358,17 +532,13 @@ export default function DashboardPage() {
 
                   <Link
                     href={
-                      decision.status === "COMPLETED"
+                      isCompleted
                         ? `/decisions/${decision.id}/scenarios`
                         : `/decisions/${decision.id}/context`
                     }
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition shadow-xs"
                   >
-                    <span>
-                      {decision.status === "COMPLETED"
-                        ? "Inspect"
-                        : "Attach Context"}
-                    </span>
+                    <span>{isCompleted ? "Inspect Matrix" : "Input Context"}</span>
                     <ChevronRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
@@ -376,8 +546,94 @@ export default function DashboardPage() {
             );
           })}
         </div>
+      ) : (
+        /* Executive Table View */
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="overflow-x-auto">
+            <table className="w-full text-start text-xs">
+              <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-950">
+                <tr>
+                  <th className="px-4 py-3 text-start">Ref #</th>
+                  <th className="px-4 py-3 text-start">Policy Proposal</th>
+                  <th className="px-4 py-3 text-start">Department</th>
+                  <th className="px-4 py-3 text-start">Horizon</th>
+                  <th className="px-4 py-3 text-start">Priority</th>
+                  <th className="px-4 py-3 text-start">Status</th>
+                  <th className="px-4 py-3 text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredDecisions.map((decision) => (
+                  <tr
+                    key={decision.id}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <td className="px-4 py-3 font-mono font-bold text-slate-500">
+                      D-{String(decision.id).padStart(4, "0")}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white max-w-sm truncate">
+                      <Link
+                        href={
+                          decision.status === "COMPLETED"
+                            ? `/decisions/${decision.id}/scenarios`
+                            : `/decisions/${decision.id}/context`
+                        }
+                        className="hover:text-indigo-600 dark:hover:text-indigo-400"
+                      >
+                        {decision.title}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                      {decision.department || "Operations"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                      {decision.time_horizon || "1 year"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        {decision.priority}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          decision.status === "COMPLETED"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                        }`}
+                      >
+                        {decision.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-end">
+                      <Link
+                        href={
+                          decision.status === "COMPLETED"
+                            ? `/decisions/${decision.id}/scenarios`
+                            : `/decisions/${decision.id}/context`
+                        }
+                        className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                      >
+                        <span>Open</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
-      {!loading && <LoadMore loaded={decisions.length} hasMore={hasMore} loading={loadingMore} onLoadMore={handleLoadMore} />}
+
+      {!loading && (
+        <LoadMore
+          loaded={decisions.length}
+          hasMore={hasMore}
+          loading={loadingMore}
+          onLoadMore={handleLoadMore}
+        />
+      )}
     </div>
   );
 }

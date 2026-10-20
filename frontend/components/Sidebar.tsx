@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Archive, Building2, LayoutDashboard, PlusCircle, Sliders, X } from "lucide-react";
+import { Archive, Building2, Compass, LayoutDashboard, PlusCircle, ShieldCheck, Sliders, X } from "lucide-react";
 import { CharterModal } from "./CharterModal";
+import { ThemeToggle } from "./ThemeToggle";
 import { useEffect, useRef, useState } from "react";
 import { translate, type Locale } from "@/lib/locale";
 
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
 function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const [locale, setLocale] = useState<Locale>("en");
+
   useEffect(() => {
     const readLocale = () => {
       try {
@@ -33,10 +35,14 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
       window.removeEventListener("storage", readLocale);
     };
   }, []);
+
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+
   return (
-    <nav aria-label="Main navigation" className="space-y-1">
-      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{t("workspace")}</p>
+    <nav aria-label="Mobile navigation" className="space-y-1.5">
+      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        {t("workspace")}
+      </p>
       {NAV_ITEMS.map(({ href, icon: Icon }) => {
         const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
         return (
@@ -45,22 +51,50 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
             href={href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 ${
-              active ? "bg-indigo-600 text-white shadow-sm" : "text-slate-300 hover:bg-white/10 hover:text-white"
+            className={`group flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-all ${
+              active
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             }`}
           >
-            <Icon className={`h-[18px] w-[18px] ${active ? "text-white" : "text-slate-400 group-hover:text-white"}`} aria-hidden="true" />
+            <Icon
+              className={`h-4 w-4 ${active ? "text-white" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200"}`}
+              aria-hidden="true"
+            />
             {href === "/dashboard" ? t("dashboard") : href === "/decisions/new" ? t("newDecision") : t("history")}
           </Link>
         );
       })}
-      <div className="my-3 border-t border-white/10" />
-      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{locale === "ar" ? "المؤسسة" : "Organization"}</p>
-      <Link href="/onboarding" onClick={onNavigate} aria-current={pathname === "/onboarding" ? "page" : undefined} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 ${pathname === "/onboarding" ? "bg-indigo-600 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
-        <Building2 className="h-[18px] w-[18px] text-slate-400" aria-hidden="true" /> {t("organization")}
+
+      <div className="my-4 border-t border-slate-200 dark:border-slate-800" />
+      <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        {locale === "ar" ? "الإعدادات والمؤسسة" : "Workspace & Settings"}
+      </p>
+      <Link
+        href="/onboarding"
+        onClick={onNavigate}
+        aria-current={pathname === "/onboarding" ? "page" : undefined}
+        className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-all ${
+          pathname === "/onboarding"
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+        }`}
+      >
+        <Building2 className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        <span>{t("organization")}</span>
       </Link>
-      <Link href="/settings" onClick={onNavigate} aria-current={pathname === "/settings" ? "page" : undefined} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 ${pathname === "/settings" ? "bg-indigo-600 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
-        <Sliders className="h-[18px] w-[18px] text-slate-400" aria-hidden="true" /> {t("settings")}
+      <Link
+        href="/settings"
+        onClick={onNavigate}
+        aria-current={pathname === "/settings" ? "page" : undefined}
+        className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-all ${
+          pathname === "/settings"
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+        }`}
+      >
+        <Sliders className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        <span>{t("settings")}</span>
       </Link>
     </nav>
   );
@@ -111,30 +145,79 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
 
   return (
     <>
-      <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 flex-col overflow-y-auto bg-slate-950 p-4 text-white shadow-xl md:flex">
-        <NavigationLinks />
-        <div className="mt-auto space-y-2 border-t border-white/10 pt-4">
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-            <p className="text-xs font-semibold text-white">Decision support, not automation</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-slate-400">Analysis is a demo estimate. People remain responsible for final decisions.</p>
-            <button type="button" onClick={() => setCharterOpen(true)} className="mt-2 text-[11px] font-semibold text-indigo-300 hover:text-indigo-200 focus-visible:outline-2 focus-visible:outline-indigo-300">Review responsible use →</button>
-          </div>
-        </div>
-      </aside>
-
+      {/* Mobile Drawer (Only rendered on mobile when mobileOpen is true) */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <button type="button" aria-label="Close navigation menu" onClick={onClose} className="absolute inset-0 bg-slate-950/60" />
-          <aside ref={mobilePanelRef} role="dialog" aria-modal="true" aria-label="Navigation menu" className="absolute inset-y-0 start-0 flex w-[min(18rem,85vw)] flex-col bg-slate-950 p-4 text-white shadow-2xl">
-            <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
-              <span className="font-bold">Ripple<span className="text-indigo-300">IQ</span></span>
-              <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close navigation menu" className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-indigo-300"><X className="h-5 w-5" aria-hidden="true" /></button>
+          {/* Backdrop */}
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={onClose}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+          />
+
+          {/* Drawer Panel */}
+          <aside
+            ref={mobilePanelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            className="absolute inset-y-0 start-0 flex w-[min(20rem,88vw)] flex-col bg-white p-5 text-slate-900 shadow-2xl dark:border-e dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+          >
+            {/* Header */}
+            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+                  <Compass className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="font-extrabold text-base tracking-tight text-slate-950 dark:text-white">
+                  Ripple<span className="text-indigo-600 dark:text-indigo-400">IQ</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <ThemeToggle />
+                <button
+                  ref={closeButtonRef}
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close navigation menu"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
+
+            {/* Navigation links */}
             <NavigationLinks onNavigate={onClose} />
-            <p className="mt-auto border-t border-white/10 pt-4 text-[11px] leading-relaxed text-slate-400">Review decisions and settings for your current workspace.</p>
+
+            {/* Footer Responsible AI Card */}
+            <div className="mt-auto space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+                  <ShieldCheck className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Responsible Decision Support</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+                  Advisory simulation only. Humans remain accountable for final choices.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    setCharterOpen(true);
+                  }}
+                  className="mt-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
+                  Review Charter →
+                </button>
+              </div>
+            </div>
           </aside>
         </div>
       )}
+
+      {/* Charter Modal */}
       <CharterModal isOpen={charterOpen} onClose={() => setCharterOpen(false)} />
     </>
   );

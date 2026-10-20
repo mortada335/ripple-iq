@@ -17,6 +17,7 @@ import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { ReportResponse } from "@/types/decision";
 import { toast } from "sonner";
 import { downloadReportDocx } from "@/lib/report-export";
+import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 import { ApiLoadError } from "@/components/ApiLoadError";
 
 export default function ReportPreviewPage({
@@ -101,6 +102,7 @@ export default function ReportPreviewPage({
   return (
     <div className="space-y-4 sm:space-y-5">
       <DecisionNavTabs decisionId={decisionId} />
+      <HumanReviewBanner />
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

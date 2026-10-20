@@ -412,6 +412,58 @@ export async function toggleArchiveDecision(id: number): Promise<Decision | null
   });
 }
 
+export async function getDecisionScenarios(decisionId: number) {
+  return requestWithDemoFallback(
+    `/api/v1/decisions/${decisionId}/scenarios`,
+    { method: "GET" },
+    async () => {
+      const res = await getSimulationResult(decisionId);
+      return res.scenarios;
+    },
+  );
+}
+
+export async function getDecisionConsequences(decisionId: number) {
+  return requestWithDemoFallback(
+    `/api/v1/decisions/${decisionId}/consequences`,
+    { method: "GET" },
+    async () => {
+      const res = await getSimulationResult(decisionId);
+      return res.impacts;
+    },
+  );
+}
+
+export async function getDecisionRisks(decisionId: number) {
+  return requestWithDemoFallback(
+    `/api/v1/decisions/${decisionId}/risks`,
+    { method: "GET" },
+    async () => {
+      const res = await getSimulationResult(decisionId);
+      return res.risks;
+    },
+  );
+}
+
+export async function submitKnowledgeFeedback(data: {
+  decision_id: number;
+  category: string;
+  notes: string;
+  proposed_mitigation?: string;
+}) {
+  return requestWithDemoFallback(
+    "/api/v1/knowledge-submissions",
+    { method: "POST", body: JSON.stringify(data) },
+    () => ({
+      id: Date.now(),
+      decision_id: data.decision_id,
+      status: "pending_review",
+      message: "Knowledge feedback logged in demo session.",
+      created_at: new Date().toISOString(),
+    }),
+  );
+}
+
 export async function deleteDecision(id: number): Promise<void> {
   if (!isDemoSession() && process.env.NEXT_PUBLIC_USE_MOCK !== "true") {
     throw new Error("Permanent deletion is not available. The organization API archives decisions instead.");

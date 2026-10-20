@@ -5,10 +5,12 @@ import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/AuthProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -53,13 +55,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <Toaster position="top-right" richColors closeButton />
-        <AuthProvider>
-          <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
-            <AppShell>{children}</AppShell>
-          </Suspense>
-        </AuthProvider>
+      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+        <ThemeProvider>
+          <Toaster position="top-right" richColors closeButton />
+          <AuthProvider>
+            <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+              <AppShell>{children}</AppShell>
+            </Suspense>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

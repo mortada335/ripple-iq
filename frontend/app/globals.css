@@ -39,85 +39,213 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius: 0.75rem;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+  --radius-full: 9999px;
 }
 
+/* ============================================
+   DARK MODE COLORS - OPTIMIZED FOR VISUAL HARMONY
+   Using oklch for perceptually uniform colors
+   ============================================ */
+
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0.008 326);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0.008 326);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0.008 326);
-  --primary: oklch(0.508 0.118 165.612);
-  --primary-foreground: oklch(0.979 0.021 166.113);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.96 0.003 325.6);
-  --muted-foreground: oklch(0.542 0.034 322.5);
-  --accent: oklch(0.96 0.003 325.6);
-  --accent-foreground: oklch(0.212 0.019 322.12);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.005 325.62);
-  --input: oklch(0.922 0.005 325.62);
-  --ring: oklch(0.711 0.019 323.02);
-  --chart-1: oklch(0.865 0.012 325.68);
-  --chart-2: oklch(0.542 0.034 322.5);
-  --chart-3: oklch(0.435 0.029 321.78);
-  --chart-4: oklch(0.364 0.029 323.89);
-  --chart-5: oklch(0.263 0.024 320.12);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0.008 326);
-  --sidebar-primary: oklch(0.596 0.145 163.225);
-  --sidebar-primary-foreground: oklch(0.979 0.021 166.113);
-  --sidebar-accent: oklch(0.96 0.003 325.6);
-  --sidebar-accent-foreground: oklch(0.212 0.019 322.12);
-  --sidebar-border: oklch(0.922 0.005 325.62);
-  --sidebar-ring: oklch(0.711 0.019 323.02);
+  --radius: 0.75rem;
+  /* Base Colors */
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.12 0.015 260);
+  --card: oklch(0.99 0 0);
+  --card-foreground: oklch(0.12 0.015 260);
+  --popover: oklch(0.99 0 0);
+  --popover-foreground: oklch(0.12 0.015 260);
+  --primary: oklch(0.55 0.15 185); /* Deep navy-blue primary */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.95 0 0);
+  --secondary-foreground: oklch(0.15 0.02 260);
+  --muted: oklch(0.95 0 0);
+  --muted-foreground: oklch(0.45 0.008 260);
+  --accent: oklch(0.93 0.02 100); /* Warm beige accent */
+  --accent-foreground: oklch(0.2 0.01 260);
+  --destructive: oklch(0.6 0.25 25);
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.6 0.15 200);
+  
+  /* Semantic - Impact Colors */
+  --success: oklch(0.55 0.15 110); /* Emerald - positive */
+  --success-foreground: oklch(0.1 0.15 110);
+  --destructive-impact: oklch(0.5 0.25 25); /* Rose - negative */
+  --destructive-impact-foreground: oklch(0.95 0 0);
+  --warning: oklch(0.6 0.2 70); /* Amber - neutral/warning */
+  --warning-foreground: oklch(0.1 0.2 70);
+  
+  /* Semantic - Severity Colors */
+  --severity-critical: oklch(0.5 0.25 25); /* Deep red */
+  --severity-high: oklch(0.6 0.22 30); /* Red */
+  --severity-medium: oklch(0.6 0.18 45); /* Orange */
+  --severity-low: oklch(0.55 0.12 100); /* Yellow-green */
+  
+  /* Semantic - Confidence Colors */
+  --confidence-high: oklch(0.35 0.15 260); /* Indigo - high confidence */
+  --confidence-medium: oklch(0.65 0.18 45); /* Amber - medium confidence */
+  --confidence-low: oklch(0.7 0.18 30); /* Orange - low confidence */
+  
+  /* Semantic - Priority Colors */
+  --priority-critical: oklch(0.5 0.25 25); /* Deep red */
+  --priority-high: oklch(0.6 0.22 30); /* Red */
+  --priority-medium: oklch(0.6 0.18 45); /* Orange */
+  --priority-low: oklch(0.55 0.12 100); /* Yellow-green */
+  
+  /* Chart Colors */
+  --chart-1: oklch(0.85 0.02 220); /* Blue */
+  --chart-2: oklch(0.75 0.05 160); /* Teal */
+  --chart-3: oklch(0.7 0.08 100); /* Orange */
+  --chart-4: oklch(0.65 0.1 50); /* Yellow */
+  --chart-5: oklch(0.55 0.15 180); /* Purple */
+  
+  /* Sidebar Colors */
+  --sidebar: oklch(0.96 0 0);
+  --sidebar-foreground: oklch(0.12 0.015 260);
+  --sidebar-primary: oklch(0.55 0.15 185);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.93 0.02 100);
+  --sidebar-accent-foreground: oklch(0.2 0.01 260);
+  --sidebar-border: oklch(0.9 0 0);
+  --sidebar-ring: oklch(0.6 0.15 200);
+  
+  /* Typography Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+  
+  /* Spacing Scale (4px base) */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+  --space-40: 160px;
+  --space-48: 192px;
+  --space-56: 224px;
+  --space-64: 256px;
 }
 
 .dark {
-  --background: oklch(0.145 0.008 326);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.212 0.019 322.12);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.212 0.019 322.12);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.432 0.095 166.913);
-  --primary-foreground: oklch(0.979 0.021 166.113);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.263 0.024 320.12);
-  --muted-foreground: oklch(0.711 0.019 323.02);
-  --accent: oklch(0.263 0.024 320.12);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.542 0.034 322.5);
-  --chart-1: oklch(0.865 0.012 325.68);
-  --chart-2: oklch(0.542 0.034 322.5);
-  --chart-3: oklch(0.435 0.029 321.78);
-  --chart-4: oklch(0.364 0.029 323.89);
-  --chart-5: oklch(0.263 0.024 320.12);
-  --sidebar: oklch(0.212 0.019 322.12);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.696 0.17 162.48);
-  --sidebar-primary-foreground: oklch(0.262 0.051 172.552);
-  --sidebar-accent: oklch(0.263 0.024 320.12);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.542 0.034 322.5);
+  --radius: 0.75rem;
+  --background: oklch(0.12 0.015 260); /* Deep navy */
+  --foreground: oklch(0.98 0 0); /* Pure white */
+  --card: oklch(0.15 0.02 260); /* Dark navy */
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.15 0.02 260);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.45 0.12 200); /* Strong navy-blue */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.25 0.01 260); /* Dark slate */
+  --secondary-foreground: oklch(0.92 0 0);
+  --muted: oklch(0.2 0.01 260); /* Dark muted */
+  --muted-foreground: oklch(0.65 0.01 260); /* Light gray */
+  --accent: oklch(0.28 0.02 85); /* Warm gray-beige */
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.6 0.2 30); /* Deep red */
+  --destructive-impact: oklch(0.7 0.22 35); /* Bright red */
+  --destructive-impact-foreground: oklch(0.95 0 0);
+  --warning: oklch(0.65 0.2 65); /* Bright amber */
+  --warning-foreground: oklch(0.1 0.2 65);
+  --border: oklch(0.28 0.02 260); /* Subtle border */
+  --input: oklch(0.35 0.02 260); /* Dark input */
+  --ring: oklch(0.6 0.12 210); /* Navy ring */
+  
+  --severity-critical: oklch(0.6 0.25 30);
+  --severity-high: oklch(0.6 0.22 30);
+  --severity-medium: oklch(0.6 0.18 45);
+  --severity-low: oklch(0.55 0.12 100);
+  
+  --confidence-high: oklch(0.5 0.12 250);
+  --confidence-medium: oklch(0.7 0.15 45);
+  --confidence-low: oklch(0.75 0.15 35);
+  
+  --priority-critical: oklch(0.6 0.25 30);
+  --priority-high: oklch(0.6 0.22 30);
+  --priority-medium: oklch(0.6 0.18 45);
+  --priority-low: oklch(0.55 0.12 100);
+  
+  --chart-1: oklch(0.75 0.05 220);
+  --chart-2: oklch(0.65 0.08 160);
+  --chart-3: oklch(0.6 0.12 100);
+  --chart-4: oklch(0.55 0.15 50);
+  --chart-5: oklch(0.5 0.18 180);
+  
+  --sidebar: oklch(0.18 0.02 260);
+  --sidebar-foreground: oklch(0.92 0 0);
+  --sidebar-primary: oklch(0.5 0.12 200);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.28 0.02 85);
+  --sidebar-accent-foreground: oklch(0.92 0 0);
+  --sidebar-border: oklch(0.3 0.02 260);
+  --sidebar-ring: oklch(0.6 0.12 210);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.12 0.015 260);
+    --foreground: oklch(0.98 0 0);
+    --card: oklch(0.15 0.02 260);
+    --card-foreground: oklch(0.98 0 0);
+    --popover: oklch(0.15 0.02 260);
+    --popover-foreground: oklch(0.98 0 0);
+    --primary: oklch(0.45 0.12 200);
+    --primary-foreground: oklch(0.98 0 0);
+    --secondary: oklch(0.25 0.01 260);
+    --secondary-foreground: oklch(0.92 0 0);
+    --muted: oklch(0.2 0.01 260);
+    --muted-foreground: oklch(0.65 0.01 260);
+    --accent: oklch(0.28 0.02 85);
+    --accent-foreground: oklch(0.98 0 0);
+    --destructive: oklch(0.6 0.2 30);
+    --destructive-impact: oklch(0.7 0.22 35);
+    --warning: oklch(0.65 0.2 65);
+    --border: oklch(0.28 0.02 260);
+    --input: oklch(0.35 0.02 260);
+    --ring: oklch(0.6 0.12 210);
+    
+    --chart-1: oklch(0.75 0.05 220);
+    --chart-2: oklch(0.65 0.08 160);
+    --chart-3: oklch(0.6 0.12 100);
+    --chart-4: oklch(0.55 0.15 50);
+    --chart-5: oklch(0.5 0.18 180);
+    
+    --sidebar: oklch(0.18 0.02 260);
+    --sidebar-foreground: oklch(0.92 0 0);
+    --sidebar-primary: oklch(0.5 0.12 200);
+    --sidebar-primary-foreground: oklch(0.98 0 0);
+    --sidebar-accent: oklch(0.28 0.02 85);
+    --sidebar-accent-foreground: oklch(0.92 0 0);
+    --sidebar-border: oklch(0.3 0.02 260);
+    --sidebar-ring: oklch(0.6 0.12 210);
+  }
 }
 
 @layer base {
@@ -132,29 +260,865 @@
   }
 }
 
+/* ============================================
+   PROFESSIONAL ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 0%;
+  }
+}
+
+@keyframes bounce-sm {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes confetti {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0);
+  }
+  50% {
+    transform: translateY(-200px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-400px) scale(1.1);
+  }
+}
+
+@keyframes progress {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadePageIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadePageOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+@keyframes skeleton-jitter {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ring-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(var(--ring), 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(var(--ring), 0.8);
+  }
+}
+
+@keyframes bubble {
+  0% {
+    transform: scale(0) translateX(0);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(0) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px) translateX(var(--random-offset, 0px));
+    opacity: 0;
+  }
+}
+
+@keyframes glow-text {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(var(--ring), 0.5);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(var(--ring), 0.8);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes slideInToast {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToast {
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes bounce-short {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  10% {
+    transform: translateY(-3px);
+  }
+  30% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  70% {
+    transform: translateY(0);
+  }
+  90% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-fast {
+  from {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   UTILITY ANIMATIONS
+   ============================================ */
+
+@layer utilities {
+  /* Fade animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  .animate-fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+  }
+  
+  /* Slide animations */
+  .animate-slide-down {
+    animation: slideInDown 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-up {
+    animation: slideInUp 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-right {
+    animation: slideInRight 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-left {
+    animation: slideInLeft 0.4s ease-out forwards;
+  }
+  
+  /* Scale animation */
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+  
+  /* Rotate animations */
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+  
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+  
+  .animate-spin-fast {
+    animation: spin-fast 0.5s linear infinite;
+  }
+  
+  /* Pulse animation */
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Shimmer animation for loading states */
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+  
+  /* Bounce animations */
+  .animate-bounce-sm {
+    animation: bounce-sm 2s ease-in-out infinite;
+  }
+  
+  .animate-bounce {
+    animation: bounce 2s ease-in-out infinite;
+  }
+  
+  /* Wiggle animation */
+  .animate-wiggle {
+    animation: wiggle 0.5s ease-in-out infinite;
+  }
+  
+  /* Confetti animation */
+  .animate-confetti {
+    animation: confetti 2s ease-out forwards;
+  }
+  
+  /* Progress bar animation */
+  .animate-progress {
+    animation: progress 2s linear infinite;
+  }
+  
+  /* Slide from edges */
+  .animate-slide-in-from-left {
+    animation: slideInFromLeft 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-in-from-right {
+    animation: slideInFromRight 0.4s ease-out forwards;
+  }
+  
+  /* Page transition animation */
+  .animate-page-in {
+    animation: fadePageIn 0.4s ease-out forwards;
+  }
+  
+  /* Skeleton pulse animation */
+  .animate-skeleton-pulse {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+  
+  /* Skeleton jitter animation */
+  .animate-skeleton-jitter {
+    animation: skeleton-jitter 3s ease-in-out infinite;
+  }
+  
+  /* Ring pulse animation */
+  .animate-ring-pulse {
+    animation: ring-pulse 2s cubic-bezier(0.5, 0, 0.8, 1) infinite;
+  }
+  
+  /* Glow animation */
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+  
+  /* Bubble animation */
+  .animate-bubble {
+    animation: bubble 3s ease-out infinite;
+  }
+  
+  /* Glow text animation */
+  .animate-glow-text {
+    animation: glow-text 2s ease-in-out infinite;
+  }
+  
+  /* Gradient shift animation */
+  .animate-gradient-shift {
+    animation: gradient-shift 3s ease infinite;
+  }
+  
+  /* Float animation */
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  /* Heartbeat animation */
+  .animate-heartbeat {
+    animation: heartbeat 2s ease-in-out infinite;
+  }
+  
+  /* Toast slide animations */
+  .animate-slide-in-toast {
+    animation: slideInToast 0.3s ease-out forwards;
+  }
+  
+  .animate-slide-out-toast {
+    animation: slideOutToast 0.3s ease-out forwards;
+  }
+  
+  /* Ripple animation */
+  .animate-ripple {
+    animation: ripple 0.6s ease-out forwards;
+  }
+  
+  /* Marquee animation */
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+  
+  /* Bounce short animation */
+  .animate-bounce-short {
+    animation: bounce-short 0.3s ease-in-out;
+  }
+}
+
+/* Custom transitions */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-colors {
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+             background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+             border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-opacity {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-transform {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Delayed transitions */
+.transition-delay-75 {
+  transition-delay: 75ms;
+}
+
+.transition-delay-100 {
+  transition-delay: 100ms;
+}
+
+.transition-delay-150 {
+  transition-delay: 150ms;
+}
+
+/* Duration transitions */
+.transition-fast {
+  transition-duration: 150ms;
+}
+
+.transition-slow {
+  transition-duration: 300ms;
+}
+
+/* Skeleton loader specific utilities */
+.skeleton-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgba(234, 242, 248, 0.5) 0%,
+    rgba(241, 245, 249, 0.8) 50%,
+    rgba(234, 242, 248, 0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton-card {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0.7) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(30, 41, 59, 0.7) 100%
+  );
+}
+
+.skeleton-text {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgba(234, 242, 248, 0.5) 0%,
+    rgba(241, 245, 249, 0.8) 50%,
+    rgba(234, 242, 248, 0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton-text {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0.7) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(30, 41, 59, 0.7) 100%
+  );
+}
+
+.skeleton-jitter {
+  animation: skeleton-jitter 3s ease-in-out infinite;
+}
+
+/* Progress bar utility */
+.progress-bar {
+  width: 3px;
+  animation: progress 2s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+/* Shimmer effect for loading states */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(234, 242, 248, 0.4) 0%,
+    rgba(241, 245, 249, 0.8) 50%,
+    rgba(234, 242, 248, 0.4) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.dark .shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0.8) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(30, 41, 59, 0.8) 100%
+  );
+}
+
+/* Page transition wrapper */
+.page-transition {
+  animation: fadePageIn 0.4s ease-out forwards;
+}
+
+/* ============================================
+   RESPONSIVE ANIMATION DURATION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   HACKATHON HERO ANIMATIONS - IMPRESSIVE VISUAL EFFECTS
+   ============================================ */
+
+/* Hero gradient animation */
+.hero-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, #0ea5e9 50%, var(--primary) 100%);
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* Ripple effect for buttons */
+.ripple-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  animation: ripple 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* Button hover glow */
+.btn-glow-hover:hover {
+  box-shadow: 0 0 20px rgba(var(--ring), 0.4);
+  transform: translateY(-2px);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Floating decoration */
+.floating-decoration {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Stagger animation for multiple elements */
+.stagger-1 {
+  animation-delay: 0ms;
+}
+
+.stagger-2 {
+  animation-delay: 100ms;
+}
+
+.stagger-3 {
+  animation-delay: 200ms;
+}
+
+.stagger-4 {
+  animation-delay: 300ms;
+}
+
+/* Loading spinner with brand color */
+.spinner-brand {
+  color: var(--primary);
+  animation: spin 1s linear infinite;
+}
+
+/* Confetti burst */
+.confetti-burst {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  animation: confetti 2s ease-out forwards;
+}
+
+/* Progress stepper animation */
+.step-complete {
+  color: var(--success);
+}
+
+.step-active {
+  animation: scaleIn 0.3s ease-out;
+  box-shadow: 0 0 0 3px var(--primary);
+}
+
+.step-pending {
+  opacity: 0.5;
+}
+
+/* ============================================
+   DARK MODE ENHANCEMENTS
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY FOCUS STYLES
+   ============================================ */
+
+/* High contrast focus for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.dark :focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Custom button focus */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Remove outline on click */
+:active {
+  outline: none;
+}
+
+/* ============================================
+   PRINT STYLES - PROFESSIONAL REPORT OUTPUT
+   ============================================ */
+
 @media print {
   @page {
-    size: auto;
-    margin: 18mm;
+    size: letter;
+    margin: 1in;
   }
 
-  body * {
+  body {
     visibility: hidden !important;
+    color: #000000 !important;
   }
 
   #report-print-content,
   #report-print-content * {
     visibility: visible !important;
+    color: #000000 !important;
   }
 
   #report-print-content {
-    display: block !important;
-    position: absolute;
-    inset: 0 auto auto 0;
     width: 100%;
-    color: #0f172a !important;
-    background: #fff !important;
-    font-size: 10pt;
+    margin: 0;
+    padding: 0;
+    background: white;
   }
 
   #report-print-content h1,
@@ -164,13 +1128,14 @@
   #report-print-content li,
   #report-print-content th,
   #report-print-content td {
-    color: #0f172a !important;
+    color: #000000 !important;
   }
 
   #report-print-content table {
     width: 100%;
     border-collapse: collapse;
-    break-inside: auto;
+    break-inside: avoid;
+    color: #000000 !important;
   }
 
   #report-print-content tr,
@@ -180,7 +1145,31 @@
 
   #report-print-content th,
   #report-print-content td {
-    border: 1px solid #cbd5e1;
-    padding: 6pt;
+    border: 1px solid #d1d5db;
+    padding: 8px 12px;
   }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .hide-print {
+    display: none !important;
+  }
+
+  /* Print professional header */
+  @top-center {
+    content: "RippleIQ Decision Memorandum";
+    font-size: 14pt;
+    font-weight: bold;
+    color: #000000;
+  }
+
+  @top-right {
+    content: counter(page);
+    font-size: 10pt;
+  }
+
+  /* Reset page counters */
+  counter-reset: page;
 }

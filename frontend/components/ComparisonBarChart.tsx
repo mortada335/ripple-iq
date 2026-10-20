@@ -12,6 +12,13 @@ const toneClasses = {
   amber: "bg-amber-500 dark:bg-amber-400",
 } as const;
 
+const toneTextClasses = {
+  indigo: "text-indigo-700 dark:text-indigo-300",
+  emerald: "text-emerald-700 dark:text-emerald-300",
+  rose: "text-rose-700 dark:text-rose-300",
+  amber: "text-amber-700 dark:text-amber-300",
+} as const;
+
 export function ComparisonBarChart({
   title,
   items,
@@ -24,18 +31,23 @@ export function ComparisonBarChart({
   valueSuffix?: string;
 }) {
   return (
-    <section aria-label={title} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-      <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h2>
-      <ul className="mt-4 space-y-4">
+    <section aria-label={title} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5 w-full overflow-hidden">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">{title}</h2>
+      <ul className="space-y-4 w-full">
         {items.map((item) => {
           const boundedValue = Math.min(Math.max(0, item.value), maxValue);
           const width = maxValue > 0 ? (boundedValue / maxValue) * 100 : 0;
           const tone = item.tone ?? "indigo";
           return (
-            <li key={item.label}>
-              <div className="mb-1.5 flex items-baseline justify-between gap-3 text-xs">
-                <span className="truncate font-medium text-slate-700 dark:text-slate-200">{item.label}</span>
-                <span className="shrink-0 font-semibold tabular-nums text-slate-900 dark:text-white">{item.value}{valueSuffix}{item.detail ? <span className="ms-1 font-normal text-slate-500">{item.detail}</span> : null}</span>
+            <li key={item.label} className="w-full">
+              <div className="flex items-baseline justify-between gap-2 text-xs mb-1.5 flex-wrap">
+                <span className="font-medium text-slate-700 dark:text-slate-200 min-w-0 break-words leading-tight">
+                  {item.label}
+                </span>
+                <span className={`shrink-0 font-bold tabular-nums ${toneTextClasses[tone]}`}>
+                  {item.value}{valueSuffix}
+                  {item.detail && <span className="ms-1 font-normal text-slate-500 dark:text-slate-400">{item.detail}</span>}
+                </span>
               </div>
               <div
                 role="meter"
@@ -43,9 +55,12 @@ export function ComparisonBarChart({
                 aria-valuemin={0}
                 aria-valuemax={maxValue}
                 aria-valuenow={boundedValue}
-                className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+                className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
               >
-                <div className={`h-full rounded-full transition-[width] duration-500 ${toneClasses[tone]}`} style={{ width: `${width}%` }} />
+                <div
+                  className={`h-full rounded-full transition-[width] duration-700 ease-out ${toneClasses[tone]}`}
+                  style={{ width: `${width}%` }}
+                />
               </div>
             </li>
           );
