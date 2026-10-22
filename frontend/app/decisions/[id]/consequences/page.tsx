@@ -17,9 +17,11 @@ import {
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
+import { useLocale } from "@/components/LocaleProvider";
 import { SimulationResult } from "@/types/decision";
 import { ComparisonBarChart } from "@/components/ComparisonBarChart";
 import { ApiLoadError } from "@/components/ApiLoadError";
+import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
 
 export default function ConsequencesPage({
   params,
@@ -28,6 +30,8 @@ export default function ConsequencesPage({
 }) {
   const resolvedParams = use(params);
   const decisionId = resolvedParams.id;
+  const { locale } = useLocale();
+  const isAr = locale === "ar";
 
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [selectedStakeholder, setSelectedStakeholder] = useState<string>("all");
@@ -42,11 +46,11 @@ export default function ConsequencesPage({
     try {
       setResult(await getSimulationResult(Number(decisionId)));
     } catch (cause) {
-      setLoadError(cause instanceof Error ? cause.message : "Could not load impact results.");
+      setLoadError(cause instanceof Error ? cause.message : isAr ? "تعذر تحميل نتائج الآثار." : "Could not load impact results.");
     } finally {
       setLoading(false);
     }
-  }, [decisionId]);
+  }, [decisionId, isAr]);
 
   useEffect(() => {
     void Promise.resolve().then(loadResult);
@@ -70,6 +74,26 @@ export default function ConsequencesPage({
     });
   }, [result, selectedStakeholder, directionFilter]);
 
+  const getStakeholderName = (key: string, originalName?: string) => {
+    if (isAr) {
+      switch (key.toLowerCase()) {
+        case "students":
+          return "الطلاب";
+        case "faculty":
+          return "أعضاء هيئة التدريس";
+        case "laboratories":
+          return "المختبرات والبحوث";
+        case "administration":
+          return "الإدارة والموظفون";
+        case "transportation":
+          return "خدمات النقل";
+        default:
+          break;
+      }
+    }
+    return originalName || result?.stakeholders.find((s) => s.key === key)?.name || key;
+  };
+
   const overviewChart = React.useMemo(() => {
     if (!result) return { maxValue: 1, items: [] };
     const countsByKey: Record<string, { pos: number; neg: number }> = {};
@@ -87,21 +111,17 @@ export default function ConsequencesPage({
     const maxValue = Math.max(1, ...maxVals);
     const items = result.stakeholders.flatMap((stakeholder) => {
       const counts = countsByKey[stakeholder.key] ?? { pos: 0, neg: 0 };
+      const name = getStakeholderName(stakeholder.key, stakeholder.name);
       return [
-        { label: `${stakeholder.name} · Favorable`, value: counts.pos, tone: "emerald" as const },
-        { label: `${stakeholder.name} · Adverse`, value: counts.neg, tone: "rose" as const },
+        { label: `${name} · ${isAr ? "إيجابي" : "Favorable"}`, value: counts.pos, tone: "emerald" as const },
+        { label: `${name} · ${isAr ? "سلبي" : "Adverse"}`, value: counts.neg, tone: "rose" as const },
       ];
     });
     return { maxValue, items };
-  }, [result]);
+  }, [result, isAr]);
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <DecisionNavTabs decisionId={decisionId} />
-        <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
-      </div>
-    );
+    return <DecisionAnalysisSkeleton decisionId={decisionId} />;
   }
 
   if (loadError || !result) {
@@ -109,7 +129,7 @@ export default function ConsequencesPage({
       <div className="space-y-4">
         <DecisionNavTabs decisionId={decisionId} />
         <ApiLoadError
-          message={loadError ?? "Analysis results are not available yet."}
+          message={loadError ?? (isAr ? "نتائج التحليل غير متاحة بعد." : "Analysis results are not available yet.")}
           onRetry={() => void loadResult()}
         />
       </div>
@@ -133,10 +153,6 @@ export default function ConsequencesPage({
     }
   };
 
-  const getStakeholderName = (key: string) => {
-    return result.stakeholders.find((s) => s.key === key)?.name || key;
-  };
-
   const totalPositive = result.impacts.filter((i) => i.direction === "POSITIVE").length;
   const totalNegative = result.impacts.filter((i) => i.direction === "NEGATIVE").length;
 
@@ -144,18 +160,19 @@ export default function ConsequencesPage({
     <div className="space-y-6">
       <DecisionNavTabs decisionId={decisionId} />
 
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Stage 03 of Decision Analysis
+            {isAr ? "المرحلة 03 من تحليل القرار" : "Stage 03 of Decision Analysis"}
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-            Stakeholder Ripples & Impact Matrix
+            {isAr ? "آثار أصحاب المصلحة ومصفوفة التأثير" : "Stakeholder Ripples & Impact Matrix"}
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-            Detailed breakdown of how policies ripple across each campus constituency. Filter by constituent group and direction of impact.
+            {isAr
+              ? "تفصيل شامل لكيفية ارتداد السياسات وتأثيرها على مختلف أطراف المؤسسة. قم بالتصفية حسب الفئة واتجاه التأثير."
+              : "Detailed breakdown of how policies ripple across each campus constituency. Filter by constituent group and direction of impact."}
           </p>
         </div>
 
@@ -164,22 +181,22 @@ export default function ConsequencesPage({
             href={`/decisions/${decisionId}/risks`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
           >
-            <span>Risk Register</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <span>{isAr ? "سجل المخاطر" : "Risk Register"}</span>
+            <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
           </Link>
           <Link
             href={`/decisions/${decisionId}/recommendation`}
             className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 transition"
           >
             <Award className="h-3.5 w-3.5" />
-            <span>Recommendation</span>
+            <span>{isAr ? "التوصية التنفيذية" : "Recommendation"}</span>
           </Link>
         </div>
       </div>
 
       {/* Ripple Distribution Chart */}
       <ComparisonBarChart
-        title="Favorable vs Adverse Ripple Distribution across Constituencies"
+        title={isAr ? "توزيع الآثار الإيجابية والسلبية عبر فئات أصحاب المصلحة" : "Favorable vs Adverse Ripple Distribution across Constituencies"}
         maxValue={overviewChart.maxValue}
         items={overviewChart.items}
       />
@@ -191,13 +208,13 @@ export default function ConsequencesPage({
           <button
             type="button"
             onClick={() => setSelectedStakeholder("all")}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
               selectedStakeholder === "all"
                 ? "bg-slate-900 text-white dark:bg-indigo-600"
                 : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
             }`}
           >
-            <span>All Stakeholders</span>
+            <span>{isAr ? "جميع أصحاب المصلحة" : "All Stakeholders"}</span>
             <span className="opacity-75 text-[10px]">({result.impacts.length})</span>
           </button>
 
@@ -209,14 +226,14 @@ export default function ConsequencesPage({
                 key={s.key}
                 type="button"
                 onClick={() => setSelectedStakeholder(s.key)}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                   isSelected
                     ? "bg-slate-900 text-white dark:bg-indigo-600 shadow-xs"
                     : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                 }`}
               >
                 {getStakeholderIcon(s.key)}
-                <span>{s.name}</span>
+                <span>{getStakeholderName(s.key, s.name)}</span>
                 <span className="opacity-75 text-[10px]">({count})</span>
               </button>
             );
@@ -228,37 +245,37 @@ export default function ConsequencesPage({
           <button
             type="button"
             onClick={() => setDirectionFilter("all")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
               directionFilter === "all"
                 ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white"
                 : "text-slate-500 hover:text-slate-900 dark:text-slate-400"
             }`}
           >
-            All
+            {isAr ? "الكل" : "All"}
           </button>
           <button
             type="button"
             onClick={() => setDirectionFilter("positive")}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
               directionFilter === "positive"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
             }`}
           >
             <TrendingUp className="h-3 w-3" />
-            <span>Favorable ({totalPositive})</span>
+            <span>{isAr ? `إيجابي (${totalPositive})` : `Favorable (${totalPositive})`}</span>
           </button>
           <button
             type="button"
             onClick={() => setDirectionFilter("negative")}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
               directionFilter === "negative"
                 ? "bg-rose-600 text-white shadow-xs"
                 : "text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
             }`}
           >
             <TrendingDown className="h-3 w-3" />
-            <span>Adverse ({totalNegative})</span>
+            <span>{isAr ? `سلبي (${totalNegative})` : `Adverse (${totalNegative})`}</span>
           </button>
         </div>
       </div>
@@ -295,11 +312,11 @@ export default function ConsequencesPage({
                       }`}
                     >
                       {isPos ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      <span>{isPos ? "Favorable" : "Adverse"}</span>
+                      <span>{isAr ? (isPos ? "إيجابي" : "سلبي") : isPos ? "Favorable" : "Adverse"}</span>
                     </span>
 
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                      Mag: {impact.magnitude}
+                      {isAr ? `الشدة: ${impact.magnitude}` : `Mag: ${impact.magnitude}`}
                     </span>
                   </div>
                 </div>
@@ -311,10 +328,10 @@ export default function ConsequencesPage({
                   </h3>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
                     <span className="font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                      Category: {impact.category}
+                      {isAr ? `التصنيف: ${impact.category}` : `Category: ${impact.category}`}
                     </span>
                     <span>·</span>
-                    <span>Pathway 0{impact.scenario_number}</span>
+                    <span>{isAr ? `المسار 0${impact.scenario_number}` : `Pathway 0${impact.scenario_number}`}</span>
                   </div>
                 </div>
 
@@ -326,14 +343,14 @@ export default function ConsequencesPage({
                       onClick={() => toggleExpand(idx)}
                       className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 cursor-pointer pt-1"
                     >
-                      <span>{isExpanded ? "Hide analytical estimate" : "View analytical estimate"}</span>
+                      <span>{isExpanded ? (isAr ? "إخفاء التقدير التحليلي" : "Hide analytical estimate") : (isAr ? "عرض التقدير التحليلي" : "View analytical estimate")}</span>
                       {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </button>
 
                     {isExpanded && (
                       <div className="mt-2 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
                         <span className="block font-bold text-[10px] uppercase tracking-wider text-slate-500">
-                          Quantitative / Operational Estimate
+                          {isAr ? "التقدير الكمي والتشغيلي" : "Quantitative / Operational Estimate"}
                         </span>
                         <p>{impact.metric_estimate}</p>
                       </div>

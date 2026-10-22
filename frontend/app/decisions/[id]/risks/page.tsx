@@ -12,9 +12,11 @@ import {
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
+import { useLocale } from "@/components/LocaleProvider";
 import { RiskItem, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
 import { ApiLoadError } from "@/components/ApiLoadError";
+import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
 
 const SEVERITY_ORDER: Record<string, number> = {
   CRITICAL: 4,
@@ -36,6 +38,8 @@ export default function RiskRegisterPage({
 }) {
   const resolvedParams = use(params);
   const decisionId = resolvedParams.id;
+  const { locale } = useLocale();
+  const isAr = locale === "ar";
 
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [risks, setRisks] = useState<RiskItem[]>([]);
@@ -55,11 +59,11 @@ export default function RiskRegisterPage({
       setResult(data);
       setRisks(data.risks || []);
     } catch (cause) {
-      setLoadError(cause instanceof Error ? cause.message : "Could not load risk results.");
+      setLoadError(cause instanceof Error ? cause.message : isAr ? "تعذر تحميل نتائج المخاطر." : "Could not load risk results.");
     } finally {
       setLoading(false);
     }
-  }, [decisionId]);
+  }, [decisionId, isAr]);
 
   useEffect(() => {
     void Promise.resolve().then(loadResult);
@@ -88,8 +92,8 @@ export default function RiskRegisterPage({
     if (result) setResult({ ...result, risks: updated });
     toast.info(
       updated[idx].acknowledged
-        ? "Mitigation checklist marked as verified by human reviewer"
-        : "Mitigation status reset"
+        ? (isAr ? "تم اعتماد قائمة التحقق للتخفيف من قبل المراجع البشري" : "Mitigation checklist marked as verified by human reviewer")
+        : (isAr ? "تمت إعادة ضبط حالة التخفيف" : "Mitigation status reset")
     );
   };
 
@@ -130,16 +134,45 @@ export default function RiskRegisterPage({
     a.download = `rippleiq-decision-${decisionId}-risks.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Risk register exported to CSV");
+    toast.success(isAr ? "تم تصدير سجل المخاطر بنجاح بصيغة CSV" : "Risk register exported to CSV");
+  };
+
+  const translateSev = (sev: string) => {
+    if (!isAr) return sev;
+    switch (sev.toUpperCase()) {
+      case "CRITICAL": return "حرج";
+      case "HIGH": return "عالي";
+      case "MEDIUM": return "متوسط";
+      case "LOW": return "منخفض";
+      case "ALL": return "الكل";
+      default: return sev;
+    }
+  };
+
+  const translateLik = (lik: string) => {
+    if (!isAr) return lik;
+    switch (lik.toUpperCase()) {
+      case "HIGH": return "عالية";
+      case "MEDIUM": return "متوسطة";
+      case "LOW": return "منخفضة";
+      default: return lik;
+    }
+  };
+
+  const translateStakeholder = (name: string) => {
+    if (!isAr) return name;
+    switch (name.toLowerCase()) {
+      case "students": return "الطلاب";
+      case "faculty": return "أعضاء هيئة التدريس";
+      case "laboratories": return "المختبرات";
+      case "administration": return "الإدارة";
+      case "transportation": return "النقل";
+      default: return name;
+    }
   };
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <DecisionNavTabs decisionId={decisionId} />
-        <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
-      </div>
-    );
+    return <DecisionAnalysisSkeleton decisionId={decisionId} />;
   }
 
   if (loadError || !result) {
@@ -147,7 +180,7 @@ export default function RiskRegisterPage({
       <div className="space-y-4">
         <DecisionNavTabs decisionId={decisionId} />
         <ApiLoadError
-          message={loadError ?? "Risk analysis results are not available yet."}
+          message={loadError ?? (isAr ? "نتائج تحليل المخاطر غير متاحة بعد." : "Risk analysis results are not available yet.")}
           onRetry={() => void loadResult()}
         />
       </div>
@@ -158,18 +191,19 @@ export default function RiskRegisterPage({
     <div className="space-y-6">
       <DecisionNavTabs decisionId={decisionId} />
 
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Stage 04 of Decision Analysis
+            {isAr ? "المرحلة 04 من تحليل القرار" : "Stage 04 of Decision Analysis"}
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-            Institutional Risk Register
+            {isAr ? "سجل المخاطر المؤسسية" : "Institutional Risk Register"}
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-            Identifies vulnerabilities and potential failure modes across campus facilities, accreditation, and staffing. Requires active human mitigation sign-off.
+            {isAr
+              ? "تحديد الثغرات ونقاط الخطر المحتملة عبر مرافق المؤسسة والاعتماد والكوادر. يتطلب اعتماداً بشرياً لخطط التخفيف."
+              : "Identifies vulnerabilities and potential failure modes across campus facilities, accreditation, and staffing. Requires active human mitigation sign-off."}
           </p>
         </div>
 
@@ -177,10 +211,10 @@ export default function RiskRegisterPage({
           <button
             type="button"
             onClick={handleExportRisks}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
-            <span>Export CSV</span>
+            <span>{isAr ? "تصدير CSV" : "Export CSV"}</span>
           </button>
 
           <Link
@@ -188,7 +222,7 @@ export default function RiskRegisterPage({
             className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 transition"
           >
             <Award className="h-3.5 w-3.5" />
-            <span>Recommendation</span>
+            <span>{isAr ? "التوصية التنفيذية" : "Recommendation"}</span>
           </Link>
         </div>
       </div>
@@ -198,10 +232,12 @@ export default function RiskRegisterPage({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              Institutional 3x3 Risk Matrix
+              {isAr ? "مصفوفة المخاطر المؤسسية 3×3" : "Institutional 3x3 Risk Matrix"}
             </h2>
             <p className="text-xs text-slate-500">
-              Click any cell to filter risks by Likelihood & Severity positioning.
+              {isAr
+                ? "انقر فوق أي خلية لتصفية المخاطر حسب موضع الاحتمالية والشدة."
+                : "Click any cell to filter risks by Likelihood & Severity positioning."}
             </p>
           </div>
 
@@ -209,9 +245,9 @@ export default function RiskRegisterPage({
             <button
               type="button"
               onClick={() => setActiveCell(null)}
-              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
             >
-              Clear matrix filter
+              {isAr ? "إلغاء تصفية المصفوفة" : "Clear matrix filter"}
             </button>
           )}
         </div>
@@ -221,17 +257,23 @@ export default function RiskRegisterPage({
           <div className="min-w-[340px] sm:min-w-[480px] grid grid-cols-4 gap-1.5 sm:gap-2 text-center text-xs">
             {/* Header row */}
             <div className="p-2 font-mono text-[11px] font-bold text-slate-400 uppercase">
-              Likelihood \ Severity
+              {isAr ? "الاحتمالية \\ الشدة" : "Likelihood \\ Severity"}
             </div>
-            <div className="p-2 font-bold text-amber-700 dark:text-amber-400 uppercase">Low</div>
-            <div className="p-2 font-bold text-orange-700 dark:text-orange-400 uppercase">Medium</div>
-            <div className="p-2 font-bold text-rose-700 dark:text-rose-400 uppercase">Critical / High</div>
+            <div className="p-2 font-bold text-amber-700 dark:text-amber-400 uppercase">
+              {isAr ? "منخفض" : "Low"}
+            </div>
+            <div className="p-2 font-bold text-orange-700 dark:text-orange-400 uppercase">
+              {isAr ? "متوسط" : "Medium"}
+            </div>
+            <div className="p-2 font-bold text-rose-700 dark:text-rose-400 uppercase">
+              {isAr ? "حرج / عالي" : "Critical / High"}
+            </div>
 
-            {/* HIGH Likelihood row */}
+            {/* Rows */}
             {(["HIGH", "MEDIUM", "LOW"] as const).map((lik) => (
               <React.Fragment key={lik}>
                 <div className="flex items-center justify-center p-2 font-bold text-slate-700 dark:text-slate-300">
-                  {lik}
+                  {translateLik(lik)}
                 </div>
                 {(["LOW", "MEDIUM", "HIGH"] as const).map((sev) => {
                   const matching = risks.filter(
@@ -266,7 +308,7 @@ export default function RiskRegisterPage({
                     >
                       <span className="text-lg font-extrabold">{matching.length}</span>
                       <span className="text-[10px] uppercase font-semibold">
-                        {matching.length === 1 ? "Risk" : "Risks"}
+                        {isAr ? "مخاطر" : matching.length === 1 ? "Risk" : "Risks"}
                       </span>
                     </button>
                   );
@@ -292,13 +334,13 @@ export default function RiskRegisterPage({
                 key={sev}
                 type="button"
                 onClick={() => setFilterSeverity(sev)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                   isSelected
                     ? "bg-slate-900 text-white dark:bg-indigo-600 shadow-xs"
                     : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                 }`}
               >
-                <span>{sev === "ALL" ? "All Severities" : sev}</span>
+                <span>{sev === "ALL" ? (isAr ? "جميع المستويات" : "All Severities") : translateSev(sev)}</span>
                 <span className="ms-1 text-[10px] opacity-75">({count})</span>
               </button>
             );
@@ -307,16 +349,16 @@ export default function RiskRegisterPage({
 
         <div className="flex items-center gap-3 text-xs">
           <span className="text-slate-500">
-            Verified: <strong className="text-emerald-600 dark:text-emerald-400">{acknowledgedCount}</strong> / {risks.length}
+            {isAr ? "تم التحقق:" : "Verified:"} <strong className="text-emerald-600 dark:text-emerald-400">{acknowledgedCount}</strong> / {risks.length}
           </span>
 
           <button
             type="button"
             onClick={toggleSort}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <ArrowUpDown className="h-3 w-3" />
-            <span>Sort: {sortBy}</span>
+            <span>{isAr ? `الترتيب: ${sortBy === "severity" ? "الشدة" : "الاحتمالية"}` : `Sort: ${sortBy}`}</span>
           </button>
         </div>
       </div>
@@ -353,28 +395,28 @@ export default function RiskRegisterPage({
                           : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
                       }`}
                     >
-                      Severity: {risk.severity}
+                      {isAr ? `الشدة: ${translateSev(risk.severity)}` : `Severity: ${risk.severity}`}
                     </span>
 
                     <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                      Likelihood: {risk.likelihood}
+                      {isAr ? `الاحتمالية: ${translateLik(risk.likelihood)}` : `Likelihood: ${risk.likelihood}`}
                     </span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => toggleAcknowledge(idx)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-600 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-600 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition"
                   >
                     {risk.acknowledged ? (
                       <>
                         <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        <span className="text-emerald-700 dark:text-emerald-300">Mitigation Verified</span>
+                        <span className="text-emerald-700 dark:text-emerald-300">{isAr ? "تم اعتماد التخفيف" : "Mitigation Verified"}</span>
                       </>
                     ) : (
                       <>
                         <Square className="h-4 w-4" />
-                        <span>Verify Mitigation</span>
+                        <span>{isAr ? "اعتماد التخفيف" : "Verify Mitigation"}</span>
                       </>
                     )}
                   </button>
@@ -387,14 +429,14 @@ export default function RiskRegisterPage({
                   </h3>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      Affected Stakeholders:
+                      {isAr ? "أصحاب المصلحة المتأثرون:" : "Affected Stakeholders:"}
                     </span>
                     {risk.affected_stakeholders.map((sh) => (
                       <span
                         key={sh}
                         className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                       >
-                        {sh}
+                        {translateStakeholder(sh)}
                       </span>
                     ))}
                   </div>
@@ -403,7 +445,7 @@ export default function RiskRegisterPage({
                 {/* Explicit Mitigation Strategy Card */}
                 <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3.5 text-xs text-indigo-950 dark:border-indigo-900/40 dark:bg-indigo-950/30 dark:text-indigo-200 space-y-1">
                   <span className="block font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 text-[10px]">
-                    Prescribed Human Mitigation Protocol
+                    {isAr ? "بروتوكول التخفيف البشري المعتمد" : "Prescribed Human Mitigation Protocol"}
                   </span>
                   <p className="leading-relaxed">{risk.mitigation_strategy}</p>
                 </div>

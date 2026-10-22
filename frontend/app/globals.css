@@ -5,19 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-slate-50: var(--background);
-  --color-slate-100: var(--secondary);
-  --color-slate-200: var(--border);
-  --color-slate-300: var(--input);
-  --color-slate-400: var(--muted-foreground);
-  --color-slate-500: var(--muted-foreground);
-  --color-slate-700: var(--foreground);
-  --color-slate-800: var(--secondary);
-  --color-slate-900: var(--card);
-  --color-slate-950: var(--background);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+  --font-arabic: var(--font-arabic);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -231,46 +222,6 @@
   --sidebar-ring: oklch(0.68 0.22 280);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.12 0.015 260);
-    --foreground: oklch(0.98 0 0);
-    --card: oklch(0.15 0.02 260);
-    --card-foreground: oklch(0.98 0 0);
-    --popover: oklch(0.15 0.02 260);
-    --popover-foreground: oklch(0.98 0 0);
-    --primary: oklch(0.45 0.12 200);
-    --primary-foreground: oklch(0.98 0 0);
-    --secondary: oklch(0.25 0.01 260);
-    --secondary-foreground: oklch(0.92 0 0);
-    --muted: oklch(0.2 0.01 260);
-    --muted-foreground: oklch(0.65 0.01 260);
-    --accent: oklch(0.28 0.02 85);
-    --accent-foreground: oklch(0.98 0 0);
-    --destructive: oklch(0.6 0.2 30);
-    --destructive-impact: oklch(0.7 0.22 35);
-    --warning: oklch(0.65 0.2 65);
-    --border: oklch(0.28 0.02 260);
-    --input: oklch(0.35 0.02 260);
-    --ring: oklch(0.6 0.12 210);
-    
-    --chart-1: oklch(0.75 0.05 220);
-    --chart-2: oklch(0.65 0.08 160);
-    --chart-3: oklch(0.6 0.12 100);
-    --chart-4: oklch(0.55 0.15 50);
-    --chart-5: oklch(0.5 0.18 180);
-    
-    --sidebar: oklch(0.18 0.02 260);
-    --sidebar-foreground: oklch(0.92 0 0);
-    --sidebar-primary: oklch(0.5 0.12 200);
-    --sidebar-primary-foreground: oklch(0.98 0 0);
-    --sidebar-accent: oklch(0.28 0.02 85);
-    --sidebar-accent-foreground: oklch(0.92 0 0);
-    --sidebar-border: oklch(0.3 0.02 260);
-    --sidebar-ring: oklch(0.6 0.12 210);
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -280,6 +231,12 @@
   }
   html {
     @apply font-sans;
+  }
+  [dir="rtl"],
+  [dir="rtl"] body,
+  html[lang="ar"],
+  html[lang="ar"] body {
+    font-family: var(--font-arabic), "Cairo", system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -1080,16 +1037,6 @@
 }
 
 /* ============================================
-   DARK MODE ENHANCEMENTS
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  }
-}
-
-/* ============================================
    ACCESSIBILITY FOCUS STYLES
    ============================================ */
 
@@ -1179,20 +1126,4 @@ a:focus-visible {
   .hide-print {
     display: none !important;
   }
-
-  /* Print professional header */
-  @top-center {
-    content: "RippleIQ Decision Memorandum";
-    font-size: 14pt;
-    font-weight: bold;
-    color: #000000;
-  }
-
-  @top-right {
-    content: counter(page);
-    font-size: 10pt;
-  }
-
-  /* Reset page counters */
-  counter-reset: page;
-}
+}

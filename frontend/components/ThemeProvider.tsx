@@ -12,7 +12,7 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "system",
+  theme: "light",
   resolvedTheme: "light",
   setTheme: () => {},
   toggleTheme: () => {},
@@ -21,7 +21,7 @@ const ThemeContext = createContext<ThemeContextType>({
 const THEME_STORAGE_KEY = "rippleiq_theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
@@ -29,6 +29,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
       if (stored && ["light", "dark", "system"].includes(stored)) {
         setThemeState(stored);
+      } else {
+        setThemeState("light");
       }
     } catch {
       // Ignore localStorage errors

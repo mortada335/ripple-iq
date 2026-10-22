@@ -1,16 +1,26 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Inter } from "next/font/google";
+import { Inter, Cairo } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { WorkspaceShellSkeleton } from "@/components/LoadingSkeleton";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+
+import { LocaleProvider } from "@/components/LocaleProvider";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+});
+
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  variable: "--font-arabic",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -54,15 +64,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${cairo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         <ThemeProvider>
-          <Toaster position="top-right" richColors closeButton />
-          <AuthProvider>
-            <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
-              <AppShell>{children}</AppShell>
-            </Suspense>
-          </AuthProvider>
+          <LocaleProvider>
+            <Toaster position="top-right" richColors closeButton />
+            <AuthProvider>
+              <Suspense fallback={<WorkspaceShellSkeleton />}>
+                <AppShell>{children}</AppShell>
+              </Suspense>
+            </AuthProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

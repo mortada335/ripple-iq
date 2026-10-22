@@ -1,207 +1,173 @@
-import { cn } from "@/lib/utils"
-import { Gauge, ArrowDown, ArrowUp } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+"use client";
 
-type ConfidenceType = "high" | "medium" | "low"
+import { cn } from "@/lib/utils";
+import { CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useLocale } from "@/components/LocaleProvider";
+
+type ConfidenceType = "high" | "medium" | "low";
 
 interface ConfidenceBadgeProps {
-  confidence: ConfidenceType | number
-  variant?: "default" | "outline"
-  size?: "default" | "sm" | "lg"
-  withProgress?: boolean
-  interactive?: boolean
-  onClick?: () => void
+  confidence: ConfidenceType | number;
+  variant?: "default" | "outline";
+  size?: "default" | "sm" | "lg";
+  withProgress?: boolean;
+  interactive?: boolean;
+  onClick?: () => void;
 }
 
-function getConfidenceLevel(value: number | string) {
-  return typeof value === "string" ? value : value >= 80 ? "high" : value >= 50 ? "medium" : "low"
+function getConfidenceLevel(value: number | string): ConfidenceType {
+  return typeof value === "string" ? (value as ConfidenceType) : value >= 80 ? "high" : value >= 50 ? "medium" : "low";
 }
 
-export function ConfidenceBadge({ confidence, variant = "default", size = "default", withProgress = false, interactive = false, onClick }: ConfidenceBadgeProps) {
-  const level = getConfidenceLevel(confidence)
+export function ConfidenceBadge({
+  confidence,
+  variant = "default",
+  size = "default",
+  withProgress = false,
+  interactive = false,
+  onClick,
+}: ConfidenceBadgeProps) {
+  const level = getConfidenceLevel(confidence);
+  const { locale } = useLocale();
+
+  const labels = {
+    high: { en: "High Confidence", ar: "ثقة عالية" },
+    medium: { en: "Medium Confidence", ar: "ثقة متوسطة" },
+    low: { en: "Low Confidence", ar: "ثقة منخفضة" },
+  };
 
   const styles = {
     high: {
-      bg: "bg-[var(--confidence-high)]",
-      bgDark: "bg-indigo-500",
-      text: "text-white",
-      label: "High",
-      border: "border-indigo-900",
-      lightBg: "bg-indigo-50",
-      lightText: "text-indigo-700",
-      lightBorder: "border-indigo-200",
-      icon: "🟢",
+      bg: "bg-indigo-600 text-white border-indigo-700",
+      lightBg: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50",
+      icon: CheckCircle2,
     },
     medium: {
-      bg: "bg-[var(--confidence-medium)]",
-      bgDark: "bg-amber-500",
-      text: "text-white",
-      label: "Medium",
-      border: "border-amber-900",
-      lightBg: "bg-amber-50",
-      lightText: "text-amber-700",
-      lightBorder: "border-amber-200",
-      icon: "🟡",
+      bg: "bg-amber-500 text-white border-amber-600",
+      lightBg: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50",
+      icon: AlertCircle,
     },
     low: {
-      bg: "bg-[var(--confidence-low)]",
-      bgDark: "bg-orange-500",
-      text: "text-[var(--foreground)]",
-      label: "Low",
-      border: "border-orange-900",
-      lightBg: "bg-orange-50",
-      lightText: "text-orange-700",
-      lightBorder: "border-orange-200",
-      icon: "🟠",
+      bg: "bg-orange-500 text-white border-orange-600",
+      lightBg: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900/50",
+      icon: AlertTriangle,
     },
-  }
+  };
 
-  const style = styles[level as keyof typeof styles]
-
-  const percentage = typeof confidence === "number" ? confidence : 0
-
-  const sizeClasses = {
-    default: "px-3 py-1.5 text-sm",
-    sm: "px-2 py-1 text-xs",
-    lg: "px-4 py-2 text-base",
-  }
+  const style = styles[level];
+  const Icon = style.icon;
+  const percentage = typeof confidence === "number" ? confidence : 0;
+  const labelText = labels[level]?.[locale] ?? labels[level]?.en;
 
   return (
     <Badge
       className={cn(
-        cn(
-          "inline-flex items-center gap-2 rounded-md font-semibold transition-all duration-300 hover:scale-105",
-          variant === "default"
-            ? `${style.bg} ${style.text} border ${style.border}`
-            : `${style.bg} ${style.border} ${style.lightText}`,
-          size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1.5 text-sm"
-        ),
-        variant === "default" ? "" : "bg-lightBg border-lightBorder"
+        "inline-flex items-center gap-1.5 rounded-lg font-semibold transition-all shadow-2xs border",
+        variant === "default" ? style.bg : style.lightBg,
+        size === "sm" ? "px-2 py-0.5 text-[11px]" : size === "lg" ? "px-3.5 py-1.5 text-sm" : "px-2.5 py-1 text-xs"
       )}
       variant={variant}
+      onClick={interactive ? onClick : undefined}
     >
-      <span
-        className={cn(
-          "text-xl transition-transform duration-300",
-          interactive ? "hover:scale-110 cursor-pointer select-none" : ""
-        )}
-        onClick={interactive ? onClick : undefined}
-      >
-        {style.icon}
-      </span>
-      <span className={cn(size === "sm" ? "" : "text-base font-bold")}>
-        {level.charAt(0).toUpperCase() + level.slice(1)} Confidence
-      </span>
+      <Icon className={cn("shrink-0", size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} aria-hidden="true" />
+      <span>{labelText}</span>
       {withProgress && (
-        <Progress value={percentage} className="h-1.5 w-12 ml-2 flex-shrink-0" indicatorClassName={cn("transition-all duration-500", style.bg.replace("bg-", "bg-"))} />
+        <Progress value={percentage} className="h-1.5 w-12 ms-2 shrink-0" />
       )}
     </Badge>
-  )
+  );
 }
 
 export interface ConfidenceBadgeDetailedProps extends ConfidenceBadgeProps {
-  percentage: number
-  description?: string
-  recommendedAction?: string
+  percentage: number;
+  description?: string;
+  recommendedAction?: string;
 }
 
-export function ConfidenceBadgeDetailed({ confidence, percentage, description, recommendedAction, variant = "default", size = "default", interactive = false, onClick }: ConfidenceBadgeDetailedProps) {
-  const level = getConfidenceLevel(confidence)
+export function ConfidenceBadgeDetailed({
+  confidence,
+  percentage,
+  description,
+  recommendedAction,
+  interactive = false,
+  onClick,
+}: ConfidenceBadgeDetailedProps) {
+  const level = getConfidenceLevel(confidence);
+  const { locale } = useLocale();
+
+  const labels = {
+    high: { en: "High Confidence", ar: "ثقة عالية" },
+    medium: { en: "Medium Confidence", ar: "ثقة متوسطة" },
+    low: { en: "Low Confidence", ar: "ثقة منخفضة" },
+  };
+
   const styles = {
     high: {
-      bg: "bg-[var(--confidence-high)]",
-      bgDark: "bg-indigo-500",
-      text: "text-white",
-      label: "High Confidence",
-      border: "border-indigo-900",
-      lightBg: "bg-indigo-50",
-      lightText: "text-indigo-700",
-      lightBorder: "border-indigo-200",
-      icon: "🟢",
-      desc: "AI is highly confident in this recommendation. Review and accept if it matches your intent.",
+      icon: CheckCircle2,
+      color: "text-indigo-600 dark:text-indigo-400",
+      bgBadge: "bg-indigo-500",
+      border: "border-indigo-200 dark:border-indigo-900/50",
     },
     medium: {
-      bg: "bg-[var(--confidence-medium)]",
-      bgDark: "bg-amber-500",
-      text: "text-white",
-      label: "Medium Confidence",
-      border: "border-amber-900",
-      lightBg: "bg-amber-50",
-      lightText: "text-amber-700",
-      lightBorder: "border-amber-200",
-      icon: "🟡",
-      desc: "AI has a moderate confidence level. Carefully review the recommendation before proceeding.",
+      icon: AlertCircle,
+      color: "text-amber-600 dark:text-amber-400",
+      bgBadge: "bg-amber-500",
+      border: "border-amber-200 dark:border-amber-900/50",
     },
     low: {
-      bg: "bg-[var(--confidence-low)]",
-      bgDark: "bg-orange-500",
-      text: "text-[var(--foreground)]",
-      label: "Low Confidence",
-      border: "border-orange-900",
-      lightBg: "bg-orange-50",
-      lightText: "text-orange-700",
-      lightBorder: "border-orange-200",
-      icon: "🟠",
-      desc: "AI is uncertain about this recommendation. Strongly recommend human review before proceeding.",
+      icon: AlertTriangle,
+      color: "text-orange-600 dark:text-orange-400",
+      bgBadge: "bg-orange-500",
+      border: "border-orange-200 dark:border-orange-900/50",
     },
-  }
+  };
 
-  const style = styles[level as keyof typeof styles]
+  const style = styles[level];
+  const Icon = style.icon;
 
   return (
-    <div className="relative p-3 rounded-lg border border-dashed border-border/60 bg-card/50 hover:bg-card/80 transition-all duration-300">
+    <div className={cn("relative p-3.5 rounded-xl border bg-white/50 dark:bg-slate-900/50 backdrop-blur-xs transition-all", style.border)}>
       <div className="flex items-start gap-3">
-        <span
-          className={cn(
-            "text-2xl transition-transform duration-300",
-            interactive ? "hover:scale-125 cursor-pointer hover:animate-bounce" : ""
-          )}
-          onClick={interactive ? onClick : undefined}
-        >
-          {style.icon}
+        <span className={cn("p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800", style.color)}>
+          <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
         <div className="flex-1">
-          <h4 className={cn("font-semibold text-base mb-1 transition-colors duration-300", interactive ? "cursor-pointer hover:text-primary" : "")}>
-            {style.label}
-            <span className={cn("text-sm font-normal ml-2 text-muted-foreground", interactive ? "cursor-pointer hover:text-foreground" : "")}>
+          <h4 className="font-semibold text-sm mb-1 text-slate-900 dark:text-white">
+            {labels[level]?.[locale] ?? labels[level]?.en}
+            <span className="text-xs font-normal ms-2 text-slate-500">
               ({percentage}%)
             </span>
           </h4>
           {description && (
-            <p className={cn("text-sm text-muted-foreground mb-2 line-clamp-2", interactive ? "" : "")}>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 line-clamp-2">
               {description}
             </p>
           )}
           {recommendedAction && (
-            <div className="mb-3">
-              <span className={cn("text-xs font-medium", interactive ? "text-primary" : "text-primary-foreground")}>
-                <span className={cn("inline-block w-1.5 h-1.5 rounded-full mr-1.5", style.bg.replace("[", "").replace("]", ""))}></span>
-                Recommended Action:
+            <div className="mb-2 text-xs">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                {locale === "ar" ? "الإجراء الموصى به: " : "Recommended Action: "}
               </span>
-              <p className={cn("text-sm mt-1.5", interactive ? "text-muted-foreground" : "")}>
+              <span className="text-slate-600 dark:text-slate-400">
                 {recommendedAction}
-              </p>
+              </span>
             </div>
           )}
           {interactive && (
             <Button
               size="sm"
               variant="outline"
-              className={cn(
-                "mt-2 px-3 py-1.5 text-xs transition-all duration-200",
-                level === "high" && "border-green-500 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20",
-                level === "medium" && "border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-500 dark:text-amber-400 dark:hover:bg-amber-900/20",
-                level === "low" && "border-orange-500 text-orange-600 hover:bg-orange-50 dark:border-orange-500 dark:text-orange-400 dark:hover:bg-orange-900/20"
-              )}
+              className="mt-1 px-3 py-1 text-xs"
               onClick={onClick}
             >
-              {percentage >= 80 ? "Accept" : percentage >= 50 ? "Review" : "Manual Override"}
+              {percentage >= 80 ? (locale === "ar" ? "قبول" : "Accept") : percentage >= 50 ? (locale === "ar" ? "مراجعة" : "Review") : (locale === "ar" ? "تعديل يدوي" : "Manual Override")}
             </Button>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }

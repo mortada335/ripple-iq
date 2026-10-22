@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from app.config import settings
+from app.core.cache import memory_cache
 from app.database import get_db
 from app.dependencies import (
     get_current_user,
@@ -303,6 +304,7 @@ def create_decision(
             detail={"code": "INSUFFICIENT_ROLE", "message": "Your organization role cannot create decisions."},
         )
     decision = DecisionService.create_decision(db, data, membership.organization_id, user.id)
+    memory_cache.invalidate_prefix("decisions:list")
     return decision_response(decision)
 
 
@@ -315,8 +317,15 @@ def list_decisions(
     organization_id: int | None = Depends(organization_header),
 ):
     membership = resolve_membership(db, user, organization_id)
+    cache_key = f"decisions:list:{membership.organization_id}:{offset}:{limit}"
+    cached = memory_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     decisions = DecisionService.list_decisions(db, membership.organization_id, offset=offset, limit=limit)
-    return [decision_response(decision) for decision in decisions]
+    response_list = [decision_response(decision) for decision in decisions]
+    memory_cache.set(cache_key, response_list, ttl=20)
+    return response_list
 
 
 @router.get(
@@ -328,6 +337,11 @@ def list_decisions(
 def get_decision(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Retrieves decision metadata, status, and attached context flags."""
     require_decision_access(db, user, id)
+    cache_key = f"decision:detail:{id}"
+    cached = memory_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     decision = DecisionService.get_decision(db, id)
     if not decision:
         raise HTTPException(
@@ -335,7 +349,9 @@ def get_decision(id: int, db: Session = Depends(get_db), user: User = Depends(ge
             detail={"code": "DECISION_NOT_FOUND", "message": f"Decision with ID {id} was not found."},
         )
 
-    return decision_response(decision)
+    result = decision_response(decision)
+    memory_cache.set(cache_key, result, ttl=30)
+    return result
 
 
 @router.patch("/api/v1/decisions/{id}", response_model=DecisionResponse, tags=["Decisions"])
@@ -347,7 +363,10 @@ def update_decision(
 ):
     decision = require_decision_access(db, user, id, write=True)
     try:
-        return decision_response(DecisionService.update_decision(db, decision, data, user.id))
+        updated = decision_response(DecisionService.update_decision(db, decision, data, user.id))
+        memory_cache.invalidate_prefix("decisions:list")
+        memory_cache.delete(f"decision:detail:{id}")
+        return updated
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -359,6 +378,8 @@ def update_decision(
 def archive_decision(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     decision = require_decision_access(db, user, id, write=True)
     DecisionService.archive_decision(db, decision, user.id)
+    memory_cache.invalidate_prefix("decisions:list")
+    memory_cache.delete(f"decision:detail:{id}")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -541,7 +562,13 @@ def simulate_decision(
     require_decision_access(db, user, id, write=True)
     enforce_limits(db, analysis_rules(request, user))
     try:
-        return SimulationService.run_simulation(db, id, actor_user_id=user.id)
+        sim_res = SimulationService.run_simulation(db, id, actor_user_id=user.id)
+        memory_cache.delete(f"decision:result:{id}")
+        memory_cache.delete(f"decision:report:{id}")
+        memory_cache.delete(f"decision:recommendation:{id}")
+        memory_cache.delete(f"decision:detail:{id}")
+        memory_cache.invalidate_prefix("decisions:list")
+        return sim_res
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

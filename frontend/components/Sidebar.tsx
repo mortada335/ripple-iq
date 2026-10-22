@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Archive, Building2, Compass, LayoutDashboard, PlusCircle, ShieldCheck, Sliders, X } from "lucide-react";
+import { Archive, ArrowRight, Building2, Compass, LayoutDashboard, PlusCircle, ShieldCheck, Sliders, X } from "lucide-react";
 import { CharterModal } from "./CharterModal";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageToggle } from "./LanguageToggle";
 import { useEffect, useRef, useState } from "react";
-import { translate, type Locale } from "@/lib/locale";
+import { useLocale } from "@/components/LocaleProvider";
 
 const NAV_ITEMS = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -16,27 +17,7 @@ const NAV_ITEMS = [
 
 function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const [locale, setLocale] = useState<Locale>("en");
-
-  useEffect(() => {
-    const readLocale = () => {
-      try {
-        const settings = JSON.parse(localStorage.getItem("rippleiq_settings") ?? "{}") as { language?: string };
-        setLocale(settings.language === "ar" ? "ar" : "en");
-      } catch {
-        setLocale("en");
-      }
-    };
-    readLocale();
-    window.addEventListener("rippleiq:locale-updated", readLocale);
-    window.addEventListener("storage", readLocale);
-    return () => {
-      window.removeEventListener("rippleiq:locale-updated", readLocale);
-      window.removeEventListener("storage", readLocale);
-    };
-  }, []);
-
-  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+  const { t } = useLocale();
 
   return (
     <nav aria-label="Mobile navigation" className="space-y-1.5">
@@ -68,7 +49,7 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="my-4 border-t border-slate-200 dark:border-slate-800" />
       <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-        {locale === "ar" ? "الإعدادات والمؤسسة" : "Workspace & Settings"}
+        {t("sidebarSettingsOrg")}
       </p>
       <Link
         href="/onboarding"
@@ -101,6 +82,7 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
+  const { t, locale } = useLocale();
   const [charterOpen, setCharterOpen] = useState(false);
   const mobilePanelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -175,6 +157,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
+                <LanguageToggle />
                 <ThemeToggle />
                 <button
                   ref={closeButtonRef}
@@ -196,10 +179,10 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
               <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
                   <ShieldCheck className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>Responsible Decision Support</span>
+                  <span>{t("responsibleDecisionSupport")}</span>
                 </div>
                 <p className="mt-1 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
-                  Advisory simulation only. Humans remain accountable for final choices.
+                  {t("advisorySimulationNotice")}
                 </p>
                 <button
                   type="button"
@@ -207,9 +190,10 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
                     onClose();
                     setCharterOpen(true);
                   }}
-                  className="mt-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
-                  Review Charter →
+                  <span>{t("reviewCharter")}</span>
+                  <ArrowRight className="h-3 w-3 rtl:rotate-180" aria-hidden="true" />
                 </button>
               </div>
             </div>

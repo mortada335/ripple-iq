@@ -8,6 +8,7 @@ import {
   Loader2,
   Save,
   ArrowLeft,
+  ArrowRight,
   Upload,
   GraduationCap,
   Users2,
@@ -23,6 +24,7 @@ import { ExtractedDocument } from "@/types/decision";
 import { toast } from "sonner";
 import { readSavedOrganizationContext } from "@/lib/organization";
 import { useAuth } from "@/components/AuthProvider";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function DecisionContextPage({
   params,
@@ -33,6 +35,8 @@ export default function DecisionContextPage({
   const decisionId = resolvedParams.id;
   const router = useRouter();
   const { activeOrganizationId } = useAuth();
+  const { locale, t } = useLocale();
+  const isAr = locale === "ar";
 
   const [studentPopulation, setStudentPopulation] = useState("");
   const [facultyCount, setFacultyCount] = useState("");
@@ -195,23 +199,25 @@ export default function DecisionContextPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Stage 01 of Decision Analysis
+            {isAr ? "المرحلة 01 من تحليل القرار" : "Stage 01 of Decision Analysis"}
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-            Operational Parameters & Context
+            {isAr ? "المعايير التشغيلية والسياق المؤسسي" : "Operational Parameters & Context"}
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-            Provide baseline institutional parameters to calibrate deterministic simulation models. You can also upload a PDF policy memo for automated extraction.
+            {isAr
+              ? "تحديد المعايير المؤسسية الأساسية لمعايرة نماذج المحاكاة الخوارزمية. يمكنك أيضاً رفع مذكرة سياسات بصيغة PDF للاستخراج التلقائي."
+              : "Provide baseline institutional parameters to calibrate deterministic simulation models. You can also upload a PDF policy memo for automated extraction."}
           </p>
         </div>
 
         <button
           type="button"
           onClick={handleLoadDemoProfile}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition cursor-pointer"
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          <span>Load University 4-Day Reference Profile</span>
+          <span>{isAr ? "تحميل بيانات نموذج الـ 4 أيام" : "Load University 4-Day Reference Profile"}</span>
         </button>
       </div>
 
@@ -231,64 +237,70 @@ export default function DecisionContextPage({
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
               <GraduationCap className="h-4 w-4 text-indigo-500" />
               <label htmlFor="student-pop" className="text-xs font-bold uppercase tracking-wider">
-                Student Headcount
+                {isAr ? "تعداد الطلاب" : "Student Headcount"}
               </label>
             </div>
             <input
               id="student-pop"
               type="number"
               min="0"
-              placeholder="e.g. 28000"
+              placeholder={isAr ? "مثال: 28000" : "e.g. 28000"}
               value={studentPopulation}
               onChange={(e) => setStudentPopulation(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:border-indigo-500 focus:bg-white"
             />
-            <p className="text-[10px] text-slate-400">Total enrolled undergraduate & graduate</p>
+            <p className="text-[10px] text-slate-400">
+              {isAr ? "إجمالي المقيدين في مرحلتي البكالوريوس والدراسات العليا" : "Total enrolled undergraduate & graduate"}
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-2">
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
               <Users2 className="h-4 w-4 text-emerald-500" />
               <label htmlFor="faculty-count" className="text-xs font-bold uppercase tracking-wider">
-                Faculty & Instructors
+                {isAr ? "أعضاء هيئة التدريس" : "Faculty & Instructors"}
               </label>
             </div>
             <input
               id="faculty-count"
               type="number"
               min="0"
-              placeholder="e.g. 1400"
+              placeholder={isAr ? "مثال: 1400" : "e.g. 1400"}
               value={facultyCount}
               onChange={(e) => setFacultyCount(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:border-indigo-500 focus:bg-white"
             />
-            <p className="text-[10px] text-slate-400">Tenured, adjunct, and teaching assistants</p>
+            <p className="text-[10px] text-slate-400">
+              {isAr ? "الأساتذة والباحثون والمحاضرون المساعدون" : "Tenured, adjunct, and teaching assistants"}
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-2">
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
               <FlaskConical className="h-4 w-4 text-amber-500" />
               <label htmlFor="active-labs" className="text-xs font-bold uppercase tracking-wider">
-                Active Research Labs
+                {isAr ? "المعامل البحثية النشطة" : "Active Research Labs"}
               </label>
             </div>
             <input
               id="active-labs"
               type="number"
               min="0"
-              placeholder="e.g. 85"
+              placeholder={isAr ? "مثال: 85" : "e.g. 85"}
               value={activeLaboratories}
               onChange={(e) => setActiveLaboratories(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:border-indigo-500 focus:bg-white"
             />
-            <p className="text-[10px] text-slate-400">Wet labs, animal facilities, cold storage</p>
+            <p className="text-[10px] text-slate-400">
+              {isAr ? "المعامل الرطبة، مرافق التجارب الحية، والتخزين المبرد" : "Wet labs, animal facilities, cold storage"}
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-2">
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
               <Bus className="h-4 w-4 text-sky-500" />
               <label htmlFor="transit-rate" className="text-xs font-bold uppercase tracking-wider">
-                Transit Dependency %
+                {isAr ? "نسبة الاعتماد على النقل %" : "Transit Dependency %"}
               </label>
             </div>
             <input
@@ -297,12 +309,14 @@ export default function DecisionContextPage({
               step="0.1"
               min="0"
               max="100"
-              placeholder="e.g. 68.5"
+              placeholder={isAr ? "مثال: 68.5" : "e.g. 68.5"}
               value={transitRate}
               onChange={(e) => setTransitRate(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:border-indigo-500 focus:bg-white"
             />
-            <p className="text-[10px] text-slate-400">Commuting via buses and campus shuttles</p>
+            <p className="text-[10px] text-slate-400">
+              {isAr ? "التنقل عبر الحافلات والنقل الجامعي المشترك" : "Commuting via buses and campus shuttles"}
+            </p>
           </div>
         </div>
 
@@ -311,11 +325,13 @@ export default function DecisionContextPage({
           <div className="flex items-center gap-2">
             <Upload className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              OCR Document Extraction (PDF Policy Memos)
+              {isAr ? "استخراج مستندات السياسات (مذكرات PDF)" : "OCR Document Extraction (PDF Policy Memos)"}
             </h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Upload institutional briefing documents or accreditation guidelines (up to 10 MiB). The pipeline extracts key assumptions and operational constraints automatically.
+            {isAr
+              ? "رفع وثائق السياسات المؤسسية أو إرشادات الاعتماد (حتى 10 ميغابايت). يستخرج النظام الافتراضات والقيود التشغيلية تلقائياً."
+              : "Upload institutional briefing documents or accreditation guidelines (up to 10 MiB). The pipeline extracts key assumptions and operational constraints automatically."}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -331,10 +347,18 @@ export default function DecisionContextPage({
                 type="button"
                 disabled={extractingDocument}
                 onClick={handleExtractDocument}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition disabled:opacity-50 cursor-pointer"
               >
                 {extractingDocument ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                <span>{extractingDocument ? "Extracting Content..." : "Run Document Extraction"}</span>
+                <span>
+                  {extractingDocument
+                    ? isAr
+                      ? "جارٍ استخراج المحتوى..."
+                      : "Extracting Content..."
+                    : isAr
+                    ? "تشغيل استخراج المستند"
+                    : "Run Document Extraction"}
+                </span>
               </button>
             )}
           </div>
@@ -346,7 +370,11 @@ export default function DecisionContextPage({
           {extractedDocument && (
             <div className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>Extracted content from {extractedDocument.pages.length} document page(s).</span>
+              <span>
+                {isAr
+                  ? `تم استخراج المحتوى بنجاح من ${extractedDocument.pages.length} صفحة.`
+                  : `Extracted content from ${extractedDocument.pages.length} document page(s).`}
+              </span>
             </div>
           )}
         </div>
@@ -357,9 +385,11 @@ export default function DecisionContextPage({
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
             <div>
               <label htmlFor="assumptions" className="text-sm font-bold text-slate-900 dark:text-white">
-                Key Analytical Assumptions
+                {isAr ? "الافتراضات التحليلية الأساسية" : "Key Analytical Assumptions"}
               </label>
-              <p className="text-xs text-slate-500 dark:text-slate-400">One per line. Explicit assumptions ensure explainability.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {isAr ? "افتراض واحد في كل سطر. الافتراضات الصريحة تضمن قابلية التفسير." : "One per line. Explicit assumptions ensure explainability."}
+              </p>
             </div>
 
             <textarea
@@ -367,27 +397,39 @@ export default function DecisionContextPage({
               rows={5}
               value={assumptions}
               onChange={(e) => setAssumptions(e.target.value)}
-              placeholder="Fridays designated as asynchronous remote learning day&#10;Campus dining auxiliary footprint reduced by 50%&#10;Total accreditation contact hours unchanged"
+              placeholder={
+                isAr
+                  ? "تخصيص أيام الجمعة كيوم تعلم عن بُعد غير متزامن&#10;تقليص خدمات المطاعم والمرافق بنسبة 50%&#10;المحافظة على ساعات الاتصال المعتمدة"
+                  : "Fridays designated as asynchronous remote learning day&#10;Campus dining auxiliary footprint reduced by 50%&#10;Total accreditation contact hours unchanged"
+              }
               className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-900 outline-none focus:border-indigo-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
 
             {/* Quick Suggestion Tags */}
             <div className="space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Quick University Suggestions:
+                {isAr ? "اقتراحات جامعية سريعة:" : "Quick University Suggestions:"}
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  "15% longer lecture periods Mon–Thu",
-                  "Friday asynchronous digital learning",
-                  "Dining & auxiliary reduced footprint",
-                  "Graduate research labs exempted",
-                ].map((tag) => (
+                {(isAr
+                  ? [
+                      "زيادة 15% في مدة المحاضرات (الإثنين-الخميس)",
+                      "تعلم رقمي غير متزامن يوم الجمعة",
+                      "تقليص خدمات المطاعم والمرافق بنسبة 50%",
+                      "استثناء معامل الأبحاث العليا المعتمدة",
+                    ]
+                  : [
+                      "15% longer lecture periods Mon–Thu",
+                      "Friday asynchronous digital learning",
+                      "Dining & auxiliary reduced footprint",
+                      "Graduate research labs exempted",
+                    ]
+                ).map((tag) => (
                   <button
                     key={tag}
                     type="button"
                     onClick={() => addAssumptionTag(tag)}
-                    className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition"
+                    className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition cursor-pointer"
                   >
                     + {tag}
                   </button>
@@ -400,9 +442,11 @@ export default function DecisionContextPage({
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
             <div>
               <label htmlFor="constraints" className="text-sm font-bold text-slate-900 dark:text-white">
-                Critical Institutional Constraints
+                {isAr ? "القيود المؤسسية الحرجة" : "Critical Institutional Constraints"}
               </label>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Hard boundaries (e.g. biosafety, union contracts, continuous power).</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {isAr ? "حدود صارمة (مثل السلامة الحيوية، عقود العمل، استمرار الطاقة)." : "Hard boundaries (e.g. biosafety, union contracts, continuous power)."}
+              </p>
             </div>
 
             <textarea
@@ -410,7 +454,11 @@ export default function DecisionContextPage({
               rows={5}
               value={constraints}
               onChange={(e) => setConstraints(e.target.value)}
-              placeholder="Wet laboratories, animal research facilities, and biosafety level 2 facilities require continuous daily temperature controls, monitoring, and researcher access."
+              placeholder={
+                isAr
+                  ? "تتطلب المعامل الرطبة ومرافق أبحاث الحيوانات الحية ومعامل المستوى الحيوي الثاني تحكماً حرارياً يومياً مستمراً ومراقبة ووصولاً مادياً للباحثين."
+                  : "Wet laboratories, animal research facilities, and biosafety level 2 facilities require continuous daily temperature controls, monitoring, and researcher access."
+              }
               className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-900 outline-none focus:border-indigo-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
@@ -422,8 +470,8 @@ export default function DecisionContextPage({
             href={`/decisions/${decisionId}`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Proposal</span>
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+            <span>{isAr ? "العودة للمقترح" : "Back to Proposal"}</span>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -431,19 +479,28 @@ export default function DecisionContextPage({
               type="button"
               disabled={savingOnly || loading}
               onClick={handleSaveOnly}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition disabled:opacity-50 cursor-pointer"
             >
               <Save className="h-4 w-4" />
-              <span>{savingOnly ? "Saving..." : "Save Draft"}</span>
+              <span>
+                {savingOnly
+                  ? isAr
+                    ? "جارٍ الحفظ..."
+                    : "Saving..."
+                  : isAr
+                  ? "حفظ كمسودة"
+                  : "Save Draft"}
+              </span>
             </button>
 
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-500 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-500 transition disabled:opacity-50 cursor-pointer"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              <span>Save & Launch Simulation →</span>
+              <span>{isAr ? "حفظ وتشغيل المحاكاة" : "Save & Launch Simulation"}</span>
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </button>
           </div>
         </div>

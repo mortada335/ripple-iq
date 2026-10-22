@@ -12,53 +12,56 @@ import {
   FileText,
 } from "lucide-react";
 
+import { useLocale } from "@/components/LocaleProvider";
+
 interface DecisionNavTabsProps {
   decisionId: string | number;
 }
 
 export function DecisionNavTabs({ decisionId }: DecisionNavTabsProps) {
   const pathname = usePathname();
+  const { locale, t } = useLocale();
 
   const tabs = [
     {
       step: "01",
-      label: "Context",
-      fullLabel: "Operational Context",
+      label: locale === "ar" ? "السياق" : "Context",
+      fullLabel: locale === "ar" ? "السياق التشغيلي" : "Operational Context",
       href: `/decisions/${decisionId}/context`,
       icon: FileCode2,
     },
     {
       step: "02",
-      label: "Scenarios",
-      fullLabel: "Scenarios Matrix",
+      label: locale === "ar" ? "السيناريوهات" : "Scenarios",
+      fullLabel: locale === "ar" ? "مصفوفة السيناريوهات" : "Scenarios Matrix",
       href: `/decisions/${decisionId}/scenarios`,
       icon: GitCompare,
     },
     {
       step: "03",
-      label: "Ripples",
-      fullLabel: "Stakeholders & Ripples",
+      label: locale === "ar" ? "الآثار" : "Ripples",
+      fullLabel: locale === "ar" ? "أصحاب المصلحة والآثار" : "Stakeholders & Ripples",
       href: `/decisions/${decisionId}/consequences`,
       icon: Users2,
     },
     {
       step: "04",
-      label: "Risks",
-      fullLabel: "Risk Register",
+      label: locale === "ar" ? "المخاطر" : "Risks",
+      fullLabel: locale === "ar" ? "سجل المخاطر" : "Risk Register",
       href: `/decisions/${decisionId}/risks`,
       icon: ShieldAlert,
     },
     {
       step: "05",
-      label: "Recommend",
-      fullLabel: "Recommendation",
+      label: locale === "ar" ? "التوصية" : "Recommend",
+      fullLabel: locale === "ar" ? "التوصية التنفيذية" : "Recommendation",
       href: `/decisions/${decisionId}/recommendation`,
       icon: Award,
     },
     {
       step: "06",
-      label: "Memorandum",
-      fullLabel: "Memorandum",
+      label: locale === "ar" ? "المذكرة" : "Memorandum",
+      fullLabel: locale === "ar" ? "المذكرة النهائية" : "Memorandum",
       href: `/decisions/${decisionId}/report`,
       icon: FileText,
     },

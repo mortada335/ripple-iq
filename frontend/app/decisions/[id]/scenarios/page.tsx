@@ -13,6 +13,8 @@ import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RecommendationView, SimulationResult } from "@/types/decision";
 import { ComparisonBarChart } from "@/components/ComparisonBarChart";
 import { toast } from "sonner";
+import { useLocale } from "@/components/LocaleProvider";
+import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
 
 export default function ScenarioComparisonPage({
   params,
@@ -21,6 +23,8 @@ export default function ScenarioComparisonPage({
 }) {
   const resolvedParams = use(params);
   const decisionId = resolvedParams.id;
+  const { locale, t } = useLocale();
+  const isAr = locale === "ar";
 
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [recommendation, setRecommendation] = useState<RecommendationView | null>(null);
@@ -76,12 +80,7 @@ export default function ScenarioComparisonPage({
   };
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <DecisionNavTabs decisionId={decisionId} />
-        <div className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900" />
-      </div>
-    );
+    return <DecisionAnalysisSkeleton decisionId={decisionId} />;
   }
 
   if (loadError || !result || !recommendation) {
@@ -116,13 +115,15 @@ export default function ScenarioComparisonPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Stage 02 of Decision Analysis
+            {isAr ? "المرحلة 02 من تحليل القرار" : "Stage 02 of Decision Analysis"}
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-            Comparative Scenario Matrix
+            {isAr ? "مصفوفة مقارنة السيناريوهات" : "Comparative Scenario Matrix"}
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-            Side-by-side trade-off evaluation. Never forces a binary yes/no. Compare 3 distinct policy pathways calibrated to your institutional constraints.
+            {isAr
+              ? "تقييم المفاضلات جنباً إلى جنب. لا يفرض خياراً ثنائياً أبداً. قارن بين 3 مسارات سياسات متباينة تمت معايرتها وفق قيود مؤسستك."
+              : "Side-by-side trade-off evaluation. Never forces a binary yes/no. Compare 3 distinct policy pathways calibrated to your institutional constraints."}
           </p>
         </div>
 
@@ -131,26 +132,28 @@ export default function ScenarioComparisonPage({
             href={`/decisions/${decisionId}/consequences`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
           >
-            <span>Stakeholder Ripples</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <span>{isAr ? "الآثار على أصحاب المصلحة" : "Stakeholder Ripples"}</span>
+            <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
           </Link>
           <Link
             href={`/decisions/${decisionId}/recommendation`}
             className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 transition"
           >
             <Award className="h-3.5 w-3.5" />
-            <span>Recommendation</span>
+            <span>{isAr ? "التوصية" : "Recommendation"}</span>
           </Link>
         </div>
       </div>
 
       {/* Feasibility Comparison Bar Chart */}
       <ComparisonBarChart
-        title="Comparative Heuristic Feasibility Scores"
+        title={isAr ? "درجات الجدوى التشغيلية المقارنة" : "Comparative Heuristic Feasibility Scores"}
         maxValue={100}
         valueSuffix="%"
         items={result.scenarios.map((scenario) => ({
-          label: `Scenario 0${scenario.scenario_number}: ${scenario.title}`,
+          label: isAr
+            ? `سيناريو 0${scenario.scenario_number}: ${scenario.title}`
+            : `Scenario 0${scenario.scenario_number}: ${scenario.title}`,
           value: Math.round(scenario.feasibility_score * 100),
           tone:
             recommendation.current.selected_scenario_number === scenario.scenario_number
@@ -158,7 +161,9 @@ export default function ScenarioComparisonPage({
               : ("emerald" as const),
           detail:
             recommendation.current.selected_scenario_number === scenario.scenario_number
-              ? "Active Preference"
+              ? isAr
+                ? "الخيار النشط المعتمد"
+                : "Active Preference"
               : undefined,
         }))}
       />
@@ -203,7 +208,11 @@ export default function ScenarioComparisonPage({
                   <Sparkles className="h-3 w-3" />
                   <span>
                     {recommendation.refinement
-                      ? "Your Preferred Pathway"
+                      ? isAr
+                        ? "المسار المفضل المختار"
+                        : "Your Preferred Pathway"
+                      : isAr
+                      ? "توصية القيادة التنفيذية"
                       : "Executive Recommendation"}
                   </span>
                 </div>
@@ -213,11 +222,13 @@ export default function ScenarioComparisonPage({
                 {/* Header: Scenario Number & Score */}
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Pathway 0{scenario.scenario_number}
+                    {isAr ? `المسار 0${scenario.scenario_number}` : `Pathway 0${scenario.scenario_number}`}
                   </span>
 
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-slate-500">Feasibility</span>
+                    <span className="text-[11px] font-medium text-slate-500">
+                      {isAr ? "الجدوى" : "Feasibility"}
+                    </span>
                     <span
                       className={`rounded-md px-2 py-0.5 font-mono text-xs font-extrabold ${
                         scorePercent >= 85
@@ -264,7 +275,7 @@ export default function ScenarioComparisonPage({
                 <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                      Positive Beneficiaries
+                      {isAr ? "الفئات المستفيدة إيجاباً" : "Positive Beneficiaries"}
                     </span>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {beneficiaries.length > 0 ? (
@@ -277,14 +288,16 @@ export default function ScenarioComparisonPage({
                           </span>
                         ))
                       ) : (
-                        <span className="text-[10px] text-slate-400">None detected</span>
+                        <span className="text-[10px] text-slate-400">
+                          {isAr ? "لم يُرصد مستفيدون" : "None detected"}
+                        </span>
                       )}
                     </div>
                   </div>
 
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                      Disadvantaged Constituencies
+                      {isAr ? "الفئات المتأثرة سلباً" : "Disadvantaged Constituencies"}
                     </span>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {disadvantaged.length > 0 ? (
@@ -297,7 +310,9 @@ export default function ScenarioComparisonPage({
                           </span>
                         ))
                       ) : (
-                        <span className="text-[10px] text-slate-400">Minimal friction</span>
+                        <span className="text-[10px] text-slate-400">
+                          {isAr ? "احتكاك طفيف جداً" : "Minimal friction"}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -310,7 +325,7 @@ export default function ScenarioComparisonPage({
                   type="button"
                   disabled={savingScenario !== null || isWinner}
                   onClick={() => handleSetPreferred(scenario.scenario_number)}
-                  className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs ${
+                  className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
                     isWinner
                       ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
                       : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500"
@@ -319,18 +334,23 @@ export default function ScenarioComparisonPage({
                   {isWinner ? (
                     <>
                       <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Active Institutional Choice</span>
+                      <span>{isAr ? "الخيار المؤسسي النشط" : "Active Institutional Choice"}</span>
                     </>
                   ) : (
-                    <span>Adopt as Preferred Pathway</span>
+                    <span>{isAr ? "الاعتماد كمسار مفضل" : "Adopt as Preferred Pathway"}</span>
                   )}
                 </button>
 
                 <Link
                   href={`/decisions/${decisionId}/scenarios/${scenario.scenario_number}`}
-                  className="text-center text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 py-1"
+                  className="inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 py-1"
                 >
-                  Inspect Scenario {scenario.scenario_number} Breakdown →
+                  <span>
+                    {isAr
+                      ? `فحص تفاصيل السيناريو 0${scenario.scenario_number}`
+                      : `Inspect Scenario 0${scenario.scenario_number} Breakdown`}
+                  </span>
+                  <ArrowRight className="h-3 w-3 rtl:rotate-180" />
                 </Link>
               </div>
             </div>

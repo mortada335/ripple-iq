@@ -19,36 +19,47 @@ import {
 import { getAnalysisStatus, retryFailedAnalysis, runSimulation } from "@/lib/api";
 import type { AnalysisStatus, SimulateResponse } from "@/types/decision";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
+import { useLocale } from "@/components/LocaleProvider";
 
 const SIMULATION_STAGES = [
   {
     id: 1,
-    title: "1. Ingesting Institutional Context & Constraints",
-    desc: "Validating headcount parameters, active laboratory thermal requirements, and weekly transit loads.",
+    titleEn: "1. Ingesting Institutional Context & Constraints",
+    titleAr: "1. استيعاب السياق المؤسسي والقيود التشغيلية",
+    descEn: "Validating headcount parameters, active laboratory thermal requirements, and weekly transit loads.",
+    descAr: "التحقق من بيانات التعداد، والمتطلبات الحرارية للمعامل النشطة، وأحمال النقل الأسبوعية.",
     icon: Cpu,
   },
   {
     id: 2,
-    title: "2. Mapping 5 Core Stakeholder Constituencies",
-    desc: "Tracing direct and secondary lines of impact for Students, Faculty, Laboratories, Administration, and Transit.",
+    titleEn: "2. Mapping 5 Core Stakeholder Constituencies",
+    titleAr: "2. رسم الفئات الخمس الرئيسية لأصحاب المصلحة",
+    descEn: "Tracing direct and secondary lines of impact for Students, Faculty, Laboratories, Administration, and Transit.",
+    descAr: "تتبع خطوط التأثير المباشرة والثانوية للطلاب، التدريسيين، المعامل، الإدارة، والنقل.",
     icon: GraduationCap,
   },
   {
     id: 3,
-    title: "3. Generating 3 Comparative Scenario Pathways",
-    desc: "Formulating Scenario 1 (As Written), Scenario 2 (Lab Protection - Recommended), and Scenario 3 (Limited Pilot).",
+    titleEn: "3. Generating 3 Comparative Scenario Pathways",
+    titleAr: "3. توليد 3 مسارات سيناريوهات متوازنة للمقارنة",
+    descEn: "Formulating Scenario 1 (As Written), Scenario 2 (Lab Protection - Recommended), and Scenario 3 (Limited Pilot).",
+    descAr: "صياغة سيناريو 1 (كما كُتب)، سيناريو 2 (حماية المعامل - الموصى به)، وسيناريو 3 (تجربة مرحلية).",
     icon: GitCompare,
   },
   {
     id: 4,
-    title: "4. Calibrating Risk Register & Explaining Trade-offs",
-    desc: "Computing heat scores on a 3x3 Likelihood/Severity matrix and establishing verifiable mitigation strategies.",
+    titleEn: "4. Calibrating Risk Register & Explaining Trade-offs",
+    titleAr: "4. معايرة سجل المخاطر وتفسير المفاضلات",
+    descEn: "Computing heat scores on a 3x3 Likelihood/Severity matrix and establishing verifiable mitigation strategies.",
+    descAr: "حساب درجات الخطورة على مصفوفة 3×3 للاحتمالية والشدة ووضع استراتيجيات تخفيف قابلة للتحقق.",
     icon: AlertTriangle,
   },
   {
     id: 5,
-    title: "5. Synthesizing Strategic Recommendation & Memorandum",
-    desc: "Synthesizing executive recommendation, calculating heuristic confidence rating, and drafting board memorandum.",
+    titleEn: "5. Synthesizing Strategic Recommendation & Memorandum",
+    titleAr: "5. صياغة التوصية الاستراتيجية والمذكرة التنفيذية",
+    descEn: "Synthesizing executive recommendation, calculating heuristic confidence rating, and drafting board memorandum.",
+    descAr: "تجميع التوصية التنفيذية، وحساب درجة الثقة التقديرية، وصياغة مسودة المذكرة الرسمية للمجلس.",
     icon: Sparkles,
   },
 ];
@@ -61,6 +72,8 @@ export default function AnalysisProgressPage({
   const resolvedParams = use(params);
   const decisionId = resolvedParams.id;
   const router = useRouter();
+  const { locale } = useLocale();
+  const isAr = locale === "ar";
 
   const [activeStep, setActiveStep] = useState(1);
   const [complete, setComplete] = useState(false);
@@ -176,19 +189,28 @@ export default function AnalysisProgressPage({
 
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-              {complete ? "Simulation Complete!" : "Running Decision Simulation"}
+              {complete
+                ? isAr
+                  ? "اكتملت المحاكاة بنجاح!"
+                  : "Simulation Complete!"
+                : isAr
+                ? "جارٍ تشغيل محاكاة القرار"
+                : "Running Decision Simulation"}
             </h1>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Proposal Reference: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">D-{String(decisionId).padStart(4, "0")}</span>
+              {isAr ? "مرجع المقترح:" : "Proposal Reference:"}{" "}
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                D-{String(decisionId).padStart(4, "0")}
+              </span>
             </p>
           </div>
 
           <div className="flex items-center justify-center gap-4 text-xs font-mono">
             <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-              Elapsed: {elapsedSeconds}s
+              {isAr ? `الوقت المنقضي: ${elapsedSeconds}ث` : `Elapsed: ${elapsedSeconds}s`}
             </span>
             <span className="rounded-full bg-indigo-50 px-3 py-1 font-bold text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300">
-              Progress: {progressPercent}%
+              {isAr ? `التقدم: ${progressPercent}%` : `Progress: ${progressPercent}%`}
             </span>
           </div>
 
@@ -221,10 +243,10 @@ export default function AnalysisProgressPage({
                 setElapsedSeconds(0);
                 setAttempt((c) => c + 1);
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 bg-white px-3 py-1.5 font-bold text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-slate-900 dark:text-rose-300 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 bg-white px-3 py-1.5 font-bold text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-slate-900 dark:text-rose-300 transition cursor-pointer"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span>Retry Simulation</span>
+              <span>{isAr ? "إعادة المحاولة" : "Retry Simulation"}</span>
             </button>
           </div>
         )}
@@ -233,10 +255,16 @@ export default function AnalysisProgressPage({
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Multi-Phase Analytical Pipeline
+              {isAr ? "مسار التحليل متعدد المراحل" : "Multi-Phase Analytical Pipeline"}
             </h2>
             <span className="text-[11px] font-mono text-slate-400">
-              {complete ? "All 5 phases verified" : `Phase ${activeStep} of 5 active`}
+              {complete
+                ? isAr
+                  ? "تم التحقق من كافة المراحل الـ 5"
+                  : "All 5 phases verified"
+                : isAr
+                ? `المرحلة ${activeStep} من 5 نشطة`
+                : `Phase ${activeStep} of 5 active`}
             </span>
           </div>
 
@@ -283,7 +311,7 @@ export default function AnalysisProgressPage({
                             : "text-slate-500"
                         }`}
                       >
-                        {stage.title}
+                        {isAr ? stage.titleAr : stage.titleEn}
                       </h3>
                       <span
                         className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
@@ -294,11 +322,21 @@ export default function AnalysisProgressPage({
                             : "text-slate-400"
                         }`}
                       >
-                        {isDone ? "Done" : isCurrent ? "Computing" : "Queued"}
+                        {isDone
+                          ? isAr
+                            ? "تم"
+                            : "Done"
+                          : isCurrent
+                          ? isAr
+                            ? "جارٍ الحساب"
+                            : "Computing"
+                          : isAr
+                          ? "في الانتظار"
+                          : "Queued"}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      {stage.desc}
+                      {isAr ? stage.descAr : stage.descEn}
                     </p>
                   </div>
                 </div>
@@ -312,7 +350,7 @@ export default function AnalysisProgressPage({
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             >
               <XCircle className="h-4 w-4" />
-              <span>Cancel & return</span>
+              <span>{isAr ? "إلغاء والعودة" : "Cancel & return"}</span>
             </Link>
 
             {complete ? (
@@ -320,12 +358,12 @@ export default function AnalysisProgressPage({
                 href={`/decisions/${decisionId}/scenarios`}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-500 shadow-sm"
               >
-                <span>Open Scenarios Matrix</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                <span>{isAr ? "فتح مصفوفة السيناريوهات" : "Open Scenarios Matrix"}</span>
+                <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
               </Link>
             ) : (
               <span className="text-[11px] text-slate-400 font-mono">
-                Auto-redirecting upon completion...
+                {isAr ? "جارٍ التحويل التلقائي فور الاكتمال..." : "Auto-redirecting upon completion..."}
               </span>
             )}
           </div>

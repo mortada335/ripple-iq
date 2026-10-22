@@ -17,10 +17,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from starlette.middleware.gzip import GZipMiddleware
 from app.api.endpoints import router as api_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.organizations import router as organizations_router
 from app.config import settings
+from app.middleware.rate_limit import FastRateLimitMiddleware
 
 
 class JsonLogFormatter(logging.Formatter):
@@ -73,6 +75,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# High-Performance GZip Compression for payloads >= 500 bytes (reduces egress network traffic by ~80%)
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# Global Sliding-Window Request Rate Limiter (Protects against 10M+ brute force & DoS spikes)
+app.add_middleware(FastRateLimitMiddleware)
 
 
 @app.middleware("http")

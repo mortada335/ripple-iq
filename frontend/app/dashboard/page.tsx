@@ -28,13 +28,15 @@ import { Decision } from "@/types/decision";
 import { LoadMore } from "@/components/LoadMore";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
-import { PageSkeleton } from "@/components/LoadingSkeleton";
+import { DashboardSkeleton, DecisionCardSkeleton } from "@/components/LoadingSkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { DEMO_DECISION, saveLocalDecision } from "@/lib/mock-data";
+import { useLocale } from "@/components/LocaleProvider";
 
 const PAGE_SIZE = 20;
 
 export default function DashboardPage() {
+  const { locale, t, isRtl } = useLocale();
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -177,22 +179,26 @@ export default function DashboardPage() {
     void reloadDecisions();
   };
 
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Executive Command Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/80 bg-white/90 p-5 sm:p-6 shadow-xs backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/90">
         <div>
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              {activeOrg?.name ?? (isDemo ? "University Demonstration Workspace" : "Institutional Intelligence")}
+              {activeOrg?.name ?? (isDemo ? t("cockpitDemoTag") : t("cockpitTag"))}
             </span>
           </div>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-            Executive Decision Cockpit
+            {t("cockpitTitle")}
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-            Multi-stakeholder simulation and policy risk intelligence. Review cascading ripples, scenario feasibility, and executive memoranda.
+            {t("cockpitSubtitle")}
           </p>
         </div>
 
@@ -204,16 +210,16 @@ export default function DashboardPage() {
               className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span>Load 4-Day Policy Demo</span>
+              <span>{t("loadDemo")}</span>
             </button>
           )}
 
           <Link
             href="/decisions/new"
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 transition"
+            className="hidden md:inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 transition"
           >
             <PlusCircle className="h-4 w-4" />
-            <span>New Decision Analysis</span>
+            <span>{t("newAnalysis")}</span>
           </Link>
         </div>
       </div>
@@ -222,33 +228,33 @@ export default function DashboardPage() {
       <section aria-label="Executive decision KPIs" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           {
-            label: "Total Policy Proposals",
+            label: t("kpiTotalProposals"),
             value: counts.total,
-            detail: `${counts.completed} completed analysis`,
+            detail: `${counts.completed} ${t("kpiCompletedSuffix")}`,
             icon: Layers,
             iconColor: "text-indigo-600 dark:text-indigo-400",
             bgColor: "bg-indigo-50 dark:bg-indigo-950/50",
           },
           {
-            label: "Simulated Analyses",
+            label: t("kpiSimulatedAnalyses"),
             value: counts.completed,
-            detail: "Audit-ready memoranda",
+            detail: t("kpiSimulatedDetail"),
             icon: FileCheck2,
             iconColor: "text-emerald-600 dark:text-emerald-400",
             bgColor: "bg-emerald-50 dark:bg-emerald-950/50",
           },
           {
-            label: "Critical / High Risks Flagged",
+            label: t("kpiCriticalRisks"),
             value: counts.highPriority,
-            detail: "Requires human review",
+            detail: t("kpiCriticalDetail"),
             icon: ShieldAlert,
             iconColor: "text-rose-600 dark:text-rose-400",
             bgColor: "bg-rose-50 dark:bg-rose-950/50",
           },
           {
-            label: "Stakeholder Groups Mapped",
+            label: t("kpiStakeholders"),
             value: 5,
-            detail: "Students, Faculty, Labs, Admin, Transit",
+            detail: t("kpiStakeholdersDetail"),
             icon: Users2,
             iconColor: "text-sky-600 dark:text-sky-400",
             bgColor: "bg-sky-50 dark:bg-sky-950/50",
@@ -258,7 +264,7 @@ export default function DashboardPage() {
           return (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 transition-all hover:border-indigo-400/50"
+              className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 sm:p-5 shadow-2xs backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/90 transition-all hover:border-indigo-400/50"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{kpi.label}</span>
@@ -283,19 +289,27 @@ export default function DashboardPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search proposals by title, team, or operational keyword..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-2 ps-10 pe-4 text-xs text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder={t("searchPlaceholder")}
+            className="w-full rounded-xl border border-slate-200/80 bg-white/90 py-2 ps-10 pe-4 text-xs text-slate-900 placeholder-slate-400 shadow-2xs focus:border-indigo-500 focus:outline-none dark:border-slate-800/80 dark:bg-slate-900/90 dark:text-white"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Status Filter Tabs */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200/80 bg-white/90 p-1 shadow-2xs dark:border-slate-800/80 dark:bg-slate-900/90">
             {(["ALL", "COMPLETED", "DRAFT", "ARCHIVED"] as const).map((status) => {
               const count = decisions.filter(
                 (d) => status === "ALL" || d.status.toUpperCase() === status
               ).length;
               const isActive = statusFilter === status;
+              const tabLabel =
+                status === "ALL"
+                  ? t("filterAll")
+                  : status === "COMPLETED"
+                  ? t("filterCompleted")
+                  : status === "DRAFT"
+                  ? t("filterDraft")
+                  : t("filterArchived");
 
               return (
                 <button
@@ -308,7 +322,7 @@ export default function DashboardPage() {
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                   }`}
                 >
-                  <span>{status === "ALL" ? "All" : status.charAt(0) + status.slice(1).toLowerCase()}</span>
+                  <span>{tabLabel}</span>
                   <span className={`ms-1.5 text-[10px] ${isActive ? "opacity-90" : "opacity-60"}`}>
                     ({count})
                   </span>
@@ -318,11 +332,11 @@ export default function DashboardPage() {
           </div>
 
           {/* View Mode Switcher */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200/80 bg-white/90 p-1 shadow-2xs dark:border-slate-800/80 dark:bg-slate-900/90">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              aria-label="Grid view"
+              aria-label={t("gridView")}
               className={`rounded-lg p-1.5 transition ${
                 viewMode === "grid"
                   ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
@@ -334,7 +348,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              aria-label="Table view"
+              aria-label={t("tableView")}
               className={`rounded-lg p-1.5 transition ${
                 viewMode === "table"
                   ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
@@ -349,30 +363,34 @@ export default function DashboardPage() {
 
       {/* Decisions Content */}
       {loading ? (
-        <PageSkeleton />
+        <div className="space-y-3.5">
+          {[...Array(3)].map((_, i) => (
+            <DecisionCardSkeleton key={i} />
+          ))}
+        </div>
       ) : loadError ? (
         <div
           role="alert"
           className="rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm dark:border-rose-900 dark:bg-slate-900"
         >
           <CircleAlert className="mx-auto h-8 w-8 text-rose-600" />
-          <h3 className="mt-2 text-base font-bold text-slate-900 dark:text-white">Could not load decisions</h3>
-          <p className="mt-1 text-xs text-rose-700 dark:text-rose-300">Check connection and try again.</p>
+          <h3 className="mt-2 text-base font-bold text-slate-900 dark:text-white">{t("errorLoadDecisions")}</h3>
+          <p className="mt-1 text-xs text-rose-700 dark:text-rose-300">{t("errorLoadDesc")}</p>
           <button
             type="button"
             onClick={() => void reloadDecisions()}
             className="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
           >
-            Retry Loading
+            {t("retryLoading")}
           </button>
         </div>
       ) : filteredDecisions.length === 0 ? (
         <EmptyState
           icon={Layers}
-          title="No policy proposals found"
-          description="You haven't created any decision analyses in this filter, or the demo dataset was reset. Launch the university reference decision to explore."
+          title={t("noDecisionsTitle")}
+          description={t("noDecisionsDescription")}
           action={{
-            label: "Load Reference 4-Day Attendance Decision",
+            label: t("loadDemo"),
             onClick: handleResetDemoSample,
           }}
         />
@@ -381,6 +399,21 @@ export default function DashboardPage() {
           {filteredDecisions.map((decision) => {
             const isArchived = decision.status === "ARCHIVED";
             const isCompleted = decision.status === "COMPLETED";
+
+            const priorityLabel =
+              decision.priority === "HIGH"
+                ? t("cardPriorityHigh")
+                : decision.priority === "CRITICAL"
+                ? t("cardPriorityCritical")
+                : decision.priority === "MEDIUM"
+                ? t("cardPriorityMedium")
+                : t("cardPriorityLow");
+
+            const statusLabel = isCompleted
+              ? t("cardSimulated")
+              : isArchived
+              ? t("cardArchived")
+              : t("cardDraft");
 
             return (
               <div
@@ -395,7 +428,7 @@ export default function DashboardPage() {
                   {/* Top Bar: ID, Priority, Status */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      REF #{String(decision.id).padStart(4, "0")}
+                      {t("tableRef")} {String(decision.id).padStart(4, "0")}
                     </span>
 
                     <div className="flex items-center gap-1.5">
@@ -406,7 +439,7 @@ export default function DashboardPage() {
                             : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                       >
-                        {decision.priority}
+                        {priorityLabel}
                       </span>
 
                       <span
@@ -419,7 +452,7 @@ export default function DashboardPage() {
                         }`}
                       >
                         {isCompleted && <Sparkles className="h-2.5 w-2.5" />}
-                        {decision.status}
+                        {statusLabel}
                       </span>
                     </div>
                   </div>
@@ -447,16 +480,16 @@ export default function DashboardPage() {
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        {decision.department || "Operations"}
+                        {decision.department || t("operations")}
                       </span>
                       <span>·</span>
-                      <span>{decision.time_horizon || "1 year"}</span>
+                      <span>{decision.time_horizon || t("year1")}</span>
                     </div>
 
                     {/* 5 Core Stakeholder Icons */}
                     <div
                       className="flex items-center -space-x-1"
-                      title="Monitored Stakeholders: Students, Faculty, Laboratories, Administration, Transit"
+                      title={t("kpiStakeholdersDetail")}
                     >
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 ring-2 ring-white dark:bg-indigo-950 dark:text-indigo-300 dark:ring-slate-900">
                         <GraduationCap className="h-3 w-3" />
@@ -479,7 +512,7 @@ export default function DashboardPage() {
                   {/* Stage Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-[10px] font-mono font-medium text-slate-400">
-                      <span>{isCompleted ? "Stage 5/5: Synthesis Complete" : "Stage 1/5: Context Draft"}</span>
+                      <span>{isCompleted ? t("stage5Complete") : t("stage1Draft")}</span>
                       <span>{isCompleted ? "100%" : "25%"}</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
@@ -499,22 +532,22 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={(e) => handleDownloadReport(e, decision.id, decision.title)}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition"
-                      title="Download Markdown Board Memorandum"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition cursor-pointer"
+                      title={t("memorandum")}
                     >
                       <Download className="h-3.5 w-3.5" />
-                      <span>Memorandum</span>
+                      <span>{t("memorandum")}</span>
                     </button>
 
                     {!isArchived && (
                       <button
                         type="button"
                         onClick={(e) => handleToggleArchive(e, decision.id)}
-                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-100 hover:text-amber-600 dark:hover:bg-slate-800 dark:hover:text-amber-400 transition"
-                        title="Archive proposal"
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-100 hover:text-amber-600 dark:hover:bg-slate-800 dark:hover:text-amber-400 transition cursor-pointer"
+                        title={t("cardArchive")}
                       >
                         <Archive className="h-3.5 w-3.5" />
-                        <span>Archive</span>
+                        <span>{t("cardArchive")}</span>
                       </button>
                     )}
 
@@ -522,8 +555,8 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, decision.id)}
-                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 transition"
-                        title="Delete Proposal"
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                        title={t("cardDelete")}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -538,8 +571,8 @@ export default function DashboardPage() {
                     }
                     className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition shadow-xs"
                   >
-                    <span>{isCompleted ? "Inspect Matrix" : "Input Context"}</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <span>{isCompleted ? t("inspectMatrix") : t("inputContext")}</span>
+                    <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
                   </Link>
                 </div>
               </div>
@@ -553,73 +586,93 @@ export default function DashboardPage() {
             <table className="w-full min-w-[640px] text-start text-xs">
               <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-950">
                 <tr>
-                  <th className="px-4 py-3 text-start">Ref #</th>
-                  <th className="px-4 py-3 text-start">Policy Proposal</th>
-                  <th className="px-4 py-3 text-start">Department</th>
-                  <th className="px-4 py-3 text-start">Horizon</th>
-                  <th className="px-4 py-3 text-start">Priority</th>
-                  <th className="px-4 py-3 text-start">Status</th>
-                  <th className="px-4 py-3 text-end">Action</th>
+                  <th className="px-4 py-3 text-start">{t("tableRef")}</th>
+                  <th className="px-4 py-3 text-start">{t("tablePolicyProposal")}</th>
+                  <th className="px-4 py-3 text-start">{t("tableDepartment")}</th>
+                  <th className="px-4 py-3 text-start">{t("tableHorizon")}</th>
+                  <th className="px-4 py-3 text-start">{t("tablePriority")}</th>
+                  <th className="px-4 py-3 text-start">{t("tableStatus")}</th>
+                  <th className="px-4 py-3 text-end">{t("tableAction")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filteredDecisions.map((decision) => (
-                  <tr
-                    key={decision.id}
-                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-mono font-bold text-slate-500">
-                      D-{String(decision.id).padStart(4, "0")}
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white max-w-sm truncate">
-                      <Link
-                        href={
-                          decision.status === "COMPLETED"
-                            ? `/decisions/${decision.id}/scenarios`
-                            : `/decisions/${decision.id}/context`
-                        }
-                        className="hover:text-indigo-600 dark:hover:text-indigo-400"
-                      >
-                        {decision.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {decision.department || "Operations"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {decision.time_horizon || "1 year"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        {decision.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          decision.status === "COMPLETED"
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                            : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                        }`}
-                      >
-                        {decision.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-end">
-                      <Link
-                        href={
-                          decision.status === "COMPLETED"
-                            ? `/decisions/${decision.id}/scenarios`
-                            : `/decisions/${decision.id}/context`
-                        }
-                        className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-                      >
-                        <span>Open</span>
-                        <ChevronRight className="h-3 w-3" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {filteredDecisions.map((decision) => {
+                  const isCompleted = decision.status === "COMPLETED";
+                  const isArchived = decision.status === "ARCHIVED";
+
+                  const priorityLabel =
+                    decision.priority === "HIGH"
+                      ? t("cardPriorityHigh")
+                      : decision.priority === "CRITICAL"
+                      ? t("cardPriorityCritical")
+                      : decision.priority === "MEDIUM"
+                      ? t("cardPriorityMedium")
+                      : t("cardPriorityLow");
+
+                  const statusLabel = isCompleted
+                    ? t("cardSimulated")
+                    : isArchived
+                    ? t("cardArchived")
+                    : t("cardDraft");
+
+                  return (
+                    <tr
+                      key={decision.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <td className="px-4 py-3 font-mono font-bold text-slate-500">
+                        {String(decision.id).padStart(4, "0")}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white max-w-sm truncate">
+                        <Link
+                          href={
+                            decision.status === "COMPLETED"
+                              ? `/decisions/${decision.id}/scenarios`
+                              : `/decisions/${decision.id}/context`
+                          }
+                          className="hover:text-indigo-600 dark:hover:text-indigo-400"
+                        >
+                          {decision.title}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        {decision.department || t("operations")}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        {decision.time_horizon || t("year1")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          {priorityLabel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            decision.status === "COMPLETED"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                          }`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-end">
+                        <Link
+                          href={
+                            decision.status === "COMPLETED"
+                              ? `/decisions/${decision.id}/scenarios`
+                              : `/decisions/${decision.id}/context`
+                          }
+                          className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        >
+                          <span>{t("open")}</span>
+                          <ChevronRight className="h-3 w-3 rtl:rotate-180" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
