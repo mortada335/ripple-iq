@@ -5,12 +5,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Activity, Building2, CheckCircle2, Globe2, Laptop, Moon, RefreshCw, RotateCcw, Save, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { FormField } from "@/components/FormField";
+import { CurrencySelect } from "@/components/CurrencySelect";
 import { formatCurrency, getCurrencyCodes, getCurrencyLabel } from "@/lib/currency";
 import { checkApiHealth, getAIProviderStatus, type AIProviderStatus } from "@/lib/api";
 import type { HealthResponse } from "@/types/decision";
 import { useLocale } from "@/components/LocaleProvider";
 import { useTheme } from "@/components/ThemeProvider";
-import { FacebookLink } from "@/components/FacebookLink";
 
 const STORAGE_KEY = "rippleiq_settings";
 const DEFAULT_SETTINGS = { currency: "IQD" };
@@ -234,10 +234,11 @@ export default function SettingsPage() {
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <FormField id="preference-currency" label={t("preferredCurrency")} hint={t("preferredCurrencyDesc")}>
-            <select className={controlClassName} value={currency} onChange={(event) => setCurrency(event.target.value)}>
-              {!getCurrencyCodes().includes(currency) && <option value={currency}>{currency}</option>}
-              {getCurrencyCodes().map((code) => <option key={code} value={code}>{getCurrencyLabel(code, locale)}</option>)}
-            </select>
+            <CurrencySelect
+              id="preference-currency"
+              value={currency}
+              onChange={(newCurrency) => setCurrency(newCurrency)}
+            />
           </FormField>
           <FormField id="preference-language" label={t("language")} hint={t("languageNote")}>
             <select
@@ -278,20 +279,6 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {/* Official Community Channels */}
-      <section aria-labelledby="community-title" className="space-y-3">
-        <div>
-          <h2 id="community-title" className="text-sm font-semibold text-slate-900 dark:text-white">
-            {locale === "ar" ? "قنوات التواصل والمجتمع الرسمي" : "Official Channels & Community"}
-          </h2>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            {locale === "ar"
-              ? "تابع آخر أخبار المنصة، التحديثات المنهجية، والمناقشات المؤسسية عبر القنوات المعتمدة."
-              : "Follow platform announcements, methodology updates, and institutional discussions via official channels."}
-          </p>
-        </div>
-        <FacebookLink variant="card" />
-      </section>
     </div>
   );
 }

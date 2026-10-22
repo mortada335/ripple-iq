@@ -1,5 +1,5 @@
-import { WorkspaceShellSkeleton } from "@/components/LoadingSkeleton";
+import { PageSkeleton } from "@/components/LoadingSkeleton";
 
 export default function RootLoading() {
-  return <WorkspaceShellSkeleton />;
+  return <PageSkeleton />;
 }

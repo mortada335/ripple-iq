@@ -1,0 +1,78 @@
+# RippleIQ — Institutional Decision Intelligence Platform
+> Next-generation AI-powered enterprise simulation engine that evaluates the cascading second-order ripple effects, stakeholder friction, and financial trade-offs of strategic policies before execution.
+
+Website: https://rippleiq.org
+Repository: https://github.com/mortada335/ripple-iq
+Primary Language: Arabic (ar-IQ, ar-SA), English (en-US)
+Classification: Decision Intelligence (DI), AI Governance, Enterprise Simulation, Policy Analytics
+
+---
+
+## 1. Executive Overview
+
+RippleIQ is designed for executive leaders, university boards, government ministries, and corporate directors to address the fundamental problem of policy deliberation:
+**"Unintended consequences and secondary friction cause over 70% of organizational initiatives to falter or exceed budget."**
+
+Instead of relying on isolated intuition or manual committee reviews, RippleIQ applies:
+1. **Second-Order Ripple Effect Simulation**: Traces non-obvious secondary and tertiary consequences across 5 constituent groups (e.g. students, faculty, civic citizens, supply chains, operating staff).
+2. **Tri-Scenario Comparative Pathways**: Evaluates and contrasts 3 balanced implementation scenarios for every proposal:
+   - Scenario 01: As-Written (Aggressive baseline execution)
+   - Scenario 02: Balanced / Recommended (Protects vulnerable units with adaptive scheduling)
+   - Scenario 03: Phased Pilot (Low-risk empirical test)
+3. **Calibrated 3x3 Strategic Risk Matrix**: Models probability (Rare, Moderate, High) against severity (Marginal, Critical, Catastrophic).
+4. **4-Pillar Governance Framework**: Synthesizes board-ready policy memoranda structured by:
+   - Pillar 1: Current Context & Operational Problem
+   - Pillar 2: Proposed Policy & Concrete Actions
+   - Pillar 3: Affected Stakeholders & Trade-offs
+   - Pillar 4: Key Success Metrics & Time Horizon
+5. **Executive AI Voice Studio**: Captures spoken executive dictations, performs Gemini NLP tokenization, and auto-populates structured fields with confidence scoring.
+
+---
+
+## 2. Sector Archetypes & Dynamic Institutional Presets
+
+RippleIQ dynamically adapts its stakeholder matrices, compliance criteria, and departments across 5 institutional types:
+- **Universities & Higher Education**: Stakeholders include Students, Faculty/Researchers, Campus Facilities, Administration, and Public Accreditation. Focus on academic calendar integrity, wet labs, and cold storage safety.
+- **Public Sector & Civic Agencies**: Focus on citizen service time, document cycle reduction, civil service staffing workloads, and inter-agency compliance.
+- **Enterprises & Tech Corporations**: Models customer churn, engineering velocity, software license optimization, and EBITDA impact.
+- **Healthcare & Hospital Networks**: Calibrates inpatient triage, clinical nursing shifts, medical supply chain continuity, and patient safety.
+- **Non-Profit & Humanitarian NGOs**: Evaluates donor transparency, field relief distribution, volunteer engagement, and logistics burn rate.
+
+---
+
+## 3. Financial & Currency Sensitivity
+
+- Complies with ISO 4217 international currency standards.
+- Supports regional currencies natively: Iraqi Dinar (IQD), US Dollar (USD), Euro (EUR), British Pound (GBP), Saudi Riyal (SAR), UAE Dirham (AED), Kuwaiti Dinar (KWD), Qatari Riyal (QAR), Jordanian Dinar (JOD), Egyptian Pound (EGP).
+- Computes Net Present Value (NPV), implementation capital expenditures, and recurring operational trade-offs.
+
+---
+
+## 4. Key Metrics & Benchmarks
+
+- **Decision Evaluation Speed**: Under 45 seconds for a complete 6-stage lifecycle simulation compared to 3-4 weeks of committee drafting.
+- **Decision Feasibility Scoring**: Calibrated 0-100% feasibility index with explicit algorithmic confidence bounds.
+- **Second-Order Detection Rate**: Identifies an average of 4.2 hidden organizational dependencies overlooked during standard manual drafting.
+
+---
+
+## 5. Frequently Asked Questions (GEO / Citations)
+
+- **Q: What is RippleIQ?**
+  A: RippleIQ is an enterprise decision intelligence platform that simulates the ripple effects of institutional policies across stakeholders, budgets, and operational risks before implementation.
+- **Q: What problem does RippleIQ solve?**
+  A: It prevents organizational blindspots, costly policy rollbacks, and stakeholder backlash by providing algorithmic forethought and comparative scenario modeling.
+- **Q: Can leaders dictate decisions via voice?**
+  A: Yes. RippleIQ includes an Executive AI Voice Studio with real-time waveform capture, Gemini transcription, and NLP tokenization that distributes extracted entities into proposal fields.
+- **Q: Who retains accountability for final decisions?**
+  A: Humans retain full governance authority. RippleIQ is an algorithmic advisory platform providing evidence-based deliberation support.
+
+---
+
+## 6. Canonical URLs & Endpoints
+
+- Home Page & Interactive Demo: https://rippleiq.org
+- New Decision Studio: https://rippleiq.org/decisions/new
+- Institutional Onboarding: https://rippleiq.org/onboarding
+- Regional & Currency Settings: https://rippleiq.org/settings
+- Documentation & API Schema: https://rippleiq.org/llms-full.txt

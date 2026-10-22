@@ -70,7 +70,7 @@ export function DecisionNavTabs({ decisionId }: DecisionNavTabsProps) {
   return (
     <nav
       aria-label="Decision analysis workflow stages"
-      className="w-full rounded-2xl border border-slate-200/80 bg-white/95 p-1.5 shadow-xs backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/95"
+      className="w-full rounded-2xl border border-slate-200/80 bg-white/95 p-1.5 shadow-xs backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/95 print:hidden"
     >
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 w-full">
         {tabs.map((tab) => {

@@ -22,27 +22,33 @@ const ThemeContext = createContext<ThemeContextType>({
 const THEME_STORAGE_KEY = "rippleiq_theme";
 const THEME_COOKIE = "rippleiq_theme";
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+export function ThemeProvider({
+  children,
+  initialTheme = "dark",
+}: {
+  children: React.ReactNode;
+  initialTheme?: Theme;
+}) {
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
+    initialTheme === "light" ? "light" : "dark"
+  );
 
   useEffect(() => {
     try {
       const cookieTheme = getCookie(THEME_COOKIE) as Theme | null;
       if (cookieTheme && ["light", "dark", "system"].includes(cookieTheme)) {
-        setThemeState(cookieTheme);
+        if (cookieTheme !== theme) setThemeState(cookieTheme);
         return;
       }
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
       if (stored && ["light", "dark", "system"].includes(stored)) {
-        setThemeState(stored);
-      } else {
-        setThemeState("light");
+        if (stored !== theme) setThemeState(stored);
       }
     } catch {
       // Ignore localStorage errors
     }
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     const root = document.documentElement;

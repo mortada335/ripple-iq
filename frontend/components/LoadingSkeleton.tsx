@@ -357,55 +357,100 @@ export function SettingsSkeleton() {
  */
 export function NewDecisionFormSkeleton() {
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-48 rounded-lg" />
-        <Skeleton className="h-4 w-96 max-w-full rounded-md" />
+    <div className="space-y-6">
+      {/* Stepper bar skeleton */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-slate-200/80 pb-4 dark:border-slate-800/80">
+        <Skeleton className="h-4 w-48 rounded-md" />
+        <Skeleton className="h-7 w-72 rounded-lg" />
       </div>
 
-      <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-6">
-        {/* Title Input */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-32 rounded-md" />
-          <Skeleton className="h-11 w-full rounded-xl" />
-        </div>
-
-        {/* 2-column controls: Department & Priority */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-28 rounded-md" />
-            <Skeleton className="h-11 w-full rounded-xl" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Main Column */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 sm:p-6 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-3.5 w-32 rounded-md" />
+              <Skeleton className="h-7 w-3/4 rounded-lg" />
+              <Skeleton className="h-3.5 w-5/6 rounded-md" />
+            </div>
+            <Skeleton className="h-10 w-44 rounded-xl" />
           </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-24 rounded-md" />
-            <div className="flex gap-2">
-              <Skeleton className="h-11 flex-1 rounded-xl" />
-              <Skeleton className="h-11 flex-1 rounded-xl" />
-              <Skeleton className="h-11 flex-1 rounded-xl" />
+
+          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-6 sm:p-7 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/95 space-y-6">
+            <div className="space-y-2">
+              <Skeleton className="h-3.5 w-36 rounded-md" />
+              <Skeleton className="h-11 w-full rounded-xl" />
+              <div className="flex gap-2 pt-1">
+                <Skeleton className="h-6 w-24 rounded-lg" />
+                <Skeleton className="h-6 w-28 rounded-lg" />
+                <Skeleton className="h-6 w-32 rounded-lg" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Skeleton className="h-3.5 w-44 rounded-md" />
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-28 rounded-md" />
+                <Skeleton className="h-10 w-full rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-28 rounded-md" />
+                <Skeleton className="h-10 w-full rounded-xl" />
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <Skeleton className="h-3.5 w-36 rounded-md" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-6 dark:border-slate-800/80">
+              <Skeleton className="h-10 w-24 rounded-xl" />
+              <div className="flex gap-3">
+                <Skeleton className="h-10 w-28 rounded-xl" />
+                <Skeleton className="h-10 w-48 rounded-xl" />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Description Textarea */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-36 rounded-md" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-        </div>
-
-        {/* File Upload Dropzone */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-44 rounded-md" />
-          <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 p-8 text-center space-y-3">
-            <Skeleton className="mx-auto h-12 w-12 rounded-2xl" />
-            <Skeleton className="mx-auto h-4 w-64 rounded-md" />
-            <Skeleton className="mx-auto h-3 w-40 rounded-md" />
+        {/* Sidebar Column */}
+        <div className="lg:col-span-4 space-y-5">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/95 space-y-3">
+            <Skeleton className="h-4 w-40 rounded-md" />
+            <Skeleton className="h-3.5 w-full rounded-md" />
+            <div className="space-y-2 pt-1">
+              <Skeleton className="h-9 w-full rounded-xl" />
+              <Skeleton className="h-9 w-full rounded-xl" />
+              <Skeleton className="h-9 w-full rounded-xl" />
+              <Skeleton className="h-9 w-full rounded-xl" />
+              <Skeleton className="h-9 w-full rounded-xl" />
+            </div>
           </div>
-        </div>
 
-        {/* Actions Row */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Skeleton className="h-11 w-24 rounded-xl" />
-          <Skeleton className="h-11 w-44 rounded-xl" />
+          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/95 space-y-3">
+            <Skeleton className="h-4 w-36 rounded-md" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/95 space-y-2">
+            <Skeleton className="h-4 w-32 rounded-md" />
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-3/4 rounded-md" />
+          </div>
         </div>
       </div>
     </div>
@@ -710,31 +755,70 @@ export function AuthFormSkeleton() {
  */
 export function OnboardingSkeleton() {
   return (
-    <div className="space-y-6 max-w-3xl mx-auto py-6">
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-48 rounded-lg" />
-        <Skeleton className="h-4 w-80 rounded-md" />
+    <div className="space-y-6 max-w-7xl mx-auto py-4">
+      {/* Top Bar Skeleton */}
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-6 w-36 rounded-lg" />
+        <Skeleton className="h-9 w-52 rounded-2xl" />
       </div>
 
-      <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-36 rounded-md" />
-          <Skeleton className="h-11 w-full rounded-xl" />
+      {/* Hero Header Skeleton */}
+      <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/80 space-y-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-2xl" />
+          <Skeleton className="h-5 w-40 rounded-md" />
         </div>
+        <Skeleton className="h-8 w-80 rounded-xl" />
+        <Skeleton className="h-4 w-full max-w-2xl rounded-md" />
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-24 rounded-md" />
+      {/* 12-Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Column Skeleton (8 cols) */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 sm:p-7 dark:border-slate-800/80 dark:bg-slate-900/90 space-y-5">
+            <Skeleton className="h-5 w-48 rounded-md" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Skeleton className="h-20 w-full rounded-2xl" />
+              <Skeleton className="h-20 w-full rounded-2xl" />
+              <Skeleton className="h-20 w-full rounded-2xl" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <Skeleton className="h-11 w-full rounded-xl" />
+              <Skeleton className="h-11 w-full rounded-xl" />
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 sm:p-7 dark:border-slate-800/80 dark:bg-slate-900/90 space-y-4">
+            <Skeleton className="h-5 w-52 rounded-md" />
             <Skeleton className="h-11 w-full rounded-xl" />
           </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-28 rounded-md" />
-            <Skeleton className="h-11 w-full rounded-xl" />
+
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 sm:p-7 dark:border-slate-800/80 dark:bg-slate-900/90 space-y-4">
+            <Skeleton className="h-5 w-60 rounded-md" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Skeleton className="h-11 w-36 rounded-xl" />
+        {/* Companion Column Skeleton (4 cols) */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 dark:border-slate-800/80 dark:bg-slate-900/90 space-y-4">
+            <Skeleton className="h-4 w-32 rounded-md" />
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-14 w-14 rounded-2xl" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-3/4 rounded-md" />
+                <Skeleton className="h-3 w-1/2 rounded-md" />
+              </div>
+            </div>
+            <Skeleton className="h-32 w-full rounded-2xl" />
+          </div>
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 dark:border-slate-800/80 dark:bg-slate-900/90 space-y-3">
+            <Skeleton className="h-4 w-40 rounded-md" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+          </div>
         </div>
       </div>
     </div>
@@ -743,10 +827,40 @@ export function OnboardingSkeleton() {
 
 /**
  * Top-level Workspace Shell Skeleton.
- * Displayed whenever the application shell or auth session is loading,
- * preventing any blank screens or raw text layout shifts across the platform.
+/**
+ * Resolves the precise, tailored skeleton matching the given pathname.
+ * Ensures each page has its own dedicated loading skeleton that perfectly mirrors
+ * its actual layout, preventing generic dashboard flash or double-loading.
  */
-export function WorkspaceShellSkeleton() {
+export function getPageSkeleton(pathname = ""): React.ReactNode {
+  if (!pathname || pathname === "/") return null;
+  if (pathname === "/login" || pathname === "/register") return <AuthFormSkeleton />;
+  if (pathname === "/onboarding") return <OnboardingSkeleton />;
+  if (pathname === "/settings") return <SettingsSkeleton />;
+  if (pathname === "/decisions/new") return <NewDecisionFormSkeleton />;
+  if (pathname.includes("/risks")) return <RisksMatrixSkeleton />;
+  if (pathname.includes("/recommendation")) return <RecommendationSkeleton />;
+  if (pathname.includes("/report")) return <ReportDocumentSkeleton />;
+  if (pathname.includes("/context")) return <ContextManagementSkeleton />;
+  if (pathname.includes("/scenarios") || pathname.includes("/consequences")) return <DecisionAnalysisSkeleton />;
+  if (pathname.includes("/progress")) return <SimulationProgressSkeleton />;
+  if (pathname.match(/^\/decisions\/[^/]+$/)) return <DecisionDetailSkeleton />;
+  if (pathname === "/decisions") return <DecisionsListSkeleton />;
+  return <DashboardSkeleton />;
+}
+
+/**
+ * Tailored WorkspaceShellSkeleton that dynamically reflects the target page.
+ * Keeps header, sidebar, and exact page skeleton layout perfectly aligned.
+ */
+export function WorkspaceShellSkeleton({ pathname = "" }: { pathname?: string }) {
+  if (pathname === "/login" || pathname === "/register") {
+    return <AuthFormSkeleton />;
+  }
+  if (pathname === "/onboarding") {
+    return <OnboardingSkeleton />;
+  }
+
   return (
     <div className="relative min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-x-hidden">
       <div
@@ -755,9 +869,10 @@ export function WorkspaceShellSkeleton() {
       />
       <HeaderSkeleton />
       <div className="relative z-10 flex flex-1 items-start">
+        <SidebarSkeleton />
         <main className="flex-1 flex flex-col min-w-0">
           <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4 sm:space-y-5">
-            <DashboardSkeleton />
+            {getPageSkeleton(pathname)}
           </div>
         </main>
       </div>

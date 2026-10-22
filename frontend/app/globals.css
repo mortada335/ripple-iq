@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -1147,54 +1146,97 @@ a:focus-visible {
 
 @media print {
   @page {
-    size: letter;
-    margin: 1in;
+    size: A4 portrait;
+    margin: 10mm 12mm 12mm 12mm;
   }
 
+  html,
   body {
-    visibility: hidden !important;
-    color: #000000 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: visible !important;
+    min-height: auto !important;
+    height: auto !important;
   }
 
-  #report-print-content,
-  #report-print-content * {
-    visibility: visible !important;
-    color: #000000 !important;
+  /* Hide all interactive shell chrome & web controls */
+  header,
+  nav,
+  aside,
+  footer,
+  [data-app-header],
+  [data-app-sidebar],
+  .print\:hidden,
+  button,
+  .mobile-floating-btn,
+  #human-review-banner {
+    display: none !important;
   }
 
-  #report-print-content {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: white;
+  /* Reset main container layout for pure printable document */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 
-  #report-print-content h1,
-  #report-print-content h2,
-  #report-print-content h3,
-  #report-print-content p,
-  #report-print-content li,
-  #report-print-content th,
-  #report-print-content td {
-    color: #000000 !important;
+  main > div {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    space-y: 0 !important;
   }
 
-  #report-print-content table {
-    width: 100%;
-    border-collapse: collapse;
-    break-inside: avoid;
-    color: #000000 !important;
+  /* Executive document sheet print overrides */
+  #report-document-sheet {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    transform: none !important;
   }
 
-  #report-print-content tr,
-  #report-print-content img {
-    break-inside: avoid;
+  /* Section break protection */
+  .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
-  #report-print-content th,
-  #report-print-content td {
-    border: 1px solid #d1d5db;
-    padding: 8px 12px;
+  .print-page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  th,
+  td {
+    padding: 6px 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 9.5pt !important;
   }
 
   .print-only {

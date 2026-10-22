@@ -12,13 +12,10 @@ import {
   LogOut,
   Menu,
   PlusCircle,
-  RefreshCw,
   ShieldCheck,
   Sliders,
   UserRound,
 } from "lucide-react";
-import { checkApiHealth } from "@/lib/api";
-import type { HealthResponse } from "@/types/decision";
 import { useAuth } from "@/components/AuthProvider";
 import { CharterModal } from "@/components/CharterModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -31,32 +28,11 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
   const { user, organizations, activeOrganizationId, isDemo, selectOrganization, signOut } = useAuth();
   const { locale, t, isRtl } = useLocale();
   const activeOrganization = organizations.find((item) => item.id === activeOrganizationId);
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [refreshingHealth, setRefreshingHealth] = useState(true);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [charterOpen, setCharterOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const refreshHealth = () => {
-    setRefreshingHealth(true);
-    checkApiHealth()
-      .then(setHealth)
-      .catch(() => setHealth(null))
-      .finally(() => setRefreshingHealth(false));
-  };
-
   useEffect(() => {
-    let isMounted = true;
-    checkApiHealth()
-      .then((data) => {
-        if (isMounted) setHealth(data);
-      })
-      .catch(() => {
-        if (isMounted) setHealth(null);
-      })
-      .finally(() => {
-        if (isMounted) setRefreshingHealth(false);
-      });
 
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -65,7 +41,6 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
     };
     document.addEventListener("mousedown", closeOnOutsideClick);
     return () => {
-      isMounted = false;
       document.removeEventListener("mousedown", closeOnOutsideClick);
     };
   }, []);
@@ -218,41 +193,6 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             <span>{t("charter")}</span>
           </button>
 
-          {/* API Health Indicator - compact on small screens */}
-          <button
-            type="button"
-            onClick={refreshHealth}
-            aria-label={
-              refreshingHealth
-                ? t("checking")
-                : health?.status === "healthy"
-                ? `${t("backendReachable")}. ${locale === "ar" ? "انقر للتحديث." : "Click to refresh."}`
-                : `${t("backendUnavailable")}. ${locale === "ar" ? "انقر للمحاولة." : "Click to retry."}`
-            }
-            title={health?.status === "healthy" ? t("backendReachable") : t("backendUnavailable")}
-            disabled={refreshingHealth}
-            className="hidden sm:inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/80 px-2.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            {refreshingHealth ? (
-              <RefreshCw className="h-3.5 w-3.5 animate-spin text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-            ) : (
-              <span className="relative flex h-2 w-2">
-                <span
-                  className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
-                    health?.status === "healthy" ? "bg-emerald-400" : "bg-slate-400"
-                  }`}
-                />
-                <span
-                  className={`relative inline-flex h-2 w-2 rounded-full ${
-                    health?.status === "healthy" ? "bg-emerald-500" : "bg-slate-400"
-                  }`}
-                />
-              </span>
-            )}
-            <span className="hidden sm:inline">
-              {refreshingHealth ? t("checking") : health?.status === "healthy" ? t("apiLive") : t("offline")}
-            </span>
-          </button>
 
           {/* User Profile Dropdown */}
           <div className="relative" ref={profileRef}>

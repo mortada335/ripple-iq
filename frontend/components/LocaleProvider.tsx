@@ -32,29 +32,39 @@ function applyDirection(locale: Locale) {
   }
 }
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+export function LocaleProvider({
+  children,
+  initialLocale = "ar",
+}: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
     try {
       // Check cookie first for SSR sync, then localStorage
       const cookieLocale = getCookie(LOCALE_COOKIE);
       if (cookieLocale === "ar" || cookieLocale === "en") {
-        setLocaleState(cookieLocale);
-        applyDirection(cookieLocale);
+        if (cookieLocale !== locale) {
+          setLocaleState(cookieLocale);
+          applyDirection(cookieLocale);
+        }
         return;
       }
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as { language?: string };
-        const initial = parsed.language === "ar" ? "ar" : "en";
-        setLocaleState(initial);
-        applyDirection(initial);
+        const storedLoc = parsed.language === "ar" ? "ar" : "en";
+        if (storedLoc !== locale) {
+          setLocaleState(storedLoc);
+          applyDirection(storedLoc);
+        }
       }
     } catch {
       // Ignore localStorage parse errors
     }
-  }, []);
+  }, [locale]);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);

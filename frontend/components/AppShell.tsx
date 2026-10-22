@@ -6,10 +6,11 @@ import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { HumanReviewBanner } from "./HumanReviewBanner";
 import { MobileFloatingNewDecision } from "./MobileFloatingNewDecision";
+import { FirstTimeOrgModal } from "./FirstTimeOrgModal";
 import { useAuth } from "./AuthProvider";
 import { useLocale } from "./LocaleProvider";
 
-import { WorkspaceShellSkeleton } from "./LoadingSkeleton";
+import { WorkspaceShellSkeleton, getPageSkeleton } from "./LoadingSkeleton";
 
 const emptySubscribe = () => () => {};
 
@@ -51,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (loading || (!user && !isDemo && !authError) || (needsOnboarding && pathname !== "/onboarding")) {
-    return <WorkspaceShellSkeleton />;
+    return <WorkspaceShellSkeleton pathname={pathname} />;
   }
 
   if (authError && !user && !isDemo) {
@@ -89,11 +90,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main id="main-content" className="flex-1 flex flex-col min-w-0">
           <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4 sm:space-y-5">
             <HumanReviewBanner />
-            {children}
+            <React.Suspense fallback={getPageSkeleton(pathname)}>
+              {children}
+            </React.Suspense>
           </div>
         </main>
       </div>
       <MobileFloatingNewDecision />
+      <FirstTimeOrgModal />
     </div>
   );
 }

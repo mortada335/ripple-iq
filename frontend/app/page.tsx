@@ -13,6 +13,11 @@ import {
   CheckCircle2,
   Sparkles,
   ShieldAlert,
+  HelpCircle,
+  ChevronDown,
+  XCircle,
+  BrainCircuit,
+  Check,
 } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -23,6 +28,7 @@ export default function HomePage() {
   const { locale, isRtl } = useLocale();
   const isAr = locale === "ar";
   const [activeScenario, setActiveScenario] = useState<1 | 2 | 3>(2);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const scenariosData = {
     1: {
@@ -510,6 +516,191 @@ export default function HomePage() {
               <span>{isAr ? "إنشاء أول مقترح سياسة جديد" : "Create Your First Policy Proposal"}</span>
               <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Executive Comparison Table (GEO & Search Citable Matrix) */}
+      <section className="border-t border-slate-200/80 py-16 sm:py-24 bg-slate-50/50 dark:border-slate-800/80 dark:bg-slate-950/40">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+              <BrainCircuit className="h-3.5 w-3.5" />
+              <span>{isAr ? "مقارنة منهجيات اتخاذ القرار" : "Decision Methodologies Compared"}</span>
+            </span>
+            <h2 className="text-2xl font-extrabold sm:text-3xl text-slate-950 dark:text-white">
+              {isAr
+                ? "اتخاذ القرار الانطباعي مقابل محاكاة RippleIQ لذكاء القرارات"
+                : "Traditional Intuitive Decisions vs. RippleIQ Simulation"}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+              {isAr
+                ? "تُظهر الأبحاث المؤسسية أن 70% من السياسات تفشل بسبب تداعيات الدرجة الثانية غير المحسوبة مسبقاً."
+                : "Studies indicate 70% of organizational policy failures stem from unforecasted secondary friction."}
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-xs dark:border-slate-800/90 dark:bg-slate-900/80">
+            <table className="w-full text-left rtl:text-right border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-950/80">
+                  <th className="py-4 px-5 font-bold text-slate-700 dark:text-slate-300">
+                    {isAr ? "معيار التقييم والحوكمة" : "Governance Dimension"}
+                  </th>
+                  <th className="py-4 px-5 font-bold text-rose-700 dark:text-rose-400">
+                    {isAr ? "النهج التقليدي (الحدس واللجان)" : "Traditional Approach (Manual)"}
+                  </th>
+                  <th className="py-4 px-5 font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-950/30">
+                    {isAr ? "منظومة RippleIQ لذكاء القرارات" : "RippleIQ Decision Intelligence"}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {[
+                  {
+                    dimAr: "كشف التداعيات الثانوية غير المرئية",
+                    dimEn: "Second-Order Ripple Effect Detection",
+                    tradAr: "غائب غالباً، وتظهر العواقب كمفاجآت ميدانية واحتكاك وظيفي بعد التطبيق.",
+                    tradEn: "Usually blind; secondary friction manifests as operational surprises post-rollout.",
+                    rippAr: "محاكاة خوارزمية استشرافية تقيس الأثر عبر 5 فئات من المعنيين وسلاسل الإمداد.",
+                    rippEn: "Algorithmic simulation proactively tracing ripples across 5 stakeholder vectors.",
+                  },
+                  {
+                    dimAr: "زمن إعداد دراسة الأثر والمراجعة",
+                    dimEn: "Assessment Turnaround Time",
+                    tradAr: "3 إلى 5 أسابيع من الاجتماعات والمسودات المبعثرة.",
+                    tradEn: "3–5 weeks of manual committees and scattered drafts.",
+                    rippAr: "أقل من 60 ثانية لتوليد محاكاة متكاملة للمخاطر والسيناريوهات.",
+                    rippEn: "Under 60 seconds for multi-scenario comparative risk assessment.",
+                  },
+                  {
+                    dimAr: "مقارنة المسارات والبدائل التنفيذية",
+                    dimEn: "Multi-Scenario Comparative Pathways",
+                    tradAr: "نقاش أحادي لـ (نعم أو لا) دون مقايضات كمية متوازنة.",
+                    tradEn: "Binary yes/no deliberation without balanced quantitative trade-offs.",
+                    rippAr: "3 مسارات متوازنة (كما كُتب، المتوازن الموصى به، والمرحلي التجريبي).",
+                    rippEn: "3 calibrated pathways (As-Written, Balanced Recommendation, Phased Pilot).",
+                  },
+                  {
+                    dimAr: "معايرة مصفوفة المخاطر التشغيلية والمالية",
+                    dimEn: "Operational & Financial Risk Calibration",
+                    tradAr: "تقديرات وصفية انطباعية تفتقر للدقة الإحصائية.",
+                    tradEn: "Subjective, impressionistic qualitative guesses lacking calibration.",
+                    rippAr: "مصفوفة 3×3 دقيقة تقيس الشدة والاحتمالية مع مؤشرات حساسية الميزانية.",
+                    rippEn: "3x3 probability vs severity matrix with budget sensitivity bounds.",
+                  },
+                  {
+                    dimAr: "التوثيق ومذكرات مجالس الإدارة",
+                    dimEn: "Governance Documentation & Memoranda",
+                    tradAr: "محاضر جلسات سردية مطولة يصعب تدقيقها.",
+                    tradEn: "Unstructured meeting minutes difficult for board audit.",
+                    rippAr: "مذكرة تنفيذية مهيكلة بالركائز الأربع جاهزة للتصدير بصيغة Word و Markdown.",
+                    rippEn: "Audit-grade 4-Pillar Executive Memorandum exportable to Word & Markdown.",
+                  },
+                ].map((row, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                    <td className="py-3.5 px-5 font-semibold text-slate-900 dark:text-slate-100">
+                      {isAr ? row.dimAr : row.dimEn}
+                    </td>
+                    <td className="py-3.5 px-5 text-slate-500 dark:text-slate-400">
+                      <div className="flex items-start gap-2">
+                        <XCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                        <span>{isAr ? row.tradAr : row.tradEn}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-5 text-indigo-950 dark:text-indigo-200 bg-indigo-50/20 dark:bg-indigo-950/20 font-medium">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <span>{isAr ? row.rippAr : row.rippEn}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Authoritative GEO / AI SEO FAQ Section */}
+      <section className="border-t border-slate-200/80 py-16 sm:py-24 dark:border-slate-800/80">
+        <div className="mx-auto max-w-4xl px-4 sm:px-8">
+          <div className="text-center space-y-2 mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+              <HelpCircle className="h-3.5 w-3.5" />
+              <span>{isAr ? "الأسئلة الشائعة وذكاء القرارات" : "Decision Intelligence FAQ"}</span>
+            </span>
+            <h2 className="text-2xl font-extrabold sm:text-3xl text-slate-950 dark:text-white">
+              {isAr
+                ? "إجابات شاملة حول محاكاة السياسات وحوكمة القرارات"
+                : "Frequently Asked Questions on Decision Simulation"}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+              {isAr
+                ? "دليلك المعرفي لفهم آليات عمل RippleIQ، معالجة الصوت بـ NLP، ونمذجة المخاطر المؤسسية."
+                : "Comprehensive guidance on RippleIQ mechanics, NLP voice capture, and risk modeling."}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              {
+                qAr: "ما هي منصة RippleIQ وكيف تحاكي أثر القرارات المؤسسية؟",
+                qEn: "What is RippleIQ and how does it simulate decision impact?",
+                aAr: "منصة RippleIQ هي محرك ذكاء قرارات استراتيجي (Decision Intelligence) يقوم بمحاكاة التداعيات غير المرئية (Second-Order Ripples) لأي قرار أو سياسة قبل تطبيقها، من خلال مقارنة 3 سيناريوهات تنفيذية متوازنة وتحديد المقايضات ومستويات الرضا لدى أصحاب المصلحة.",
+                aEn: "RippleIQ is a predictive enterprise decision-simulation platform that evaluates the cascading second-order consequences of operational, policy, and budget decisions across multiple stakeholder groups before execution.",
+              },
+              {
+                qAr: "كيف يتنبأ RippleIQ بالمخاطر التشغيلية والمالية غير المتوقعة؟",
+                qEn: "How does RippleIQ forecast unintended operational and financial risks?",
+                aAr: "تعتمد المنصة على نمذجة دقيقة لمصفوفة المخاطر 3×3 (الشدة والاحتمالية)، مع محاكاة استشرافية لتدفقات الميزانية، سلاسل الإمداد، والأثر المعنوي للكوادر، مما يكشف نقاط الاحتكاك والمفاجآت التشغيلية قبل أن تكلف المؤسسة خسائر مادية أو سمعية.",
+                aEn: "The platform calibrates a 3x3 Risk Matrix (Probability vs. Severity) alongside budget sensitivities, supply chain interdependencies, and personnel sentiment to preempt costly blindspots.",
+              },
+              {
+                qAr: "ما هي القطاعات والمؤسسات التي تدعمها منصة RippleIQ؟",
+                qEn: "What sectors and organization types does RippleIQ support?",
+                aAr: "توفر المنصة قوالب ومؤشرات متخصصة تتكيف تلقائياً مع 5 أنماط رئيسية: الجامعات والمؤسسات الأكاديمية، الشركات التقنية والخاصة، الدوائر والوزارات الحكومية، المنشآت الصحية والمستشفيات، والمنظمات غير الربحية والإنسانية.",
+                aEn: "RippleIQ features dynamic presets for 5 core sectors: Universities & Higher Education, Tech & Private Enterprises, Public Sector & Ministries, Healthcare & Hospitals, and NGOs.",
+              },
+              {
+                qAr: "كيف يعمل استوديو الإملاء الصوتي والتحليل اللغوي بالذكاء الاصطناعي في RippleIQ؟",
+                qEn: "How does the AI Voice Studio and NLP tokenization pipeline work?",
+                aAr: "يتضمن استوديو الإملاء (AI Voice Studio) مسار نقل صوتي مشفر مع معالجة Gemini NLP؛ حيث يحلل الصوت المسجل، ويقوم بالترميز اللغوي (Tokenization) لاستخراج عنوان القرار، تصنيف القسم، تحديد الأفق الزمني والأولوية، وتوزيعها آلياً في الحقول بصياغة حوكمة مهيكلة.",
+                aEn: "The AI Voice Studio captures real-time audio waveforms, securely streams to Gemini NLP, tokenizes spoken entities (action verbs, departments, horizons, priorities), and populates proposal fields automatically.",
+              },
+              {
+                qAr: "ما هو هيكل المذكرة التنفيذية (4-Pillar Executive Memo) في RippleIQ؟",
+                qEn: "What is the 4-Pillar Executive Memorandum framework?",
+                aAr: "تعتمد المنصة منهجية الركائز الأربع للحوكمة الاستراتيجية: 1. السياق والمشكلة الراهنة، 2. الإجراء المقترح ونطاق التغيير، 3. أصحاب المصلحة المتأثرون والمقايضات، 4. مؤشرات النجاح والأفق الزمني؛ لتصدير مذكرات متوافقة مع مجالس الإدارة واللجان القيادية.",
+                aEn: "Every policy output is formalized into 4 governance pillars: 1. Current Context & Problem, 2. Proposed Policy & Concrete Actions, 3. Affected Stakeholders & Trade-offs, 4. Key Success Metrics & Time Horizon.",
+              },
+            ].map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-slate-200/80 bg-white transition-all dark:border-slate-800/80 dark:bg-slate-900/60"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="flex w-full items-center justify-between gap-4 p-4 text-start text-xs sm:text-sm font-bold text-slate-900 dark:text-white"
+                  >
+                    <span>{isAr ? faq.qAr : faq.qEn}</span>
+                    <ChevronDown
+                      className={`h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                        isOpen ? "rotate-180 text-indigo-600 dark:text-indigo-400" : ""
+                      }`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-1 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60 animate-in fade-in duration-150">
+                      {isAr ? faq.aAr : faq.aEn}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
