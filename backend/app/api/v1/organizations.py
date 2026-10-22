@@ -18,16 +18,17 @@ from app.schemas.schemas import (
 router = APIRouter(prefix="/api/v1/organizations", tags=["Organizations"])
 
 
-def make_slug(name: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", name.casefold()).strip("-")[:100]
-    if not slug:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "code": "INVALID_ORGANIZATION_NAME",
-                "message": "Organization name must contain letters or numbers.",
-            },
-        )
+import uuid
+
+def make_slug(name: str, db: Session | None = None) -> str:
+    clean = re.sub(r"[^a-z0-9]+", "-", name.casefold()).strip("-")[:80]
+    if not clean:
+        clean = f"org-{uuid.uuid4().hex[:8]}"
+    base_slug = clean
+    slug = base_slug
+    if db:
+        if db.query(Organization).filter(Organization.slug == slug).first() is not None:
+            slug = f"{base_slug[:70]}-{uuid.uuid4().hex[:6]}"
     return slug
 
 
@@ -37,7 +38,14 @@ def create_organization(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> OrganizationResponse:
-    organization = Organization(name=data.name.strip(), slug=make_slug(data.name), country=data.country)
+    name_clean = data.name.strip()
+    if not name_clean:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INVALID_NAME", "message": "Organization name cannot be empty."},
+        )
+    slug = make_slug(name_clean, db=db)
+    organization = Organization(name=name_clean, slug=slug, country=data.country)
     db.add(organization)
     try:
         db.flush()
@@ -48,10 +56,39 @@ def create_organization(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "ORGANIZATION_ALREADY_EXISTS", "message": "An organization with this name already exists."},
-        ) from None
+        # If organization already exists, attach user to it or reuse
+        existing = db.query(Organization).filter(Organization.name == name_clean).first()
+        if existing:
+            existing_member = (
+                db.query(OrganizationMember)
+                .filter(OrganizationMember.organization_id == existing.id, OrganizationMember.user_id == user.id)
+                .first()
+            )
+            if not existing_member:
+                membership = OrganizationMember(organization=existing, user=user, role="owner")
+                db.add(membership)
+            if user.organization_id is None:
+                user.organization = existing
+            db.commit()
+            db.refresh(existing)
+            return OrganizationResponse(
+                id=existing.id,
+                name=existing.name,
+                slug=existing.slug,
+                country=existing.country,
+                role="owner",
+                created_at=existing.created_at,
+            )
+        # If slug collided, retry with random unique uuid slug
+        slug = f"org-{uuid.uuid4().hex[:12]}"
+        organization = Organization(name=name_clean, slug=slug, country=data.country)
+        db.add(organization)
+        db.flush()
+        membership = OrganizationMember(organization=organization, user=user, role="owner")
+        db.add(membership)
+        if user.organization_id is None:
+            user.organization = organization
+        db.commit()
     db.refresh(organization)
     return OrganizationResponse(
         id=organization.id,

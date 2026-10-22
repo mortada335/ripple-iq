@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   PlusCircle,
   Search,
@@ -30,12 +31,12 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { DashboardSkeleton, DecisionCardSkeleton } from "@/components/LoadingSkeleton";
 import { EmptyState } from "@/components/EmptyState";
-import { DEMO_DECISION, saveLocalDecision } from "@/lib/mock-data";
 import { useLocale } from "@/components/LocaleProvider";
 
 const PAGE_SIZE = 20;
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { locale, t, isRtl } = useLocale();
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [search, setSearch] = useState("");
@@ -45,7 +46,7 @@ export default function DashboardPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const { isDemo, activeOrganizationId, organizations } = useAuth();
+  const { user, isDemo, activeOrganizationId, organizations } = useAuth();
 
   const activeOrg = organizations.find((o) => o.id === activeOrganizationId);
 
@@ -173,12 +174,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleResetDemoSample = () => {
-    saveLocalDecision(DEMO_DECISION);
-    toast.success("Reference University 4-Day Attendance Decision loaded!");
-    void reloadDecisions();
-  };
-
   if (loading) {
     return <DashboardSkeleton />;
   }
@@ -190,9 +185,19 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              {activeOrg?.name ?? (isDemo ? t("cockpitDemoTag") : t("cockpitTag"))}
-            </span>
+            {user && organizations.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event("rippleiq:open-onboarding-modal"))}
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              >
+                {locale === "ar" ? "+ إنشاء منظمتك الأولى" : "+ Set Up Organization"}
+              </button>
+            ) : (
+              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                {activeOrg?.name ?? (isDemo ? t("cockpitDemoTag") : t("cockpitTag"))}
+              </span>
+            )}
           </div>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
             {t("cockpitTitle")}
@@ -203,26 +208,53 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {decisions.length === 0 && (
+          {user && organizations.length === 0 && (
             <button
               type="button"
-              onClick={handleResetDemoSample}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition"
+              onClick={() => window.dispatchEvent(new Event("rippleiq:open-onboarding-modal"))}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition cursor-pointer"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>{t("loadDemo")}</span>
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>{locale === "ar" ? "إنشاء مؤسستك الأولى" : "Create Organization"}</span>
             </button>
           )}
 
           <Link
             href="/decisions/new"
-            className="hidden md:inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/25 hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/25 hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition"
           >
             <PlusCircle className="h-4 w-4" />
             <span>{t("newAnalysis")}</span>
           </Link>
         </div>
       </div>
+
+      {user && organizations.length === 0 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-indigo-200/80 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
+              <PlusCircle className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                {locale === "ar" ? "ابدأ بإنشاء ملف مؤسستك الأولى" : "Set up your organization profile"}
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                {locale === "ar"
+                  ? "أنشئ منظمتك لضبط العملة والمعايير التشغيلية ونمذجة القرارات بدقة."
+                  : "Define your organization type, currency, and goals to tailor decision simulations."}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("rippleiq:open-onboarding-modal"))}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 transition cursor-pointer"
+          >
+            <span>{locale === "ar" ? "فتح نافذة الإنشاء" : "Open Setup Modal"}</span>
+          </button>
+        </div>
+      )}
 
       {/* 4 KPI Summary Cards */}
       <section aria-label="Executive decision KPIs" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -391,8 +423,8 @@ export default function DashboardPage() {
           title={t("noDecisionsTitle")}
           description={t("noDecisionsDescription")}
           action={{
-            label: t("loadDemo"),
-            onClick: handleResetDemoSample,
+            label: t("newAnalysis"),
+            onClick: () => router.push("/decisions/new"),
           }}
         />
       ) : viewMode === "grid" ? (

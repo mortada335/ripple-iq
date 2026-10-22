@@ -21,16 +21,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const isPublicPage = pathname === "/" || pathname === "/login" || pathname === "/register";
-  const needsOnboarding = Boolean(user && organizations.length === 0 && !activeOrganizationId);
 
   useEffect(() => {
     if (!isMounted || loading || authError || isPublicPage) return;
     if (!user && !isDemo) {
       router.replace("/login");
-    } else if (needsOnboarding && pathname !== "/onboarding") {
-      router.replace("/onboarding");
     }
-  }, [isMounted, isDemo, isPublicPage, loading, authError, needsOnboarding, pathname, router, user]);
+  }, [isMounted, isDemo, isPublicPage, loading, authError, router, user]);
 
   // Before mount on client: render identical SSR neutral shell, avoiding hydration mismatch.
   if (!isMounted) {
@@ -50,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (loading || (!user && !isDemo && !authError) || (needsOnboarding && pathname !== "/onboarding")) {
+  if (loading || (!user && !isDemo && !authError)) {
     return <WorkspaceShellSkeleton pathname={pathname} />;
   }
 

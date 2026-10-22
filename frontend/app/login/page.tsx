@@ -10,6 +10,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useLocale } from "@/components/LocaleProvider";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DEMO_DECISION, saveLocalDecision } from "@/lib/mock-data";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,8 +27,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await loginAccount(email.trim(), password);
-      const hasOrganization = await refresh();
-      router.replace(hasOrganization ? "/dashboard" : "/onboarding");
+      await refresh();
+      router.replace("/dashboard");
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Could not sign in. Try again.";
       setError(message);
@@ -38,6 +39,7 @@ export default function LoginPage() {
 
   function enterDemo() {
     startDemo();
+    saveLocalDecision(DEMO_DECISION);
     toast.info("Demo workspace opened", {
       description: "Demo data stays in this browser and is not sent to the API.",
     });

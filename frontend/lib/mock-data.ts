@@ -355,16 +355,15 @@ const LOCAL_STORAGE_KEY_CONTEXTS = "rippleiq_contexts";
 const LOCAL_STORAGE_KEY_RESULTS = "rippleiq_results";
 
 export function getLocalDecisions(): Decision[] {
-  if (typeof window === "undefined") return [DEMO_DECISION];
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY_DECISIONS);
     if (!raw) {
-      localStorage.setItem(LOCAL_STORAGE_KEY_DECISIONS, JSON.stringify([DEMO_DECISION]));
-      return [DEMO_DECISION];
+      return [];
     }
     return JSON.parse(raw);
   } catch {
-    return [DEMO_DECISION];
+    return [];
   }
 }
 

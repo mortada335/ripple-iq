@@ -15,11 +15,9 @@ import {
   FlaskConical,
   Bus,
   CheckCircle2,
-  RotateCcw,
 } from "lucide-react";
 import { attachDecisionContext, extractDecisionDocument, getDecision, getDecisionContext } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
-import { DEMO_CONTEXT } from "@/lib/mock-data";
 import { ExtractedDocument } from "@/types/decision";
 import { toast } from "sonner";
 import { readSavedOrganizationContext } from "@/lib/organization";
@@ -83,23 +81,6 @@ export default function DecisionContextPage({
     };
   }, [decisionId]);
 
-  const handleLoadDemoProfile = () => {
-    setStudentPopulation(String(DEMO_CONTEXT.student_population ?? "28000"));
-    setFacultyCount(String(DEMO_CONTEXT.faculty_count ?? "1400"));
-    setActiveLaboratories(String(DEMO_CONTEXT.active_laboratories ?? "85"));
-    setTransitRate(String(DEMO_CONTEXT.transit_dependency_rate ?? "68.5"));
-    setAssumptions(
-      DEMO_CONTEXT.key_assumptions.join("\n") ||
-        "Fridays designated as asynchronous remote learning day\nCampus auxiliary dining operates on 50% footprint\nTotal course accreditation contact hours preserved via 15% longer classes"
-    );
-    setConstraints(
-      DEMO_CONTEXT.constraints ??
-        "Wet laboratories, live animal research facilities, and BSL-2 laboratories require continuous daily temperature controls, monitoring, and researcher physical access."
-    );
-    toast.success("Reference University Context Loaded!", {
-      description: "Sample higher-education baseline parameters applied.",
-    });
-  };
 
   const saveContextPayload = async () => {
     const parsedAssumptions = assumptions
@@ -220,15 +201,6 @@ export default function DecisionContextPage({
               : "Provide baseline institutional parameters to calibrate deterministic simulation models. You can also upload a PDF policy memo for automated extraction."}
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={handleLoadDemoProfile}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 transition cursor-pointer"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          <span>{isAr ? "تحميل بيانات نموذج الـ 4 أيام" : "Load University 4-Day Reference Profile"}</span>
-        </button>
       </div>
 
       {error && (

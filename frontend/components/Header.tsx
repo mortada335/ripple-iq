@@ -29,14 +29,18 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
   const { locale, t, isRtl } = useLocale();
   const activeOrganization = organizations.find((item) => item.id === activeOrganizationId);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const [charterOpen, setCharterOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const orgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
+      }
+      if (orgRef.current && !orgRef.current.contains(event.target as Node)) {
+        setOrgDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", closeOnOutsideClick);
@@ -78,40 +82,89 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
             </span>
           </Link>
 
-          {/* Org Selector Pill - Expands on wide screens to prevent header overcrowding */}
-          <div className="hidden 2xl:flex items-center">
+          {/* Org Selector & Creator Trigger */}
+          <div className="relative hidden sm:flex items-center" ref={orgRef}>
             {isDemo ? (
-              <Link
-                href="/onboarding"
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/80 px-2.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800"
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event("rippleiq:open-onboarding-modal"))}
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-amber-300/80 bg-amber-50/80 px-2.5 text-xs font-semibold text-amber-800 transition hover:border-amber-400 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/50 cursor-pointer"
               >
                 <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                 <span className="max-w-28 truncate">{locale === "ar" ? "مساحة تجريبية" : "Demo Workspace"}</span>
-                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                <span className="rounded-md bg-amber-200/80 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-900 dark:bg-amber-900 dark:text-amber-200">
                   {locale === "ar" ? "تجريبي" : "Demo"}
                 </span>
-              </Link>
-            ) : organizations.length > 1 ? (
-              <label className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/80 px-2.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800">
-                <Building2 className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-                <select
-                  aria-label="Active organization"
-                  value={activeOrganizationId ?? ""}
-                  onChange={(event) => selectOrganization(Number(event.target.value))}
-                  className="rounded border-0 bg-transparent py-0 text-xs font-semibold text-slate-900 focus:ring-0 dark:text-slate-100 cursor-pointer"
-                >
-                  {organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              </button>
+            ) : user && organizations.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event("rippleiq:open-onboarding-modal"))}
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-indigo-300 bg-indigo-50 px-3 text-xs font-bold text-indigo-700 shadow-xs hover:bg-indigo-100 hover:border-indigo-400 dark:border-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 dark:hover:bg-indigo-900 transition cursor-pointer"
+              >
+                <PlusCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                <span>{locale === "ar" ? "+ إنشاء منظمة" : "+ Create Organization"}</span>
+              </button>
             ) : activeOrganization ? (
-              <span className="inline-flex h-9 max-w-40 items-center gap-1.5 truncate rounded-xl border border-slate-200/80 bg-slate-50/80 px-2.5 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200">
-                <Building2 className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-                <span className="truncate">{activeOrganization.name}</span>
-              </span>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOrgDropdownOpen((open) => !open)}
+                  aria-expanded={orgDropdownOpen}
+                  aria-controls="org-menu"
+                  className="inline-flex h-9 max-w-48 items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/80 px-2.5 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <Building2 className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                  <span className="truncate">{activeOrganization.name}</span>
+                  <ChevronDown className="h-3 w-3 text-slate-400 shrink-0" aria-hidden="true" />
+                </button>
+
+                {orgDropdownOpen && (
+                  <div
+                    id="org-menu"
+                    className="absolute start-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-xs shadow-xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in duration-150"
+                  >
+                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      {locale === "ar" ? "المنظمات التابعة لك" : "Your Organizations"}
+                    </div>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {organizations.map((org) => {
+                        const isSelected = org.id === activeOrganizationId;
+                        return (
+                          <button
+                            key={org.id}
+                            type="button"
+                            onClick={() => {
+                              selectOrganization(org.id);
+                              setOrgDropdownOpen(false);
+                            }}
+                            className={`flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-start transition cursor-pointer ${
+                              isSelected
+                                ? "bg-indigo-50 font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
+                                : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                            }`}
+                          >
+                            <span className="truncate">{org.name}</span>
+                            {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOrgDropdownOpen(false);
+                        window.dispatchEvent(new Event("rippleiq:open-onboarding-modal"));
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-start font-semibold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/50 transition cursor-pointer"
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>{locale === "ar" ? "+ إنشاء منظمة جديدة" : "+ New Organization"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : null}
           </div>
 
@@ -240,13 +293,17 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
                   >
                     <UserRound className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("profile")}
                   </Link>
-                  <Link
-                    href="/onboarding"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      window.dispatchEvent(new Event("rippleiq:open-onboarding-modal"));
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
                   >
-                    <Building2 className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("organization")}
-                  </Link>
+                    <Building2 className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                    <span>{t("organization")}</span>
+                  </button>
                   <Link
                     href="/settings"
                     onClick={() => setProfileDropdownOpen(false)}

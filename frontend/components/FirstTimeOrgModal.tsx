@@ -72,15 +72,16 @@ export function FirstTimeOrgModal() {
     };
     window.addEventListener("rippleiq:open-onboarding-modal", handleOpen);
 
-    // Automatic trigger check: only if not seen yet AND user is logged in or in demo
+    // Automatic trigger check: only if not seen yet OR user is logged in with no org
     const seen = localStorage.getItem(MODAL_STORAGE_KEY);
     const hasNoOrg = Boolean(user && organizations.length === 0);
 
     if (!seen || hasNoOrg) {
       const timer = setTimeout(() => {
         const current = readDemoOrganization(activeOrganizationId);
-        // If real user with active org, check if name matches default
-        if (user && organizations.length > 0) {
+        if (hasNoOrg) {
+          current.name = "";
+        } else if (user && organizations.length > 0) {
           const activeOrg = organizations.find((o) => o.id === activeOrganizationId);
           if (activeOrg) {
             current.name = activeOrg.name;
@@ -89,7 +90,7 @@ export function FirstTimeOrgModal() {
         }
         setProfile(current);
         setIsOpen(true);
-      }, 500);
+      }, 400);
 
       return () => {
         clearTimeout(timer);
@@ -102,7 +103,7 @@ export function FirstTimeOrgModal() {
     };
   }, [activeOrganizationId, organizations, user, isDemo]);
 
-  if (!isOpen || pathname === "/onboarding") return null;
+  if (!isOpen) return null;
 
   const update = <K extends keyof OrganizationProfile>(key: K, value: OrganizationProfile[K]) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
@@ -125,7 +126,7 @@ export function FirstTimeOrgModal() {
       // Ignore
     }
     setIsOpen(false);
-    toast.info(isAr ? "يمكنك دائماً تعديل بيانات المؤسسة من الإعدادات." : "You can always edit organization details in Settings.");
+    toast.info(isAr ? "يمكنك دائماً إنشاء أو تعديل بيانات المؤسسة من شريط التنقل أو الإعدادات." : "You can manage organizations anytime from the navigation bar or settings.");
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -137,20 +138,25 @@ export function FirstTimeOrgModal() {
 
     setSaving(true);
     try {
-      // If registered user with no organization yet, create it on backend
-      if (user && organizations.length === 0) {
-        await createOrganization({
-          name: profile.name.trim(),
-          country: profile.country.trim() || null,
-        });
-        await refresh();
+      // If user is logged in, create the organization on backend if not existing
+      if (user) {
+        const isExistingOrg = organizations.some(
+          (o) => o.name.trim().toLowerCase() === profile.name.trim().toLowerCase()
+        );
+        if (!isExistingOrg) {
+          await createOrganization({
+            name: profile.name.trim(),
+            country: profile.country.trim() || null,
+          });
+          await refresh();
+        }
       }
 
       // Save complete extended profile to local context
       saveDemoOrganization(profile, getActiveOrganizationId());
       localStorage.setItem(MODAL_STORAGE_KEY, "true");
 
-      toast.success(isAr ? "تم إعداد ملف المؤسسة بنجاح!" : "Organization profile configured successfully!", {
+      toast.success(isAr ? "تم إعداد مساحة المؤسسة بنجاح!" : "Organization profile configured successfully!", {
         description: isAr
           ? "أصبحت منصة RippleIQ جاهزة الآن لمحاكاة القرارات بناءً على سياق مؤسستك."
           : "RippleIQ is now tailored to simulate decisions for your organization.",

@@ -27,8 +27,8 @@ export default function RegisterPage() {
     try {
       await registerAccount({ email: email.trim(), full_name: fullName.trim(), password });
       await loginAccount(email.trim(), password);
-      const hasOrganization = await refresh();
-      router.replace(hasOrganization ? "/dashboard" : "/onboarding");
+      await refresh();
+      router.replace("/dashboard");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not create your account. Try again.");
     } finally {

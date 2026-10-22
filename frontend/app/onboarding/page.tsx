@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Building2,
@@ -102,6 +103,7 @@ const inputClassName =
   "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 
 export default function OrganizationOnboardingPage() {
+  const router = useRouter();
   const { user, organizations, activeOrganizationId, isDemo, refresh } = useAuth();
   const { locale } = useLocale();
   const isAr = locale === "ar";
@@ -185,6 +187,7 @@ export default function OrganizationOnboardingPage() {
             ? "تم حفظ اسم المؤسسة والبلد، وتم تحديث سياق التحليلات في متصفحك."
             : "Organization name saved. Extended profile context is active for all simulations.",
         });
+        router.push("/dashboard");
       } catch (cause) {
         toast.error(isAr ? "تعذر إنشاء المؤسسة" : "Could not create the organization", {
           description: cause instanceof Error ? cause.message : "Try again.",
@@ -202,6 +205,7 @@ export default function OrganizationOnboardingPage() {
           ? "يتم الآن تضمين هذا السياق المؤسسي تلقائياً في صياغة ومحاكاة كافة القرارات القادمة."
           : "This institutional context will automatically guide all upcoming decision simulations.",
       });
+      router.push("/dashboard");
     } catch {
       toast.error(isAr ? "تعذر حفظ الملف التعريفي" : "Could not save the profile");
     }
@@ -224,7 +228,7 @@ export default function OrganizationOnboardingPage() {
       {/* Top Navigation & Status Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
-          href={user && !activeOrganization ? "/login" : "/dashboard"}
+          href="/dashboard"
           className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
         >
           <ArrowLeft className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
