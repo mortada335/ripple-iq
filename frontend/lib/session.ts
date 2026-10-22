@@ -1,9 +1,12 @@
+import { deleteCookie, getCookie, setCookie } from "./cookies";
+
 export type AuthSession = {
   accessToken: string;
   expiresAt: number;
 };
 
 const SESSION_KEY = "rippleiq_auth_session";
+const SESSION_COOKIE = "rippleiq_session";
 const DEMO_KEY = "rippleiq_demo_mode";
 const ORGANIZATION_KEY = "rippleiq_active_organization";
 export const SESSION_CHANGED_EVENT = "rippleiq:session-changed";
@@ -28,8 +31,24 @@ function readAuthSessionValue(): string | null {
     if (legacy) {
       window.localStorage.setItem(SESSION_KEY, legacy);
       window.sessionStorage.removeItem(SESSION_KEY);
+      return legacy;
     }
-    return legacy;
+    // Fallback: Check cookie if localStorage was cleared or in SSR-ready context
+    const cookieToken = getCookie(SESSION_COOKIE);
+    if (cookieToken) {
+      // Create session object valid for 7 days
+      const recovered = JSON.stringify({
+        accessToken: cookieToken,
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      });
+      try {
+        window.localStorage.setItem(SESSION_KEY, recovered);
+      } catch {
+        // Ignore
+      }
+      return recovered;
+    }
+    return null;
   } catch {
     return readSessionValue(SESSION_KEY);
   }
@@ -71,6 +90,17 @@ export function saveAuthSession(accessToken: string, expiresIn: number) {
       throw new Error("Browser storage is unavailable. Enable it and try again.");
     }
   }
+
+  // Set session cookie for seamless server-side verification and persistence
+  try {
+    setCookie(SESSION_COOKIE, accessToken, {
+      days: Math.max(1, Math.round(expiresIn / 86400)),
+      sameSite: "Lax",
+    });
+  } catch {
+    // Cookie saving is best-effort in restricted environments
+  }
+
   try {
     window.sessionStorage.removeItem(DEMO_KEY);
   } catch {
@@ -91,6 +121,13 @@ export function clearAuthSession() {
   } catch {
     // State is still cleared in memory when storage is unavailable.
   }
+
+  try {
+    deleteCookie(SESSION_COOKIE);
+  } catch {
+    // Best-effort
+  }
+
   window.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
 }
 

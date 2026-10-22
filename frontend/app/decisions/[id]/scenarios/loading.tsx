@@ -1,5 +1,5 @@
-import { DecisionDetailSkeleton } from "@/components/LoadingSkeleton";
+import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
 
 export default function ScenariosLoading() {
-  return <DecisionDetailSkeleton />;
+  return <DecisionAnalysisSkeleton />;
 }

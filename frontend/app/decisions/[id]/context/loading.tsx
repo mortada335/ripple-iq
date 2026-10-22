@@ -1,5 +1,5 @@
-import { DecisionDetailSkeleton } from "@/components/LoadingSkeleton";
+import { ContextManagementSkeleton } from "@/components/LoadingSkeleton";
 
 export default function ContextLoading() {
-  return <DecisionDetailSkeleton />;
+  return <ContextManagementSkeleton />;
 }

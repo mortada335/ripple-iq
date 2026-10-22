@@ -404,6 +404,10 @@ def attach_context(
     require_decision_access(db, user, id, write=True)
     try:
         context = DecisionService.attach_context(db, id, data, actor_user_id=user.id)
+        memory_cache.delete(f"decision:detail:{id}")
+        memory_cache.delete(f"decision:result:{id}")
+        memory_cache.delete(f"decision:report:{id}")
+        memory_cache.invalidate_prefix("decisions:list")
         return ContextDataResponse.model_validate(context)
     except ValueError as e:
         raise HTTPException(
@@ -697,8 +701,15 @@ def get_simulation_result(id: int, db: Session = Depends(get_db), user: User = D
     stakeholders, 3 scenarios, impacts, risks, assumptions, confidence, limitations, and recommendation.
     """
     require_decision_access(db, user, id)
+    cache_key = f"decision:result:{id}"
+    cached = memory_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     try:
-        return SimulationService.get_simulation_result(db, id)
+        result = SimulationService.get_simulation_result(db, id)
+        memory_cache.set(cache_key, result, ttl=180)
+        return result
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -744,8 +755,15 @@ def download_report_markdown(id: int, db: Session = Depends(get_db), user: User 
 )
 def get_recommendation(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     require_decision_access(db, user, id)
+    cache_key = f"decision:recommendation:{id}"
+    cached = memory_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     try:
-        return RecommendationService.get_recommendation(db, id)
+        rec = RecommendationService.get_recommendation(db, id)
+        memory_cache.set(cache_key, rec, ttl=180)
+        return rec
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -766,7 +784,10 @@ def refine_recommendation(
 ):
     decision = require_decision_access(db, user, id, write=True)
     try:
-        return RecommendationService.refine(db, decision, user.id, data)
+        refined = RecommendationService.refine(db, decision, user.id, data)
+        memory_cache.delete(f"decision:recommendation:{id}")
+        memory_cache.delete(f"decision:report:{id}")
+        return refined
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -791,16 +812,25 @@ def get_report(
     Supports JSON response or raw Markdown via 'Accept: text/markdown'.
     """
     decision = require_decision_access(db, user, id)
+    cache_key = f"decision:report:{id}"
+    accept_header = request.headers.get("accept", "")
+    is_markdown_req = "text/markdown" in accept_header or "text/plain" in accept_header
+
+    if not is_markdown_req:
+        cached = memory_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
     try:
         report = ReportService.generate_report(db, id)
         audit_report_download(db, decision, user)
-        accept_header = request.headers.get("accept", "")
-        if "text/markdown" in accept_header or "text/plain" in accept_header:
+        if is_markdown_req:
             return PlainTextResponse(
                 content=report.content_markdown,
                 media_type="text/markdown",
                 headers={"Content-Disposition": f'attachment; filename="{report.filename}"'},
             )
+        memory_cache.set(cache_key, report, ttl=300)
         return report
     except ValueError as e:
         raise HTTPException(

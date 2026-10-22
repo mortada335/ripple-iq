@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { readSavedOrganizationContext } from "@/lib/organization";
 import { useAuth } from "@/components/AuthProvider";
 import { useLocale } from "@/components/LocaleProvider";
+import { ContextManagementSkeleton } from "@/components/LoadingSkeleton";
 
 export default function DecisionContextPage({
   params,
@@ -50,12 +51,14 @@ export default function DecisionContextPage({
   const [extractingDocument, setExtractingDocument] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
 
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [savingOnly, setSavingOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    setInitialLoading(true);
     Promise.all([getDecision(Number(decisionId)), getDecisionContext(Number(decisionId))])
       .then(([, context]) => {
         if (!active) return;
@@ -71,6 +74,9 @@ export default function DecisionContextPage({
       })
       .catch((cause) => {
         if (active) setError(cause instanceof Error ? cause.message : "Could not load decision context.");
+      })
+      .finally(() => {
+        if (active) setInitialLoading(false);
       });
     return () => {
       active = false;
@@ -189,6 +195,10 @@ export default function DecisionContextPage({
   const addAssumptionTag = (tag: string) => {
     setAssumptions((prev) => (prev ? `${prev}\n${tag}` : tag));
   };
+
+  if (initialLoading) {
+    return <ContextManagementSkeleton decisionId={decisionId} />;
+  }
 
   return (
     <div className="space-y-6">

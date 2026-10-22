@@ -1,5 +1,5 @@
-import { DecisionDetailSkeleton } from "@/components/LoadingSkeleton";
+import { RisksMatrixSkeleton } from "@/components/LoadingSkeleton";
 
 export default function RisksLoading() {
-  return <DecisionDetailSkeleton />;
+  return <RisksMatrixSkeleton />;
 }

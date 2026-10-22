@@ -353,6 +353,395 @@ export function SettingsSkeleton() {
 }
 
 /**
+ * Skeleton placeholder for New Decision Form page (/decisions/new)
+ */
+export function NewDecisionFormSkeleton() {
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-48 rounded-lg" />
+        <Skeleton className="h-4 w-96 max-w-full rounded-md" />
+      </div>
+
+      <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-6">
+        {/* Title Input */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32 rounded-md" />
+          <Skeleton className="h-11 w-full rounded-xl" />
+        </div>
+
+        {/* 2-column controls: Department & Priority */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28 rounded-md" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24 rounded-md" />
+            <div className="flex gap-2">
+              <Skeleton className="h-11 flex-1 rounded-xl" />
+              <Skeleton className="h-11 flex-1 rounded-xl" />
+              <Skeleton className="h-11 flex-1 rounded-xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Description Textarea */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-36 rounded-md" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+        </div>
+
+        {/* File Upload Dropzone */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-44 rounded-md" />
+          <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 p-8 text-center space-y-3">
+            <Skeleton className="mx-auto h-12 w-12 rounded-2xl" />
+            <Skeleton className="mx-auto h-4 w-64 rounded-md" />
+            <Skeleton className="mx-auto h-3 w-40 rounded-md" />
+          </div>
+        </div>
+
+        {/* Actions Row */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <Skeleton className="h-11 w-24 rounded-xl" />
+          <Skeleton className="h-11 w-44 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton placeholder for Simulation Progress page (/decisions/[id]/progress)
+ */
+export function SimulationProgressSkeleton({ decisionId }: { decisionId?: string | number }) {
+  return (
+    <div className="space-y-6">
+      {decisionId ? (
+        <DecisionNavTabs decisionId={decisionId} />
+      ) : (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-28 shrink-0 rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      <div className="mx-auto max-w-3xl space-y-6">
+        {/* Simulation Hero Card */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-8 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 text-center space-y-4">
+          <Skeleton className="mx-auto h-14 w-14 rounded-2xl" />
+          <div className="space-y-2">
+            <Skeleton className="mx-auto h-7 w-64 rounded-lg" />
+            <Skeleton className="mx-auto h-3.5 w-32 rounded-md" />
+          </div>
+          <div className="flex justify-center gap-3">
+            <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+          </div>
+          <Skeleton className="h-2.5 w-full max-w-lg mx-auto rounded-full mt-4" />
+        </div>
+
+        {/* 5 Sequential Stages */}
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4 sm:p-5 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90"
+            >
+              <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-48 rounded-md" />
+                <Skeleton className="h-3 w-4/5 rounded-md" />
+              </div>
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton placeholder for Board Report & Memoranda (/decisions/[id]/report)
+ */
+export function ReportDocumentSkeleton({ decisionId }: { decisionId?: string | number }) {
+  return (
+    <div className="space-y-6">
+      {decisionId ? (
+        <DecisionNavTabs decisionId={decisionId} />
+      ) : (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-28 shrink-0 rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Document Action Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-56 rounded-md" />
+          <Skeleton className="h-3.5 w-40 rounded-md" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-32 rounded-xl" />
+          <Skeleton className="h-9 w-36 rounded-xl" />
+        </div>
+      </div>
+
+      {/* Structured Document Body */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-6">
+        <div className="space-y-3 pb-6 border-b border-slate-100 dark:border-slate-800">
+          <Skeleton className="h-8 w-2/3 rounded-lg" />
+          <Skeleton className="h-4 w-48 rounded-md" />
+        </div>
+
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-40 rounded-md" />
+          <Skeleton className="h-3.5 w-full rounded-md" />
+          <Skeleton className="h-3.5 w-full rounded-md" />
+          <Skeleton className="h-3.5 w-3/4 rounded-md" />
+        </div>
+
+        <div className="space-y-3 pt-4">
+          <Skeleton className="h-5 w-48 rounded-md" />
+          <Skeleton className="h-3.5 w-full rounded-md" />
+          <Skeleton className="h-3.5 w-5/6 rounded-md" />
+          <Skeleton className="h-36 w-full rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton placeholder for Risk Assessment page (/decisions/[id]/risks)
+ */
+export function RisksMatrixSkeleton({ decisionId }: { decisionId?: string | number }) {
+  return (
+    <div className="space-y-6">
+      {decisionId ? (
+        <DecisionNavTabs decisionId={decisionId} />
+      ) : (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-28 shrink-0 rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* 4 Risk Severity Tally Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-2"
+          >
+            <Skeleton className="h-3.5 w-24 rounded-md" />
+            <Skeleton className="h-7 w-12 rounded-lg" />
+          </div>
+        ))}
+      </div>
+
+      {/* Risk Register Table */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white/90 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 divide-y divide-slate-100 dark:divide-slate-800">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="p-5 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-5 w-48 rounded-md" />
+                <Skeleton className="h-3.5 w-full max-w-lg rounded-md" />
+              </div>
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40 space-y-1.5">
+              <Skeleton className="h-3 w-32 rounded-md" />
+              <Skeleton className="h-3 w-4/5 rounded-md" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton placeholder for Executive Recommendation (/decisions/[id]/recommendation)
+ */
+export function RecommendationSkeleton({ decisionId }: { decisionId?: string | number }) {
+  return (
+    <div className="space-y-6">
+      {decisionId ? (
+        <DecisionNavTabs decisionId={decisionId} />
+      ) : (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-28 shrink-0 rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Preferred Scenario Highlight Banner */}
+      <div className="rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/80 p-6 sm:p-8 shadow-xs dark:border-indigo-900/40 dark:from-indigo-950/20 dark:via-slate-900 dark:to-indigo-950/20 space-y-4">
+        <Skeleton className="h-6 w-40 rounded-full" />
+        <Skeleton className="h-8 w-3/4 rounded-lg" />
+        <Skeleton className="h-4 w-full max-w-2xl rounded-md" />
+      </div>
+
+      {/* 2-column Rationale & Governance Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-4">
+          <Skeleton className="h-5 w-44 rounded-md" />
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex gap-3">
+                <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-32 rounded-md" />
+                  <Skeleton className="h-3 w-full rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-4">
+          <Skeleton className="h-5 w-48 rounded-md" />
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex gap-3">
+                <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+                <Skeleton className="h-4 flex-1 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton placeholder for Context & Attachments (/decisions/[id]/context)
+ */
+export function ContextManagementSkeleton({ decisionId }: { decisionId?: string | number }) {
+  return (
+    <div className="space-y-6">
+      {decisionId ? (
+        <DecisionNavTabs decisionId={decisionId} />
+      ) : (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-28 shrink-0 rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Context Upload Card */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-4">
+        <Skeleton className="h-5 w-44 rounded-md" />
+        <Skeleton className="h-3.5 w-96 max-w-full rounded-md" />
+        <Skeleton className="h-28 w-full rounded-xl" />
+      </div>
+
+      {/* Extracted Documents List */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-4">
+        <Skeleton className="h-5 w-36 rounded-md" />
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-xl border border-slate-200/80 p-4 dark:border-slate-800"
+            >
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-8 w-8 rounded-lg" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-4 w-40 rounded-md" />
+                  <Skeleton className="h-3 w-24 rounded-md" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-20 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton placeholder for Authentication (Login & Register)
+ */
+export function AuthFormSkeleton() {
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10 dark:bg-slate-950">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-2xl dark:border-slate-800/80 dark:bg-slate-900/90 backdrop-blur-xl space-y-6">
+        <div className="text-center space-y-2">
+          <Skeleton className="mx-auto h-12 w-12 rounded-2xl" />
+          <Skeleton className="mx-auto h-6 w-36 rounded-lg" />
+          <Skeleton className="mx-auto h-3.5 w-52 rounded-md" />
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-3.5 w-16 rounded-md" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-3.5 w-20 rounded-md" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+          <Skeleton className="h-11 w-full rounded-xl mt-2" />
+        </div>
+
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center space-y-2">
+          <Skeleton className="mx-auto h-10 w-44 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton placeholder for Organization Onboarding
+ */
+export function OnboardingSkeleton() {
+  return (
+    <div className="space-y-6 max-w-3xl mx-auto py-6">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-48 rounded-lg" />
+        <Skeleton className="h-4 w-80 rounded-md" />
+      </div>
+
+      <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/90 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-36 rounded-md" />
+          <Skeleton className="h-11 w-full rounded-xl" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24 rounded-md" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28 rounded-md" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+          <Skeleton className="h-11 w-36 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Top-level Workspace Shell Skeleton.
  * Displayed whenever the application shell or auth session is loading,
  * preventing any blank screens or raw text layout shifts across the platform.

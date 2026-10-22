@@ -1,5 +1,5 @@
 import jwt
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
@@ -14,6 +14,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
@@ -22,11 +23,18 @@ def get_current_user(
         detail={"code": "AUTHENTICATION_REQUIRED", "message": "A valid access token is required."},
         headers={"WWW-Authenticate": "Bearer"},
     )
-    if credentials is None:
+    raw_token: str | None = None
+    if credentials is not None:
+        raw_token = credentials.credentials
+    elif "rippleiq_session" in request.cookies:
+        raw_token = request.cookies.get("rippleiq_session")
+
+    if not raw_token:
         raise unauthorized
+
     try:
         payload = jwt.decode(
-            credentials.credentials,
+            raw_token,
             settings.SECRET_KEY,
             algorithms=[ALGORITHM],
             options={"require": ["exp", "sub"]},

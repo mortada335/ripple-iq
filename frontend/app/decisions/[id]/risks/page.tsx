@@ -16,7 +16,7 @@ import { useLocale } from "@/components/LocaleProvider";
 import { RiskItem, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
 import { ApiLoadError } from "@/components/ApiLoadError";
-import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
+import { RisksMatrixSkeleton } from "@/components/LoadingSkeleton";
 
 const SEVERITY_ORDER: Record<string, number> = {
   CRITICAL: 4,
@@ -172,7 +172,7 @@ export default function RiskRegisterPage({
   };
 
   if (loading) {
-    return <DecisionAnalysisSkeleton decisionId={decisionId} />;
+    return <RisksMatrixSkeleton decisionId={decisionId} />;
   }
 
   if (loadError || !result) {

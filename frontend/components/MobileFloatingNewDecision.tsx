@@ -27,40 +27,53 @@ export function MobileFloatingNewDecision() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-6 end-6 z-50 pointer-events-none">
+    <div
+      className="md:hidden fixed z-50 pointer-events-none transition-all duration-300"
+      style={{
+        bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))",
+        right: isAr ? "auto" : "calc(1.5rem + env(safe-area-inset-right, 0px))",
+        left: isAr ? "calc(1.5rem + env(safe-area-inset-left, 0px))" : "auto",
+      }}
+    >
       <Link
         href="/decisions/new"
         aria-label={t("newDecision")}
         title={t("newDecision")}
-        className="group relative pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 via-indigo-600 to-violet-500 text-white shadow-2xl shadow-indigo-600/50 hover:shadow-indigo-600/70 active:scale-95 transition-all duration-300 border border-white/30 dark:border-white/20 ring-4 ring-white/80 dark:ring-slate-900/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        className="group relative pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 via-indigo-600 to-violet-500 text-white shadow-[0_10px_25px_-4px_rgba(79,70,229,0.5),0_8px_10px_-6px_rgba(79,70,229,0.4)] hover:shadow-[0_16px_32px_-6px_rgba(79,70,229,0.65)] active:scale-90 transition-all duration-300 ease-out border border-white/40 dark:border-white/20 ring-4 ring-white/90 dark:ring-slate-900/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 backdrop-blur-md"
       >
-        {/* Ambient breathing glow ring */}
+        {/* Soft radial ambient halo */}
         <span
           aria-hidden="true"
-          className="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 opacity-40 blur-md group-hover:opacity-80 transition-opacity duration-300 animate-pulse-slow"
+          className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 opacity-40 blur-md group-hover:opacity-75 transition-opacity duration-300 animate-pulse-slow pointer-events-none"
         />
 
-        {/* Shimmer light reflection layer */}
+        {/* Outer subtle radar ring pulse */}
         <span
           aria-hidden="true"
-          className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 via-transparent to-black/10 pointer-events-none"
+          className="absolute -inset-1 rounded-full border border-indigo-400/30 opacity-70 group-hover:scale-110 transition-transform duration-500 pointer-events-none"
         />
 
-        {/* Floating Sparkle Micro-badge */}
+        {/* 3D Glassmorphic gloss reflection */}
         <span
           aria-hidden="true"
-          className="absolute -top-1 -start-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-amber-950 shadow-sm border border-white dark:border-slate-900 scale-90 group-hover:scale-110 transition-transform"
+          className="absolute inset-0 rounded-full bg-gradient-to-b from-white/35 via-white/10 to-transparent pointer-events-none"
+        />
+
+        {/* Sparkle Micro-badge */}
+        <span
+          aria-hidden="true"
+          className="absolute -top-1 -start-1 flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950 shadow-md border border-white/80 dark:border-slate-900 scale-90 group-hover:scale-110 group-active:scale-75 transition-transform duration-200"
         >
           <Sparkles className="h-2.5 w-2.5 fill-current" />
         </span>
 
-        {/* Plus Icon with smooth rotation on interaction */}
+        {/* Plus Icon with ultra-fluid rotation and spring micro-interaction */}
         <Plus
-          className="relative z-10 h-6 w-6 stroke-[2.7] transition-transform duration-300 ease-out group-hover:rotate-90 group-hover:scale-110 group-active:rotate-45"
+          className="relative z-10 h-6 w-6 stroke-[2.8] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:rotate-90 group-hover:scale-110 group-active:rotate-45 group-active:scale-95"
           aria-hidden="true"
         />
 
-        {/* Screen Reader Label */}
+        {/* Accessible screen reader label */}
         <span className="sr-only">{t("newDecision")}</span>
       </Link>
     </div>

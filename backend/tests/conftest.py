@@ -26,6 +26,7 @@ if str(workspace_dir) not in sys.path:
 
 import app.services.simulation_service as simulation_service
 from app.config import settings
+from app.core.cache import memory_cache
 from app.database import Base, get_db
 from app.main import app
 from app.models import Organization, OrganizationMember, User
@@ -46,6 +47,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(autouse=True)
 def isolate_analyzer_from_configured_providers(monkeypatch):
     """Keep test analysis deterministic and never call configured real providers."""
+    memory_cache.clear()
     monkeypatch.setattr(settings, "ANALYZER_BACKEND", "mock_deterministic")
     monkeypatch.setattr(simulation_service, "default_analyzer", DeterministicMockProvider())
 

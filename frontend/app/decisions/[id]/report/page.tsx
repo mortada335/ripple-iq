@@ -19,7 +19,7 @@ import { ReportResponse } from "@/types/decision";
 import { toast } from "sonner";
 import { downloadReportDocx } from "@/lib/report-export";
 import { ApiLoadError } from "@/components/ApiLoadError";
-import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
+import { ReportDocumentSkeleton } from "@/components/LoadingSkeleton";
 
 export default function ReportPreviewPage({
   params,
@@ -92,7 +92,7 @@ export default function ReportPreviewPage({
   };
 
   if (loading) {
-    return <DecisionAnalysisSkeleton decisionId={decisionId} />;
+    return <ReportDocumentSkeleton decisionId={decisionId} />;
   }
 
   if (loadError || !report) {

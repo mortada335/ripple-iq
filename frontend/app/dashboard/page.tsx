@@ -216,7 +216,7 @@ export default function DashboardPage() {
 
           <Link
             href="/decisions/new"
-            className="hidden md:inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 transition"
+            className="hidden md:inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/25 hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition"
           >
             <PlusCircle className="h-4 w-4" />
             <span>{t("newAnalysis")}</span>
@@ -232,50 +232,51 @@ export default function DashboardPage() {
             value: counts.total,
             detail: `${counts.completed} ${t("kpiCompletedSuffix")}`,
             icon: Layers,
-            iconColor: "text-indigo-600 dark:text-indigo-400",
-            bgColor: "bg-indigo-50 dark:bg-indigo-950/50",
+            iconColor: "text-indigo-600 dark:text-indigo-300",
+            bgColor: "bg-indigo-50 dark:bg-indigo-500/15 border border-transparent dark:border-indigo-500/20",
           },
           {
             label: t("kpiSimulatedAnalyses"),
             value: counts.completed,
             detail: t("kpiSimulatedDetail"),
             icon: FileCheck2,
-            iconColor: "text-emerald-600 dark:text-emerald-400",
-            bgColor: "bg-emerald-50 dark:bg-emerald-950/50",
+            iconColor: "text-emerald-600 dark:text-emerald-300",
+            bgColor: "bg-emerald-50 dark:bg-emerald-500/15 border border-transparent dark:border-emerald-500/20",
           },
           {
             label: t("kpiCriticalRisks"),
             value: counts.highPriority,
+            valueColor: counts.highPriority > 0 ? "text-rose-600 dark:text-rose-400" : undefined,
             detail: t("kpiCriticalDetail"),
             icon: ShieldAlert,
-            iconColor: "text-rose-600 dark:text-rose-400",
-            bgColor: "bg-rose-50 dark:bg-rose-950/50",
+            iconColor: "text-rose-600 dark:text-rose-300",
+            bgColor: "bg-rose-50 dark:bg-rose-500/15 border border-transparent dark:border-rose-500/20",
           },
           {
             label: t("kpiStakeholders"),
             value: 5,
             detail: t("kpiStakeholdersDetail"),
             icon: Users2,
-            iconColor: "text-sky-600 dark:text-sky-400",
-            bgColor: "bg-sky-50 dark:bg-sky-950/50",
+            iconColor: "text-sky-600 dark:text-sky-300",
+            bgColor: "bg-sky-50 dark:bg-sky-500/15 border border-transparent dark:border-sky-500/20",
           },
         ].map((kpi) => {
           const Icon = kpi.icon;
           return (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 sm:p-5 shadow-2xs backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/90 transition-all hover:border-indigo-400/50"
+              className="group rounded-2xl border border-slate-200/80 bg-white/90 p-4 sm:p-5 shadow-2xs backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/90 transition-all hover:border-indigo-400/50 dark:hover:border-indigo-500/30"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{kpi.label}</span>
-                <span className={`flex h-8 w-8 items-center justify-center rounded-xl ${kpi.bgColor}`}>
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{kpi.label}</span>
+                <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-transform group-hover:scale-105 ${kpi.bgColor}`}>
                   <Icon className={`h-4 w-4 ${kpi.iconColor}`} />
                 </span>
               </div>
-              <p className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              <p className={`mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight ${kpi.valueColor ?? "text-slate-900 dark:text-slate-100"}`}>
                 {kpi.value}
               </p>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{kpi.detail}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{kpi.detail}</p>
             </div>
           );
         })}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { getCookie, setCookie } from "@/lib/cookies";
 
 type Theme = "light" | "dark" | "system";
 
@@ -19,6 +20,7 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 const THEME_STORAGE_KEY = "rippleiq_theme";
+const THEME_COOKIE = "rippleiq_theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
@@ -26,6 +28,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
+      const cookieTheme = getCookie(THEME_COOKIE) as Theme | null;
+      if (cookieTheme && ["light", "dark", "system"].includes(cookieTheme)) {
+        setThemeState(cookieTheme);
+        return;
+      }
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
       if (stored && ["light", "dark", "system"].includes(stored)) {
         setThemeState(stored);
@@ -75,6 +82,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     try {
+      setCookie(THEME_COOKIE, newTheme, { days: 365 });
       localStorage.setItem(THEME_STORAGE_KEY, newTheme);
       window.dispatchEvent(new Event("rippleiq:theme-updated"));
     } catch {

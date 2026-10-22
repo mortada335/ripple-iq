@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(data: UserRegister, request: Request, db: Session = Depends(get_db)) -> User:
+def register(data: UserRegister, request: Request, response: Response, db: Session = Depends(get_db)) -> User:
     enforce_limits(db, registration_rules(request))
     user = User(email=data.email, full_name=data.full_name, password_hash=hash_password(data.password))
     db.add(user)
@@ -39,11 +39,21 @@ def register(data: UserRegister, request: Request, db: Session = Depends(get_db)
             detail={"code": "EMAIL_ALREADY_REGISTERED", "message": "An account with this email already exists."},
         ) from None
     db.refresh(user)
+    token = create_access_token(user.id)
+    response.set_cookie(
+        key="rippleiq_session",
+        value=token,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        samesite="lax",
+        secure=settings.ENVIRONMENT == "production",
+        path="/",
+    )
     return user
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)) -> TokenResponse:
+def login(data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> TokenResponse:
     enforce_limits(db, login_rules(request, data.email))
     user = db.query(User).filter(User.email == data.email).first()
     if (
@@ -77,10 +87,28 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)) -
         resource_id=user.id,
     )
     db.commit()
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    token = create_access_token(user.id)
+    expires_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    response.set_cookie(
+        key="rippleiq_session",
+        value=token,
+        max_age=expires_seconds,
+        httponly=True,
+        samesite="lax",
+        secure=settings.ENVIRONMENT == "production",
+        path="/",
     )
+    return TokenResponse(
+        access_token=token,
+        expires_in=expires_seconds,
+    )
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(response: Response) -> Response:
+    """Clear session cookie and invalidate active browser session."""
+    response.delete_cookie(key="rippleiq_session", path="/")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/me", response_model=UserResponse)

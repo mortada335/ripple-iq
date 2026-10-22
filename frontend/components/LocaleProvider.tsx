@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { type Locale, type TranslationKey, translate } from "@/lib/locale";
+import { getCookie, setCookie } from "@/lib/cookies";
 
 interface LocaleContextType {
   locale: Locale;
@@ -13,6 +14,7 @@ interface LocaleContextType {
 }
 
 const STORAGE_KEY = "rippleiq_settings";
+const LOCALE_COOKIE = "rippleiq_locale";
 
 const LocaleContext = createContext<LocaleContextType>({
   locale: "en",
@@ -35,6 +37,13 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
+      // Check cookie first for SSR sync, then localStorage
+      const cookieLocale = getCookie(LOCALE_COOKIE);
+      if (cookieLocale === "ar" || cookieLocale === "en") {
+        setLocaleState(cookieLocale);
+        applyDirection(cookieLocale);
+        return;
+      }
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as { language?: string };
@@ -51,6 +60,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     setLocaleState(newLocale);
     applyDirection(newLocale);
     try {
+      setCookie(LOCALE_COOKIE, newLocale, { days: 365 });
       const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, language: newLocale }));
       window.dispatchEvent(new Event("rippleiq:locale-updated"));

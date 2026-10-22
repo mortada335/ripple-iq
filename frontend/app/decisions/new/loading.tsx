@@ -1,5 +1,5 @@
-import { DecisionDetailSkeleton } from "@/components/LoadingSkeleton";
+import { NewDecisionFormSkeleton } from "@/components/LoadingSkeleton";
 
 export default function NewDecisionLoading() {
-  return <DecisionDetailSkeleton />;
+  return <NewDecisionFormSkeleton />;
 }

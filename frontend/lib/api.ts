@@ -72,62 +72,147 @@ function getErrorMessage(payload: unknown, status: number): { message: string; c
   return { message: validationDetails ? `${message} ${validationDetails}` : message, code };
 }
 
+// Client-side in-memory cache and request deduplication to withstand high traffic
+interface CacheRecord<T> {
+  data: T;
+  expiresAt: number;
+}
+
+const clientCache = new Map<string, CacheRecord<unknown>>();
+const inFlightRequests = new Map<string, Promise<unknown>>();
+
+/**
+ * Invalidate all client-side cached API responses.
+ * Automatically invoked on write operations (POST, PUT, PATCH, DELETE).
+ */
+export function clearClientApiCache(): void {
+  clientCache.clear();
+}
+
 async function requestJson<T>(
   path: string,
   options: RequestInit = {},
   authenticated = true,
   timeoutMs = 20_000,
 ): Promise<T> {
+  const method = (options.method || "GET").toUpperCase();
+  const isRead = method === "GET" || method === "HEAD";
+
+  // Mutating requests invalidate client-side cache to guarantee immediate consistency
+  if (!isRead) {
+    clientCache.clear();
+  }
+
   const session = authenticated ? getAuthSession() : null;
   if (authenticated && !session) {
     throw new ApiRequestError("Your session has expired. Sign in again to continue.", 401, "AUTHENTICATION_REQUIRED");
   }
   const organizationId = authenticated ? getActiveOrganizationId() : null;
-  const headers = new Headers(options.headers);
-  headers.set("Accept", "application/json");
-  if (typeof options.body === "string") headers.set("Content-Type", "application/json");
-  if (session) headers.set("Authorization", `Bearer ${session.accessToken}`);
-  if (organizationId) headers.set("X-Organization-ID", String(organizationId));
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers,
-      signal: controller.signal,
-      cache: "no-store",
-    });
-  } catch (cause) {
-    if (cause instanceof Error && cause.name === "AbortError") {
-      throw new ApiRequestError("The API request timed out. Please try again.", null, "REQUEST_TIMEOUT");
+  // Cache key incorporating user session and active organization
+  const cacheKey = `${session?.accessToken ?? "anon"}:${organizationId ?? "0"}:${path}`;
+
+  // 1. Instant Cache Hit for Read Requests
+  if (isRead) {
+    const cached = clientCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data as T;
     }
-    throw new ApiRequestError("Could not reach the RippleIQ API. Check the backend connection and try again.", null, "NETWORK_ERROR");
-  } finally {
-    clearTimeout(timeoutId);
+
+    // 2. In-Flight Request Deduplication (prevents duplicate requests during concurrent component renders)
+    const existingPromise = inFlightRequests.get(cacheKey);
+    if (existingPromise) {
+      return existingPromise as Promise<T>;
+    }
   }
 
-  if (response.status === 204) {
-    if (!response.ok) throw new ApiRequestError(`The API request failed (${response.status}).`, response.status);
-    return undefined as T;
+  const executeRequest = async (): Promise<T> => {
+    const headers = new Headers(options.headers);
+    headers.set("Accept", "application/json");
+    if (typeof options.body === "string") headers.set("Content-Type", "application/json");
+    if (session) headers.set("Authorization", `Bearer ${session.accessToken}`);
+    if (organizationId) headers.set("X-Organization-ID", String(organizationId));
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+        cache: "no-store",
+      });
+    } catch (cause) {
+      if (cause instanceof Error && cause.name === "AbortError") {
+        throw new ApiRequestError("The API request timed out. Please try again.", null, "REQUEST_TIMEOUT");
+      }
+      throw new ApiRequestError("Could not reach the RippleIQ API. Check the backend connection and try again.", null, "NETWORK_ERROR");
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (response.status === 204) {
+      if (!response.ok) throw new ApiRequestError(`The API request failed (${response.status}).`, response.status);
+      return undefined as T;
+    }
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+
+    if (!response.ok) {
+      if (response.status === 401 && authenticated) clearAuthSession();
+
+      // Handle HTTP 429 Rate Limiting with Retry-After header
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After") || "30";
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("rippleiq:rate-limit-exceeded", {
+              detail: { retryAfter: Number(retryAfter) },
+            })
+          );
+        }
+        throw new ApiRequestError(
+          `Request limit reached (Too many requests). Please wait ${retryAfter} seconds before trying again.`,
+          429,
+          "RATE_LIMIT_EXCEEDED"
+        );
+      }
+
+      const error = getErrorMessage(payload, response.status);
+      throw new ApiRequestError(error.message, response.status, error.code);
+    }
+
+    if (payload === null) {
+      throw new ApiRequestError("The API returned an unreadable response.", response.status, "INVALID_API_RESPONSE");
+    }
+
+    // Cache successful GET results with 15-second TTL (30s for static endpoints)
+    if (isRead) {
+      const ttlMs = path.includes("/health") || path.includes("/auth/me") ? 30_000 : 15_000;
+      clientCache.set(cacheKey, {
+        data: payload,
+        expiresAt: Date.now() + ttlMs,
+      });
+    }
+
+    return payload as T;
+  };
+
+  if (isRead) {
+    const promise = executeRequest().finally(() => {
+      inFlightRequests.delete(cacheKey);
+    });
+    inFlightRequests.set(cacheKey, promise);
+    return promise;
   }
 
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
-  if (!response.ok) {
-    if (response.status === 401 && authenticated) clearAuthSession();
-    const error = getErrorMessage(payload, response.status);
-    throw new ApiRequestError(error.message, response.status, error.code);
-  }
-  if (payload === null) {
-    throw new ApiRequestError("The API returned an unreadable response.", response.status, "INVALID_API_RESPONSE");
-  }
-  return payload as T;
+  return executeRequest();
 }
 
 async function requestWithDemoFallback<T>(

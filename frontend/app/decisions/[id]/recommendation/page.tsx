@@ -17,7 +17,7 @@ import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { useLocale } from "@/components/LocaleProvider";
 import { RecommendationView, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
-import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
+import { RecommendationSkeleton } from "@/components/LoadingSkeleton";
 
 export default function RecommendationPage({
   params,
@@ -89,7 +89,7 @@ export default function RecommendationPage({
   };
 
   if (loading) {
-    return <DecisionAnalysisSkeleton decisionId={decisionId} />;
+    return <RecommendationSkeleton decisionId={decisionId} />;
   }
 
   if (loadError || !result || !recommendation) {
