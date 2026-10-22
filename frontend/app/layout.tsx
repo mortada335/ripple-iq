@@ -24,8 +24,12 @@ const cairo = Cairo({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const defaultAppUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://ripple-iq.vercel.app");
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://rippleiq.org"),
+  metadataBase: new URL(defaultAppUrl),
   title: {
     default: "RippleIQ — ذكاء القرارات المؤسسية ومحاكاة الأثر | Decision Impact Analysis",
     template: "%s | RippleIQ",
@@ -47,10 +51,20 @@ export const metadata: Metadata = {
     "AI Governance Platform",
     "RippleIQ",
   ],
-  authors: [{ name: "RippleIQ Research & Governance Team", url: "https://rippleiq.org" }],
+  authors: [{ name: "RippleIQ Research & Governance Team", url: defaultAppUrl }],
   creator: "RippleIQ Intelligence",
   publisher: "RippleIQ Intelligence Inc.",
   category: "Enterprise Decision Support",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icon.svg", sizes: "180x180" },
+    ],
+  },
+  manifest: "/manifest.webmanifest",
   alternates: {
     canonical: "/",
     languages: {
@@ -76,9 +90,17 @@ export const metadata: Metadata = {
     title: "RippleIQ — ذكاء القرارات ومحاكاة الأثر التتابعي | Decision Impact Analysis",
     description:
       "Explore how strategic and operational decisions impact stakeholders, resources, and institutional trust before execution.",
-    url: "https://rippleiq.org",
+    url: defaultAppUrl,
     locale: "ar_IQ",
     alternateLocale: ["ar_SA", "en_US"],
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "RippleIQ — ذكاء القرارات المؤسسية ومحاكاة الأثر | Decision Impact Analysis",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -87,6 +109,7 @@ export const metadata: Metadata = {
       "Simulate second-order consequences, stakeholder trade-offs, and multi-scenario risks before enacting institutional policies.",
     site: "@RippleIQ",
     creator: "@RippleIQ",
+    images: ["/twitter-image"],
   },
 };
 

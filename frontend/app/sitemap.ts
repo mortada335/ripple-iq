@@ -5,7 +5,9 @@ import type { MetadataRoute } from "next";
  * and AI-native LLM documentation routes for search engine indexation.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rippleiq.org";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://ripple-iq.vercel.app");
   const now = new Date();
 
   return [

@@ -5,7 +5,9 @@ import type { MetadataRoute } from "next";
  * and Generative AI Search Engines (Perplexity, ChatGPT, Claude, Gemini, Copilot).
  */
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rippleiq.org";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://ripple-iq.vercel.app");
 
   return {
     rules: [

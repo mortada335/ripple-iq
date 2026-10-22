@@ -5,7 +5,9 @@ import React from "react";
  * Calibrated for Google Rich Results, Google Knowledge Graph, and AI Engine citations (Perplexity, ChatGPT, Claude, Gemini).
  */
 export function StructuredData() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rippleiq.org";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://ripple-iq.vercel.app");
 
   const softwareAppSchema = {
     "@context": "https://schema.org",
