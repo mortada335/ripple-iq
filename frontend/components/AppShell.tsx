@@ -4,7 +4,6 @@ import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import { HumanReviewBanner } from "./HumanReviewBanner";
 import { MobileFloatingNewDecision } from "./MobileFloatingNewDecision";
 import { FirstTimeOrgModal } from "./FirstTimeOrgModal";
 import { useAuth } from "./AuthProvider";
@@ -89,7 +88,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar mobileOpen={mobileNavigationOpen} onClose={() => setMobileNavigationOpen(false)} />
         <main id="main-content" className="flex-1 flex flex-col min-w-0">
           <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 space-y-4 sm:space-y-5">
-            <HumanReviewBanner />
             <React.Suspense fallback={getPageSkeleton(pathname)}>
               {children}
             </React.Suspense>

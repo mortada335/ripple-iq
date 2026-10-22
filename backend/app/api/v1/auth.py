@@ -6,7 +6,7 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models import User
-from app.schemas.schemas import LoginRequest, TokenResponse, UserRegister, UserResponse
+from app.schemas.schemas import LoginRequest, TokenResponse, UserRegister, UserResponse, UserUpdate
 from app.security.passwords import hash_password, verify_password
 from app.security.tokens import create_access_token
 from app.services.audit_service import record_audit_event
@@ -113,4 +113,17 @@ def logout(response: Response) -> Response:
 
 @router.get("/me", response_model=UserResponse)
 def me(user: User = Depends(get_current_user)) -> User:
+    return user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    data: UserUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    if data.full_name is not None and data.full_name.strip():
+        user.full_name = data.full_name.strip()
+        db.commit()
+        db.refresh(user)
     return user

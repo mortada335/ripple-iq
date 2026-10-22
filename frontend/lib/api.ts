@@ -31,7 +31,13 @@ import {
 } from "./session";
 import type { LoginResponse, Organization, OrganizationCreate, UserAccount } from "@/types/auth";
 
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
+export const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL !== undefined
+    ? process.env.NEXT_PUBLIC_API_URL
+    : typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? ""
+    : "http://localhost:8000"
+).replace(/\/+$/, "");
 
 type ErrorEnvelope = {
   error?: {
@@ -241,6 +247,18 @@ export async function loginAccount(email: string, password: string): Promise<Use
 
 export async function getCurrentUser(): Promise<UserAccount> {
   return requestJson<UserAccount>("/api/v1/auth/me");
+}
+
+export async function updateCurrentUser(data: { full_name: string }): Promise<UserAccount> {
+  for (const key of clientCache.keys()) {
+    if (key.includes("/auth/me")) {
+      clientCache.delete(key);
+    }
+  }
+  return requestJson<UserAccount>("/api/v1/auth/me", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  }, false);
 }
 
 export async function getOrganizations(): Promise<Organization[]> {

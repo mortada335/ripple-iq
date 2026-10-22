@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { useLocale } from "@/components/LocaleProvider";
 import { DecisionsListSkeleton } from "@/components/LoadingSkeleton";
+import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 
 const PAGE_SIZE = 20;
 
@@ -147,6 +148,7 @@ export default function HistoricalDecisionsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      <HumanReviewBanner />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">

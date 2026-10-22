@@ -45,6 +45,29 @@ const nextConfig: NextConfig = {
 
     return headersList;
   },
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_URL;
+    if (!backendUrl) return [];
+    const base = backendUrl.replace(/\/+$/, "");
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${base}/api/v1/:path*`,
+      },
+      {
+        source: "/health",
+        destination: `${base}/health`,
+      },
+      {
+        source: "/docs",
+        destination: `${base}/docs`,
+      },
+      {
+        source: "/openapi.json",
+        destination: `${base}/openapi.json`,
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -219,31 +219,26 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
                 id="profile-menu"
                 className="absolute inset-e-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900"
               >
-                <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800">
-                  <p className="font-bold text-slate-900 dark:text-white truncate">{isDemo ? t("demoWorkspace") : user?.full_name}</p>
-                  <p className="text-[11px] text-slate-500 truncate">{isDemo ? t("demoDisclaimer") : user?.email}</p>
-                </div>
+                <Link
+                  href="/profile"
+                  onClick={() => setProfileDropdownOpen(false)}
+                  className="block rounded-lg border-b border-slate-100 px-3 py-2 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60"
+                  title={t("profile")}
+                >
+                  <p className="font-bold text-slate-900 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400">
+                    {isDemo ? t("demoWorkspace") : user?.full_name}
+                  </p>
+                  <p className="text-[11px] text-slate-500 truncate">
+                    {isDemo ? t("demoDisclaimer") : user?.email}
+                  </p>
+                </Link>
                 <div className="py-1">
                   <Link
-                    href="/dashboard"
+                    href="/profile"
                     onClick={() => setProfileDropdownOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
-                    <LayoutDashboard className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("dashboard")}
-                  </Link>
-                  <Link
-                    href="/decisions/new"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  >
-                    <PlusCircle className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("newDecision")}
-                  </Link>
-                  <Link
-                    href="/decisions"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  >
-                    <Archive className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("history")}
+                    <UserRound className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("profile")}
                   </Link>
                   <Link
                     href="/onboarding"
@@ -259,16 +254,6 @@ export function Header({ onOpenNavigation }: { onOpenNavigation: () => void }) {
                   >
                     <Sliders className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("preferences")}
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileDropdownOpen(false);
-                      setCharterOpen(true);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  >
-                    <ShieldCheck className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" /> {t("responsibleAiCharter")}
-                  </button>
                 </div>
                 <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                 <button

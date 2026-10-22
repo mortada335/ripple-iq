@@ -70,6 +70,10 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserUpdate(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=255)
+
+
 class OrganizationCreate(BaseModel):
     name: str = Field(min_length=2, max_length=255)
     country: str | None = Field(default=None, max_length=100)
