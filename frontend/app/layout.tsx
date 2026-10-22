@@ -99,7 +99,8 @@ export default async function RootLayout({
 }) {
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("rippleiq_theme")?.value;
-  const localeCookie = (cookieStore.get("rippleiq_locale")?.value || "ar") as "ar" | "en";
+  const rawLocale = cookieStore.get("rippleiq_locale")?.value;
+  const localeCookie = (rawLocale === "ar" || rawLocale === "en" ? rawLocale : "en") as "ar" | "en";
   const isDark = themeCookie !== "light"; // Default to dark obsidian mode
 
   return (
@@ -117,7 +118,24 @@ export default async function RootLayout({
         <StructuredData />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=document.cookie.match(/rippleiq_theme=([^;]+)/);var t=m?decodeURIComponent(m[1].trim()):localStorage.getItem('rippleiq_theme');var d=t==='dark'||(t!=='light');if(d){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';document.documentElement.style.backgroundColor='#0b0d13';}else{document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';document.documentElement.style.backgroundColor='#f8fafc';}}catch(e){}})()`,
+            __html: `(function(){try{
+              var m=document.cookie.match(/rippleiq_theme=([^;]+)/);
+              var t=m?decodeURIComponent(m[1].trim()):localStorage.getItem('rippleiq_theme');
+              var d=t==='dark'||(t!=='light');
+              if(d){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';document.documentElement.style.backgroundColor='#0b0d13';}
+              else{document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';document.documentElement.style.backgroundColor='#f8fafc';}
+
+              var lm=document.cookie.match(/rippleiq_locale=([^;]+)/);
+              var loc=lm?decodeURIComponent(lm[1].trim()):localStorage.getItem('rippleiq_locale');
+              if(!loc){try{var st=JSON.parse(localStorage.getItem('rippleiq_settings')||'{}');loc=st.language;}catch(e){}}
+              if(loc==='ar'){
+                document.documentElement.lang='ar';
+                document.documentElement.dir='rtl';
+              } else if(loc==='en'){
+                document.documentElement.lang='en';
+                document.documentElement.dir='ltr';
+              }
+            }catch(e){}})()`,
           }}
         />
       </head>

@@ -34,7 +34,7 @@ function applyDirection(locale: Locale) {
 
 export function LocaleProvider({
   children,
-  initialLocale = "ar",
+  initialLocale = "en",
 }: {
   children: React.ReactNode;
   initialLocale?: Locale;
@@ -43,7 +43,7 @@ export function LocaleProvider({
 
   useEffect(() => {
     try {
-      // Check cookie first for SSR sync, then localStorage
+      // Check cookie first for SSR sync
       const cookieLocale = getCookie(LOCALE_COOKIE);
       if (cookieLocale === "ar" || cookieLocale === "en") {
         if (cookieLocale !== locale) {
@@ -52,14 +52,29 @@ export function LocaleProvider({
         }
         return;
       }
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { language?: string };
-        const storedLoc = parsed.language === "ar" ? "ar" : "en";
+
+      // Fall back to localStorage if cookie was cleared or not yet set
+      const directStoredLocale = localStorage.getItem(LOCALE_COOKIE);
+      let storedLoc: Locale | null = null;
+      if (directStoredLocale === "ar" || directStoredLocale === "en") {
+        storedLoc = directStoredLocale;
+      } else {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as { language?: string };
+          if (parsed.language === "ar" || parsed.language === "en") {
+            storedLoc = parsed.language;
+          }
+        }
+      }
+
+      if (storedLoc) {
         if (storedLoc !== locale) {
           setLocaleState(storedLoc);
           applyDirection(storedLoc);
         }
+        // Save to cookie so subsequent page reloads stay in this language on the server
+        setCookie(LOCALE_COOKIE, storedLoc, { days: 365, path: "/" });
       }
     } catch {
       // Ignore localStorage parse errors
@@ -70,7 +85,8 @@ export function LocaleProvider({
     setLocaleState(newLocale);
     applyDirection(newLocale);
     try {
-      setCookie(LOCALE_COOKIE, newLocale, { days: 365 });
+      setCookie(LOCALE_COOKIE, newLocale, { days: 365, path: "/" });
+      localStorage.setItem(LOCALE_COOKIE, newLocale);
       const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, language: newLocale }));
       window.dispatchEvent(new Event("rippleiq:locale-updated"));
