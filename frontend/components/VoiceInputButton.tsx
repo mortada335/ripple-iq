@@ -20,7 +20,7 @@ import {
   Layers,
 } from "lucide-react";
 import { toast } from "sonner";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, getApiBaseUrl } from "@/lib/api";
 import { getActiveOrganizationId, getAuthSession, isDemoSession } from "@/lib/session";
 import { useLocale } from "@/components/LocaleProvider";
 import { Priority } from "@/types/decision";
@@ -218,7 +218,8 @@ export function VoiceInputButton({
       const timeout = setTimeout(() => controller.abort(), 55_000);
       let response: Response;
       try {
-        response = await fetch(`${API_BASE_URL}/api/v1/voice/transcribe`, {
+        const baseUrl = getApiBaseUrl();
+        response = await fetch(`${baseUrl}/api/v1/voice/transcribe`, {
           method: "POST",
           headers,
           body: blob,

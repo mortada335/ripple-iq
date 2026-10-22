@@ -31,13 +31,31 @@ import {
 } from "./session";
 import type { LoginResponse, Organization, OrganizationCreate, UserAccount } from "@/types/auth";
 
-export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL !== undefined
-    ? process.env.NEXT_PUBLIC_API_URL
-    : typeof window !== "undefined" && process.env.NODE_ENV === "production"
-    ? ""
-    : "http://localhost:8000"
-).replace(/\/+$/, "");
+/**
+ * Resolves the backend base URL dynamically at runtime.
+ * Supports:
+ * 1. Vercel Services runtime binding (`process.env.BACKEND_URL`) in server functions.
+ * 2. Explicit public URL (`process.env.NEXT_PUBLIC_API_URL`).
+ * 3. Relative path ("") in browser environments to leverage Vercel top-level rewrites.
+ * 4. Localhost fallback ("http://localhost:8000") for local dev.
+ */
+export function getApiBaseUrl(): string {
+  if (typeof window === "undefined" && process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL.replace(/\/+$/, "");
+  }
+
+  if (process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== "") {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
+  }
+
+  if (typeof window !== "undefined") {
+    return "";
+  }
+
+  return "http://localhost:8000";
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 
 type ErrorEnvelope = {
   error?: {
@@ -143,7 +161,9 @@ async function requestJson<T>(
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     let response: Response;
     try {
-      response = await fetch(`${API_BASE_URL}${path}`, {
+      const baseUrl = getApiBaseUrl();
+      const url = path.startsWith("http://") || path.startsWith("https://") ? path : `${baseUrl}${path}`;
+      response = await fetch(url, {
         ...options,
         headers,
         signal: controller.signal,
