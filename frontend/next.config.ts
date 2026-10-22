@@ -20,29 +20,6 @@ const nextConfig: NextConfig = {
       },
     ];
 
-    if (isProd) {
-      headersList.push(
-        {
-          source: "/_next/static/:path*",
-          headers: [
-            {
-              key: "Cache-Control",
-              value: "public, max-age=31536000, immutable",
-            },
-          ],
-        },
-        {
-          source: "/(favicon\\.ico|.*\\.(?:jpg|jpeg|gif|png|svg|ico|webp|woff2?))$",
-          headers: [
-            {
-              key: "Cache-Control",
-              value: "public, max-age=86400, stale-while-revalidate=604800",
-            },
-          ],
-        }
-      );
-    }
-
     return headersList;
   },
   async rewrites() {
