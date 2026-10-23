@@ -14,7 +14,8 @@ import {
   Eye,
   Zap,
 } from "lucide-react";
-import { getRecommendation, getSimulationResult, refineRecommendation } from "@/lib/api";
+import { getRecommendation, getSimulationResult, refineRecommendation, getLocalRecommendation } from "@/lib/api";
+import { getLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RecommendationView, SimulationResult } from "@/types/decision";
 import { toast } from "sonner";
@@ -31,9 +32,30 @@ export default function ScenarioComparisonPage({
   const { locale } = useLocale();
   const isAr = locale === "ar";
 
-  const [result, setResult] = useState<SimulationResult | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationView | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<SimulationResult | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [recommendation, setRecommendation] = useState<RecommendationView | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalRecommendation(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return !getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return true;
+    }
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [savingScenario, setSavingScenario] = useState<number | null>(null);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
@@ -44,7 +66,6 @@ export default function ScenarioComparisonPage({
   }, [result]);
 
   const loadAnalysis = useCallback(async () => {
-    setLoading(true);
     setLoadError(null);
     try {
       const [analysis, currentRecommendation] = await Promise.all([
@@ -54,11 +75,11 @@ export default function ScenarioComparisonPage({
       setResult(analysis);
       setRecommendation(currentRecommendation);
     } catch (cause) {
-      setLoadError(cause instanceof Error ? cause.message : "Could not load the analysis.");
+      setLoadError((prev) => (result ? null : cause instanceof Error ? cause.message : "Could not load the analysis."));
     } finally {
       setLoading(false);
     }
-  }, [decisionId]);
+  }, [decisionId, result]);
 
   useEffect(() => {
     void Promise.resolve().then(loadAnalysis);
@@ -107,7 +128,7 @@ export default function ScenarioComparisonPage({
     }
   };
 
-  if (loading) {
+  if (loading && !result) {
     return <DecisionAnalysisSkeleton decisionId={decisionId} />;
   }
 

@@ -90,6 +90,7 @@ export function DecisionNavTabs({ decisionId }: DecisionNavTabsProps) {
         <div className="shrink-0">
           <Link
             href={contextTab.href}
+            prefetch={true}
             title={contextTab.fullLabel}
             className={`group relative flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 ${
               isContextActive
@@ -149,6 +150,7 @@ export function DecisionNavTabs({ decisionId }: DecisionNavTabsProps) {
               <React.Fragment key={tab.href}>
                 <Link
                   href={tab.href}
+                  prefetch={true}
                   title={tab.fullLabel}
                   className={`group flex items-center justify-center gap-1.5 flex-1 rounded-xl px-2 py-2 text-xs font-semibold transition-all duration-200 text-center ${
                     isActive

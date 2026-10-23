@@ -37,35 +37,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthError(null);
     const demo = isDemoSession();
     setIsDemo(demo);
-    if (demo) {
-      setUser(null);
-      setOrganizations([]);
-      setActiveId(null);
-      setLoading(false);
-      return false;
-    }
-    if (!getAuthSession()) {
-      setUser(null);
-      setOrganizations([]);
-      setActiveId(null);
-      setLoading(false);
-      return false;
-    }
+
+    // Load available organizations (merges server + local custom organizations)
+    let orgs: Organization[] = [];
     try {
-      const [currentUser, orgs] = await Promise.all([getCurrentUser(), getOrganizations()]);
-      const storedId = getActiveOrganizationId();
-      const activeId = orgs.some((org) => org.id === storedId) ? storedId : orgs[0]?.id ?? null;
+      orgs = await getOrganizations();
+    } catch {
+      orgs = [];
+    }
+
+    const storedId = getActiveOrganizationId();
+    const activeId = orgs.some((org) => org.id === storedId) ? storedId : orgs[0]?.id ?? null;
+
+    if (demo || !getAuthSession()) {
+      setUser(null);
+      setOrganizations(orgs);
+      setActiveId(activeId);
+      if (activeId && activeId !== storedId) {
+        setActiveOrganizationId(activeId);
+      }
+      setLoading(false);
+      return orgs.length > 0;
+    }
+
+    try {
+      const currentUser = await getCurrentUser();
       setUser(currentUser);
       setOrganizations(orgs);
       setActiveId(activeId);
-      if (activeId !== storedId) setActiveOrganizationId(activeId);
+      if (activeId && activeId !== storedId) {
+        setActiveOrganizationId(activeId);
+      }
       return orgs.length > 0;
     } catch (cause) {
       if (cause instanceof ApiRequestError && cause.status === 401) {
         clearAuthSession();
         setUser(null);
-        setOrganizations([]);
-        setActiveId(null);
+        setOrganizations(orgs);
+        setActiveId(activeId);
         return false;
       }
       setAuthError(cause instanceof Error ? cause.message : "Could not verify the saved session.");
@@ -108,7 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     startDemo() { startDemoSession(); },
-    signOut() { clearAuthSession(); clearDemoSession(); setActiveOrganizationId(null); },
+    signOut() {
+      clearAuthSession();
+      clearDemoSession();
+      void refresh();
+    },
   }), [user, organizations, activeOrganizationId, isDemo, loading, authError, refresh]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

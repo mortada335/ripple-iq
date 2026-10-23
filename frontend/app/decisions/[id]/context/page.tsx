@@ -22,6 +22,7 @@ import {
   Database,
 } from "lucide-react";
 import { attachDecisionContext, extractDecisionDocument, getDecision, getDecisionContext } from "@/lib/api";
+import { getLocalContext } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { ExtractedDocument } from "@/types/decision";
 import { toast } from "sonner";
@@ -42,29 +43,51 @@ export default function DecisionContextPage({
   const { locale } = useLocale();
   const isAr = locale === "ar";
 
-  const [studentPopulation, setStudentPopulation] = useState("");
-  const [facultyCount, setFacultyCount] = useState("");
-  const [activeLaboratories, setActiveLaboratories] = useState("");
-  const [transitRate, setTransitRate] = useState("");
-  const [assumptions, setAssumptions] = useState("");
-  const [constraints, setConstraints] = useState("");
-  const [existingMetadata, setExistingMetadata] = useState<Record<string, unknown>>({});
+  const initialLocalCtx = React.useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalContext(Number(decisionId));
+    } catch {
+      return null;
+    }
+  }, [decisionId]);
+
+  const [studentPopulation, setStudentPopulation] = useState(
+    () => initialLocalCtx?.student_population?.toString() ?? ""
+  );
+  const [facultyCount, setFacultyCount] = useState(
+    () => initialLocalCtx?.faculty_count?.toString() ?? ""
+  );
+  const [activeLaboratories, setActiveLaboratories] = useState(
+    () => initialLocalCtx?.active_laboratories?.toString() ?? ""
+  );
+  const [transitRate, setTransitRate] = useState(
+    () => initialLocalCtx?.transit_dependency_rate?.toString() ?? ""
+  );
+  const [assumptions, setAssumptions] = useState(
+    () => initialLocalCtx?.key_assumptions?.join("\n") ?? ""
+  );
+  const [constraints, setConstraints] = useState(
+    () => initialLocalCtx?.constraints ?? ""
+  );
+  const [existingMetadata, setExistingMetadata] = useState<Record<string, unknown>>(
+    () => (initialLocalCtx?.raw_metadata as Record<string, unknown>) ?? {}
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extractedDocument, setExtractedDocument] = useState<ExtractedDocument | null>(null);
   const [extractingDocument, setExtractingDocument] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
 
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(() => !initialLocalCtx);
   const [loading, setLoading] = useState(false);
   const [savingOnly, setSavingOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Locked mode ensures that baseline context is displayed read-only once saved, preventing accidental edits
-  const [isLocked, setIsLocked] = useState(true);
+  const [isLocked, setIsLocked] = useState(() => Boolean(initialLocalCtx));
 
   useEffect(() => {
     let active = true;
-    setInitialLoading(true);
     Promise.all([getDecision(Number(decisionId)), getDecisionContext(Number(decisionId))])
       .then(([, context]) => {
         if (!active) return;
@@ -77,13 +100,14 @@ export default function DecisionContextPage({
           setConstraints(context.constraints ?? "");
           setExistingMetadata(context.raw_metadata ?? {});
           setIsLocked(true);
-        } else {
-          // If no context is attached yet, open in editable mode
+        } else if (!initialLocalCtx) {
           setIsLocked(false);
         }
       })
       .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Could not load decision context.");
+        if (active && !initialLocalCtx) {
+          setError(cause instanceof Error ? cause.message : "Could not load decision context.");
+        }
       })
       .finally(() => {
         if (active) setInitialLoading(false);
@@ -91,7 +115,7 @@ export default function DecisionContextPage({
     return () => {
       active = false;
     };
-  }, [decisionId]);
+  }, [decisionId, initialLocalCtx]);
 
   const saveContextPayload = async () => {
     const parsedAssumptions = assumptions
@@ -208,7 +232,7 @@ export default function DecisionContextPage({
     setAssumptions((prev) => (prev ? `${prev}\n${tag}` : tag));
   };
 
-  if (initialLoading) {
+  if (initialLoading && !initialLocalCtx) {
     return <ContextManagementSkeleton decisionId={decisionId} />;
   }
 

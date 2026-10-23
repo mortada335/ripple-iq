@@ -17,6 +17,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
+import { getLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { useLocale } from "@/components/LocaleProvider";
 import { SimulationResult } from "@/types/decision";
@@ -33,24 +34,37 @@ export default function ConsequencesPage({
   const { locale } = useLocale();
   const isAr = locale === "ar";
 
-  const [result, setResult] = useState<SimulationResult | null>(null);
+  const [result, setResult] = useState<SimulationResult | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
   const [selectedStakeholder, setSelectedStakeholder] = useState<string>("all");
   const [directionFilter, setDirectionFilter] = useState<string>("all");
   const [expandedImpacts, setExpandedImpacts] = useState<Record<number, boolean>>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return !getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return true;
+    }
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadResult = useCallback(async () => {
-    setLoading(true);
     setLoadError(null);
     try {
       setResult(await getSimulationResult(Number(decisionId)));
     } catch (cause) {
-      setLoadError(cause instanceof Error ? cause.message : isAr ? "تعذر تحميل نتائج الآثار." : "Could not load impact results.");
+      setLoadError((prev) => (result ? null : cause instanceof Error ? cause.message : isAr ? "تعذر تحميل نتائج الآثار." : "Could not load impact results."));
     } finally {
       setLoading(false);
     }
-  }, [decisionId, isAr]);
+  }, [decisionId, isAr, result]);
 
   useEffect(() => {
     void Promise.resolve().then(loadResult);
@@ -108,7 +122,7 @@ export default function ConsequencesPage({
     });
   }, [result, isAr]);
 
-  if (loading) {
+  if (loading && !result) {
     return <DecisionAnalysisSkeleton decisionId={decisionId} />;
   }
 

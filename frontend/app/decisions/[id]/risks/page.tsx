@@ -15,6 +15,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
+import { getLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { useLocale } from "@/components/LocaleProvider";
 import { RiskItem, SimulationResult } from "@/types/decision";
@@ -45,31 +46,51 @@ export default function RiskRegisterPage({
   const { locale } = useLocale();
   const isAr = locale === "ar";
 
-  const [result, setResult] = useState<SimulationResult | null>(null);
-  const [risks, setRisks] = useState<RiskItem[]>([]);
+  const [result, setResult] = useState<SimulationResult | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [risks, setRisks] = useState<RiskItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return getLocalSimulationResult(Number(decisionId)).risks || [];
+    } catch {
+      return [];
+    }
+  });
   const [filterSeverity, setFilterSeverity] = useState<string>("ALL");
   const [activeCell, setActiveCell] = useState<{ likelihood?: string; severity?: string } | null>(null);
   const searchParams = useSearchParams();
   const initialSort = searchParams.get("sort") === "likelihood" ? "likelihood" : "severity";
   const [sortBy, setSortBy] = useState<"severity" | "likelihood">(initialSort);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return !getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return true;
+    }
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showMatrix, setShowMatrix] = useState(false);
   const [expandedRisks, setExpandedRisks] = useState<Record<number, boolean>>({});
 
   const loadResult = useCallback(async () => {
-    setLoading(true);
     setLoadError(null);
     try {
       const data = await getSimulationResult(Number(decisionId));
       setResult(data);
       setRisks(data.risks || []);
     } catch (cause) {
-      setLoadError(cause instanceof Error ? cause.message : isAr ? "تعذر تحميل نتائج المخاطر." : "Could not load risk results.");
+      setLoadError((prev) => (result ? null : cause instanceof Error ? cause.message : isAr ? "تعذر تحميل نتائج المخاطر." : "Could not load risk results."));
     } finally {
       setLoading(false);
     }
-  }, [decisionId, isAr]);
+  }, [decisionId, isAr, result]);
 
   useEffect(() => {
     void Promise.resolve().then(loadResult);
@@ -203,7 +224,7 @@ export default function RiskRegisterPage({
     }
   };
 
-  if (loading) {
+  if (loading && !result) {
     return <RisksMatrixSkeleton decisionId={decisionId} />;
   }
 

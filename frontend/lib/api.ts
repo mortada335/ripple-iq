@@ -25,6 +25,7 @@ import {
 import {
   clearAuthSession,
   getActiveOrganizationId,
+  setActiveOrganizationId,
   getAuthSession,
   isDemoSession,
   saveAuthSession,
@@ -218,9 +219,9 @@ async function requestJson<T>(
       throw new ApiRequestError("The API returned an unreadable response.", response.status, "INVALID_API_RESPONSE");
     }
 
-    // Cache successful GET results with 15-second TTL (30s for static endpoints)
+    // Cache successful GET results with 120-second TTL (instant switching between decisions/tabs)
     if (isRead) {
-      const ttlMs = path.includes("/health") || path.includes("/auth/me") ? 30_000 : 15_000;
+      const ttlMs = path.includes("/health") ? 30_000 : path.includes("/auth/me") ? 60_000 : 120_000;
       clientCache.set(cacheKey, {
         data: payload,
         expiresAt: Date.now() + ttlMs,
@@ -245,7 +246,7 @@ async function requestWithDemoFallback<T>(
   path: string,
   options: RequestInit,
   fallback: () => T | Promise<T>,
-  timeoutMs = 20_000,
+  timeoutMs = 10_000,
 ): Promise<T> {
   if (process.env.NEXT_PUBLIC_USE_MOCK === "true" || isDemoSession() || !getAuthSession()) {
     return fallback();
@@ -255,7 +256,14 @@ async function requestWithDemoFallback<T>(
   } catch (cause) {
     if (
       cause instanceof ApiRequestError &&
-      (cause.status === 401 || cause.code === "AUTHENTICATION_REQUIRED" || cause.code === "NETWORK_ERROR")
+      (cause.status === 401 ||
+        cause.status === 404 ||
+        cause.status === 500 ||
+        cause.status === 502 ||
+        cause.status === 503 ||
+        cause.code === "AUTHENTICATION_REQUIRED" ||
+        cause.code === "NETWORK_ERROR" ||
+        cause.code === "REQUEST_TIMEOUT")
     ) {
       return fallback();
     }
@@ -293,12 +301,92 @@ export async function updateCurrentUser(data: { full_name: string }): Promise<Us
   }, false);
 }
 
+const CUSTOM_ORGS_STORAGE_KEY = "rippleiq_custom_organizations";
+
+export function getCustomLocalOrganizations(): Organization[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_ORGS_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Organization[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomLocalOrganization(org: Organization): void {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = getCustomLocalOrganizations();
+    const filtered = existing.filter((item) => item.id !== org.id && item.name.toLowerCase() !== org.name.toLowerCase());
+    localStorage.setItem(CUSTOM_ORGS_STORAGE_KEY, JSON.stringify([...filtered, org]));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
 export async function getOrganizations(): Promise<Organization[]> {
-  return requestJson<Organization[]>("/api/v1/organizations");
+  const customOrgs = getCustomLocalOrganizations();
+  const fallback = (): Organization[] => {
+    const defaultOrg: Organization = {
+      id: 1,
+      name: "جامعة النور التقنية (العراق)",
+      slug: "alnoor-university",
+      country: "العراق",
+      role: "owner",
+      created_at: "2026-10-12T08:00:00Z",
+    };
+    const combined = [defaultOrg, ...customOrgs];
+    const map = new Map<number, Organization>();
+    for (const org of combined) map.set(org.id, org);
+    return Array.from(map.values());
+  };
+
+  try {
+    const serverOrgs = await requestWithDemoFallback<Organization[]>(
+      "/api/v1/organizations",
+      { method: "GET" },
+      fallback,
+    );
+    const mergedMap = new Map<number, Organization>();
+    for (const org of serverOrgs) mergedMap.set(org.id, org);
+    for (const org of customOrgs) {
+      if (!mergedMap.has(org.id)) mergedMap.set(org.id, org);
+    }
+    return Array.from(mergedMap.values());
+  } catch {
+    return fallback();
+  }
 }
 
 export async function createOrganization(data: OrganizationCreate): Promise<Organization> {
-  return requestJson<Organization>("/api/v1/organizations", { method: "POST", body: JSON.stringify(data) });
+  const fallback = (): Organization => {
+    const existing = getCustomLocalOrganizations();
+    const maxId = existing.reduce((max, o) => Math.max(max, o.id), 1);
+    const newOrg: Organization = {
+      id: maxId + 1,
+      name: data.name,
+      slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      country: data.country ?? null,
+      role: "owner",
+      created_at: new Date().toISOString(),
+    };
+    saveCustomLocalOrganization(newOrg);
+    setActiveOrganizationId(newOrg.id);
+    return newOrg;
+  };
+
+  try {
+    const org = await requestWithDemoFallback<Organization>(
+      "/api/v1/organizations",
+      { method: "POST", body: JSON.stringify(data) },
+      fallback,
+    );
+    saveCustomLocalOrganization(org);
+    setActiveOrganizationId(org.id);
+    return org;
+  } catch {
+    return fallback();
+  }
 }
 
 export async function checkApiHealth(): Promise<HealthResponse> {
@@ -471,11 +559,21 @@ export async function getSimulationResult(decisionId: number): Promise<Simulatio
   );
 }
 
+export function getLocalRecommendation(decisionId: number): RecommendationView | null {
+  try {
+    const original = getLocalSimulationResult(decisionId).recommendation;
+    if (!original) return null;
+    return { decision_id: decisionId, original, current: original, refinement: null };
+  } catch {
+    return null;
+  }
+}
+
 export async function getRecommendation(decisionId: number): Promise<RecommendationView> {
   return requestWithDemoFallback(`/api/v1/decisions/${decisionId}/recommendation`, { method: "GET" }, () => {
-    const original = getLocalSimulationResult(decisionId).recommendation;
-    if (!original) throw new ApiRequestError("A recommendation is not available yet.", 409, "RECOMMENDATION_NOT_AVAILABLE");
-    return { decision_id: decisionId, original, current: original, refinement: null };
+    const local = getLocalRecommendation(decisionId);
+    if (!local) throw new ApiRequestError("A recommendation is not available yet.", 409, "RECOMMENDATION_NOT_AVAILABLE");
+    return local;
   });
 }
 
@@ -504,8 +602,8 @@ export async function refineRecommendation(
   );
 }
 
-export async function getReport(decisionId: number): Promise<ReportResponse> {
-  return requestWithDemoFallback(`/api/v1/decisions/${decisionId}/report`, { method: "GET" }, () => {
+export function getLocalReport(decisionId: number): ReportResponse | null {
+  try {
     const decision = getLocalDecision(decisionId) ?? DEMO_DECISION;
     return {
       decision_id: decisionId,
@@ -517,6 +615,16 @@ export async function getReport(decisionId: number): Promise<ReportResponse> {
       generated_at: new Date().toISOString(),
       checksum: "",
     };
+  } catch {
+    return null;
+  }
+}
+
+export async function getReport(decisionId: number): Promise<ReportResponse> {
+  return requestWithDemoFallback(`/api/v1/decisions/${decisionId}/report`, { method: "GET" }, () => {
+    const local = getLocalReport(decisionId);
+    if (!local) throw new ApiRequestError("Report is not available yet.", 404, "REPORT_NOT_FOUND");
+    return local;
   });
 }
 

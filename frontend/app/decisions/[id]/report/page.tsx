@@ -23,7 +23,10 @@ import {
   getDecision,
   getSimulationResult,
   getRecommendation,
+  getLocalReport,
+  getLocalRecommendation,
 } from "@/lib/api";
+import { getLocalDecision, getLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { useLocale } from "@/components/LocaleProvider";
 import { MarkdownViewer } from "@/components/MarkdownViewer";
@@ -49,15 +52,50 @@ export default function ReportPreviewPage({
   const { locale } = useLocale();
   const isAr = locale === "ar";
 
-  const [report, setReport] = useState<ReportResponse | null>(null);
-  const [decision, setDecision] = useState<Decision | null>(null);
-  const [simulation, setSimulation] = useState<SimulationResult | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationView | null>(null);
+  const [report, setReport] = useState<ReportResponse | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalReport(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [decision, setDecision] = useState<Decision | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalDecision(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [simulation, setSimulation] = useState<SimulationResult | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [recommendation, setRecommendation] = useState<RecommendationView | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalRecommendation(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
 
   const [viewMode, setViewMode] = useState<"DOCUMENT" | "WEB" | "RAW">("DOCUMENT");
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [docLang, setDocLang] = useState<"ar" | "en">(isAr ? "ar" : "en");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return !getLocalReport(Number(decisionId));
+    } catch {
+      return true;
+    }
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Sync default document language with system locale on mount or change
@@ -66,7 +104,6 @@ export default function ReportPreviewPage({
   }, [isAr]);
 
   const loadReportData = useCallback(async () => {
-    setLoading(true);
     setLoadError(null);
 
     try {
@@ -162,7 +199,7 @@ export default function ReportPreviewPage({
     window.print();
   };
 
-  if (loading) {
+  if (loading && !report) {
     return <ReportDocumentSkeleton decisionId={decisionId} />;
   }
 

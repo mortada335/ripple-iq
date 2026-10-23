@@ -31,7 +31,7 @@ import {
   type OrganizationKind,
   type OrganizationProfile,
 } from "@/lib/organization";
-import { getActiveOrganizationId } from "@/lib/session";
+import { getActiveOrganizationId, setActiveOrganizationId } from "@/lib/session";
 
 const MODAL_STORAGE_KEY = "rippleiq_first_time_modal_seen";
 
@@ -121,22 +121,29 @@ export function FirstTimeOrgModal() {
 
     setSaving(true);
     try {
-      // If user is logged in, create the organization on backend if not existing
-      if (user) {
-        const isExistingOrg = organizations.some(
+      const isExistingOrg = organizations.some(
+        (o) => o.name.trim().toLowerCase() === profile.name.trim().toLowerCase()
+      );
+      let targetOrgId = activeOrganizationId;
+      if (!isExistingOrg) {
+        const newOrg = await createOrganization({
+          name: profile.name.trim(),
+          country: profile.country.trim() || null,
+        });
+        targetOrgId = newOrg.id;
+        await refresh();
+      } else {
+        const found = organizations.find(
           (o) => o.name.trim().toLowerCase() === profile.name.trim().toLowerCase()
         );
-        if (!isExistingOrg) {
-          await createOrganization({
-            name: profile.name.trim(),
-            country: profile.country.trim() || null,
-          });
-          await refresh();
+        if (found) {
+          targetOrgId = found.id;
+          setActiveOrganizationId(found.id);
         }
       }
 
       // Save complete extended profile to local context
-      saveDemoOrganization(profile, getActiveOrganizationId());
+      saveDemoOrganization(profile, targetOrgId ?? getActiveOrganizationId());
       localStorage.setItem(MODAL_STORAGE_KEY, "true");
 
       toast.success(isAr ? "تم إعداد مساحة المؤسسة بنجاح!" : "Organization profile configured successfully!", {

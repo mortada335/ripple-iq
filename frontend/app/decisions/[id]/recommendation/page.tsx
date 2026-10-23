@@ -22,7 +22,8 @@ import {
   RotateCcw,
   Check,
 } from "lucide-react";
-import { getRecommendation, getSimulationResult, refineRecommendation } from "@/lib/api";
+import { getRecommendation, getSimulationResult, refineRecommendation, getLocalRecommendation } from "@/lib/api";
+import { getLocalSimulationResult } from "@/lib/mock-data";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { useLocale } from "@/components/LocaleProvider";
 import { RecommendationView, SimulationResult } from "@/types/decision";
@@ -39,9 +40,30 @@ export default function RecommendationPage({
   const { locale } = useLocale();
   const isAr = locale === "ar";
 
-  const [result, setResult] = useState<SimulationResult | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationView | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<SimulationResult | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [recommendation, setRecommendation] = useState<RecommendationView | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return getLocalRecommendation(Number(decisionId));
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return !getLocalSimulationResult(Number(decisionId));
+    } catch {
+      return true;
+    }
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Refinement modal state
@@ -51,7 +73,6 @@ export default function RecommendationPage({
   const [switchingScenario, setSwitchingScenario] = useState<number | null>(null);
 
   const loadAnalysis = useCallback(async () => {
-    setLoading(true);
     setLoadError(null);
     try {
       const [analysis, currentRecommendation] = await Promise.all([
@@ -61,8 +82,10 @@ export default function RecommendationPage({
       setResult(analysis);
       setRecommendation(currentRecommendation);
     } catch (cause) {
-      setLoadError(
-        cause instanceof Error
+      setLoadError((prev) =>
+        result && recommendation
+          ? null
+          : cause instanceof Error
           ? cause.message
           : isAr
           ? "تعذر تحميل التوصية."
@@ -71,7 +94,7 @@ export default function RecommendationPage({
     } finally {
       setLoading(false);
     }
-  }, [decisionId, isAr]);
+  }, [decisionId, isAr, result, recommendation]);
 
   useEffect(() => {
     void Promise.resolve().then(loadAnalysis);
@@ -146,7 +169,7 @@ export default function RecommendationPage({
     }
   };
 
-  if (loading) {
+  if (loading && (!result || !recommendation)) {
     return <RecommendationSkeleton decisionId={decisionId} />;
   }
 

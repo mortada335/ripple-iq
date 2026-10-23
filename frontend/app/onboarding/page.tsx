@@ -40,7 +40,7 @@ import {
   type OrganizationKind,
   type OrganizationProfile,
 } from "@/lib/organization";
-import { getActiveOrganizationId } from "@/lib/session";
+import { getActiveOrganizationId, setActiveOrganizationId } from "@/lib/session";
 
 const kindOptions: Array<{
   value: OrganizationKind;
@@ -176,38 +176,39 @@ export default function OrganizationOnboardingPage() {
       return;
     }
 
-    if (user && !activeOrganization) {
-      setSaving(true);
-      try {
-        await createOrganization({ name: profile.name.trim(), country: profile.country.trim() || null });
-        await refresh();
-        saveDemoOrganization(profile, getActiveOrganizationId());
-        toast.success(isAr ? "تم إنشاء المؤسسة بنجاح!" : "Organization created successfully!", {
-          description: isAr
-            ? "تم حفظ اسم المؤسسة والبلد، وتم تحديث سياق التحليلات في متصفحك."
-            : "Organization name saved. Extended profile context is active for all simulations.",
-        });
-        router.push("/dashboard");
-      } catch (cause) {
-        toast.error(isAr ? "تعذر إنشاء المؤسسة" : "Could not create the organization", {
-          description: cause instanceof Error ? cause.message : "Try again.",
-        });
-      } finally {
-        setSaving(false);
-      }
-      return;
-    }
-
+    setSaving(true);
     try {
-      saveDemoOrganization(profile, activeOrganizationId);
-      toast.success(isAr ? "تم حفظ سياق المؤسسة بنجاح" : "Organization context saved successfully", {
+      const isExisting = organizations.some(
+        (o) => o.name.trim().toLowerCase() === profile.name.trim().toLowerCase()
+      );
+      let targetOrgId = activeOrganizationId;
+      if (!isExisting) {
+        const newOrg = await createOrganization({ name: profile.name.trim(), country: profile.country.trim() || null });
+        targetOrgId = newOrg.id;
+        await refresh();
+      } else {
+        const found = organizations.find(
+          (o) => o.name.trim().toLowerCase() === profile.name.trim().toLowerCase()
+        );
+        if (found) {
+          targetOrgId = found.id;
+          setActiveOrganizationId(found.id);
+        }
+      }
+
+      saveDemoOrganization(profile, targetOrgId ?? getActiveOrganizationId());
+      toast.success(isAr ? "تم حفظ سياق المؤسسة بنجاح!" : "Organization context saved successfully!", {
         description: isAr
-          ? "يتم الآن تضمين هذا السياق المؤسسي تلقائياً في صياغة ومحاكاة كافة القرارات القادمة."
-          : "This institutional context will automatically guide all upcoming decision simulations.",
+          ? "تم حفظ المؤسسة وتحديث سياق التحليلات في متصفحك."
+          : "Organization saved. Extended profile context is active for all simulations.",
       });
       router.push("/dashboard");
-    } catch {
-      toast.error(isAr ? "تعذر حفظ الملف التعريفي" : "Could not save the profile");
+    } catch (cause) {
+      toast.error(isAr ? "تعذر إنشاء أو حفظ المؤسسة" : "Could not save the organization", {
+        description: cause instanceof Error ? cause.message : "Try again.",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 

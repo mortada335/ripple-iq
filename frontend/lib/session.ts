@@ -155,18 +155,51 @@ export function isDemoSession() {
   return readSessionValue(DEMO_KEY) === "true";
 }
 
+const ORGANIZATION_COOKIE = "rippleiq_active_org";
+
 export function getActiveOrganizationId(): number | null {
+  if (typeof window === "undefined") return null;
+
+  // 1. Check persistent localStorage
+  try {
+    const rawLocal = window.localStorage.getItem(ORGANIZATION_KEY);
+    const idLocal = rawLocal ? Number(rawLocal) : NaN;
+    if (Number.isInteger(idLocal) && idLocal > 0) return idLocal;
+  } catch {
+    // Continue to cookie check
+  }
+
+  // 2. Check persistent Cookie
+  try {
+    const rawCookie = getCookie(ORGANIZATION_COOKIE);
+    const idCookie = rawCookie ? Number(rawCookie) : NaN;
+    if (Number.isInteger(idCookie) && idCookie > 0) return idCookie;
+  } catch {
+    // Continue to session storage
+  }
+
+  // 3. Fallback to tab sessionStorage
   const raw = readSessionValue(ORGANIZATION_KEY);
   const id = raw ? Number(raw) : NaN;
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
 export function setActiveOrganizationId(id: number | null) {
+  if (typeof window === "undefined") return;
+
   try {
-    if (id === null) window.sessionStorage.removeItem(ORGANIZATION_KEY);
-    else window.sessionStorage.setItem(ORGANIZATION_KEY, String(id));
+    if (id === null) {
+      window.localStorage.removeItem(ORGANIZATION_KEY);
+      window.sessionStorage.removeItem(ORGANIZATION_KEY);
+      deleteCookie(ORGANIZATION_COOKIE);
+    } else {
+      window.localStorage.setItem(ORGANIZATION_KEY, String(id));
+      window.sessionStorage.setItem(ORGANIZATION_KEY, String(id));
+      setCookie(ORGANIZATION_COOKIE, String(id), { days: 30, sameSite: "Lax" });
+    }
   } catch {
-    throw new Error("Could not save the selected organization for this tab.");
+    // Best-effort storage write
   }
+
   window.dispatchEvent(new Event(ORGANIZATION_CHANGED_EVENT));
 }

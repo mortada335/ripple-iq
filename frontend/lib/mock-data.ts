@@ -410,7 +410,7 @@ export function getLocalContext(decisionId: number): ContextData | null {
 }
 
 export function getLocalSimulationResult(decisionId: number): SimulationResult {
-  if (typeof window === "undefined" || decisionId === 1) return DEMO_SIMULATION_RESULT;
+  if (typeof window === "undefined") return DEMO_SIMULATION_RESULT;
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY_RESULTS);
     if (raw) {
@@ -420,6 +420,8 @@ export function getLocalSimulationResult(decisionId: number): SimulationResult {
   } catch {
     // fallback
   }
+
+  if (decisionId === 1) return DEMO_SIMULATION_RESULT;
 
   const dec = getLocalDecision(decisionId);
   return {
