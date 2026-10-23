@@ -12,6 +12,7 @@ import {
   Building2,
 } from "lucide-react";
 import { getDecisions, getReport, toggleArchiveDecision, deleteDecision } from "@/lib/api";
+import { getLocalDecisions } from "@/lib/mock-data";
 import { Decision } from "@/types/decision";
 import { LoadMore } from "@/components/LoadMore";
 import { toast } from "sonner";
@@ -24,9 +25,23 @@ const PAGE_SIZE = 20;
 
 export default function HistoricalDecisionsPage() {
   const { locale, t, isRtl } = useLocale();
-  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [decisions, setDecisions] = useState<Decision[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return getLocalDecisions();
+    } catch {
+      return [];
+    }
+  });
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return getLocalDecisions().length === 0;
+    } catch {
+      return true;
+    }
+  });
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -142,7 +157,7 @@ export default function HistoricalDecisionsPage() {
     );
   }, [decisions, search]);
 
-  if (loading) {
+  if (loading && decisions.length === 0) {
     return <DecisionsListSkeleton />;
   }
 
