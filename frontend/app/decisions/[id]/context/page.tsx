@@ -131,15 +131,33 @@ export default function DecisionContextPage({
       );
       setExtractedDocument(extracted);
       const extractedText = extracted.pages.map((p) => p.text).join("\n").trim();
-      if (extractedText && !assumptions) {
-        setAssumptions(extractedText.split("\n").slice(0, 5).join("\n"));
+      if (extractedText) {
+        if (!assumptions.trim()) {
+          setAssumptions(extractedText.split("\n").slice(0, 5).join("\n"));
+        } else {
+          const snippet = extractedText.split("\n").slice(0, 5).join("\n");
+          if (!assumptions.includes(snippet)) {
+            setAssumptions((prev) => `${prev.trim()}\n${snippet}`);
+          }
+        }
       }
-      toast.success("Document analyzed via OCR pipeline", {
-        description: `Extracted text from ${extracted.pages.length} page(s) of ${selectedFile.name}`,
-      });
+      toast.success(
+        isAr ? "تم تحليل الوثيقة واستخراج البيانات بنجاح" : "Document analyzed via OCR pipeline",
+        {
+          description: isAr
+            ? `تم استخراج النصوص من ${extracted.pages.length} صفحة من ${selectedFile.name}`
+            : `Extracted text from ${extracted.pages.length} page(s) of ${selectedFile.name}`,
+        }
+      );
     } catch (cause) {
-      setDocumentError(cause instanceof Error ? cause.message : "Could not extract document data.");
-      toast.error("Document extraction failed");
+      setDocumentError(
+        cause instanceof Error
+          ? cause.message
+          : isAr
+          ? "تعذر استخراج بيانات الوثيقة."
+          : "Could not extract document data."
+      );
+      toast.error(isAr ? "فشل استخراج بيانات الوثيقة" : "Document extraction failed");
     } finally {
       setExtractingDocument(false);
     }
@@ -350,13 +368,20 @@ export default function DecisionContextPage({
           )}
 
           {extractedDocument && (
-            <div className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>
-                {isAr
-                  ? `تم استخراج المحتوى بنجاح من ${extractedDocument.pages.length} صفحة.`
-                  : `Extracted content from ${extractedDocument.pages.length} document page(s).`}
-              </span>
+            <div className="rounded-xl bg-emerald-50 p-3.5 text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-semibold">
+                  {isAr
+                    ? `تم استخراج المحتوى بنجاح من ${extractedDocument.pages.length} صفحة (${selectedFile?.name || "المستند"}).`
+                    : `Extracted content from ${extractedDocument.pages.length} page(s) of ${selectedFile?.name || "document"}.`}
+                </span>
+              </div>
+              {extractedDocument.pages[0]?.text && (
+                <div className="rounded-lg bg-white/80 dark:bg-slate-900/80 p-2.5 text-[11px] font-mono max-h-28 overflow-y-auto border border-emerald-100 dark:border-emerald-900/40 text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                  {extractedDocument.pages.map((p) => p.text).join("\n")}
+                </div>
+              )}
             </div>
           )}
         </div>
