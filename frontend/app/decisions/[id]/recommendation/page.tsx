@@ -106,22 +106,37 @@ export default function RecommendationPage({
   };
 
   const handleSwitchPathway = async (scenarioNumber: number) => {
-    if (switchingScenario !== null || scenarioNumber === recommendation?.current.selected_scenario_number) return;
+    if (switchingScenario !== null || !recommendation) return;
+    const isCurrent = recommendation.current.selected_scenario_number === scenarioNumber;
+    const targetScenario = isCurrent
+      ? recommendation.original.selected_scenario_number
+      : scenarioNumber;
+
     setSwitchingScenario(scenarioNumber);
     try {
       const updated = await refineRecommendation(Number(decisionId), {
-        selected_scenario_number: scenarioNumber,
-        feedback: `Leadership elected to adopt Scenario 0${scenarioNumber} as the preferred institutional strategy.`,
+        selected_scenario_number: targetScenario,
+        feedback: isCurrent
+          ? `Leadership reset pathway adoption back to baseline recommendation Scenario 0${targetScenario}.`
+          : `Leadership elected to adopt Scenario 0${scenarioNumber} as the preferred institutional strategy.`,
       });
       setRecommendation(updated);
-      toast.success(
-        isAr ? `تم تعيين المسار 0${scenarioNumber} كمسار معتمد!` : `Scenario 0${scenarioNumber} selected as active pathway!`,
-        {
-          description: isAr
-            ? "تم تحديث التوصية ومذكرة المجلس رسمياً."
-            : "Strategic synthesis and board memorandum have been updated.",
-        }
-      );
+      if (isCurrent) {
+        toast.info(
+          isAr
+            ? `تم إلغاء اعتماد المسار، والعودة إلى مسار التوصية الأساسي (المسار 0${targetScenario})`
+            : `Adoption removed. Restored baseline pathway 0${targetScenario}`,
+        );
+      } else {
+        toast.success(
+          isAr ? `تم تعيين المسار 0${scenarioNumber} كمسار معتمد!` : `Scenario 0${scenarioNumber} selected as active pathway!`,
+          {
+            description: isAr
+              ? "تم تحديث التوصية ومذكرة المجلس رسمياً."
+              : "Strategic synthesis and board memorandum have been updated.",
+          }
+        );
+      }
     } catch (cause) {
       toast.error(isAr ? "تعذر تغيير المسار" : "Could not switch pathway", {
         description: cause instanceof Error ? cause.message : isAr ? "حاول مجدداً." : "Try again.",
@@ -193,7 +208,7 @@ export default function RecommendationPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            {isAr ? "المرحلة 05 من تحليل القرار" : "Stage 05 of Decision Analysis"}
+            {isAr ? "المرحلة 04 · التوصية الاستراتيجية ومسار الحل" : "Stage 04 · Strategic Recommendation & Solution Track"}
           </span>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {isAr ? "التوصية الإستراتيجية والتوليف النهائي" : "Strategic Recommendation & Synthesis"}
@@ -331,10 +346,17 @@ export default function RecommendationPage({
                     0{scen.scenario_number}
                   </span>
                   {isCurrent ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      <Check className="h-3 w-3" />
-                      <span>{isAr ? "المسار المعتمد" : "Selected Pathway"}</span>
-                    </span>
+                    <button
+                      type="button"
+                      disabled={switchingScenario !== null}
+                      onClick={() => handleSwitchPathway(scen.scenario_number)}
+                      title={isAr ? "اضغط لإلغاء الاعتماد واستعادة المسار الأساسي" : "Click to remove adoption and reset to baseline"}
+                      className="group inline-flex items-center gap-1 rounded-full bg-emerald-100 hover:bg-rose-100 dark:bg-emerald-950 dark:hover:bg-rose-950 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 hover:text-rose-700 dark:text-emerald-300 dark:hover:text-rose-300 transition cursor-pointer"
+                    >
+                      <Check className="h-3 w-3 group-hover:hidden" />
+                      <span className="group-hover:hidden">{isAr ? "المسار المعتمد" : "Selected Pathway"}</span>
+                      <span className="hidden group-hover:inline">{isAr ? "إلغاء الاعتماد ✕" : "Remove ✕"}</span>
+                    </button>
                   ) : (
                     <button
                       type="button"

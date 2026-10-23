@@ -64,27 +64,42 @@ export default function ScenarioComparisonPage({
     void Promise.resolve().then(loadAnalysis);
   }, [loadAnalysis]);
 
-  const handleSetPreferred = async (scenarioNum: number) => {
-    if (!result || savingScenario !== null) return;
+  const handleTogglePreferred = async (scenarioNum: number) => {
+    if (!result || savingScenario !== null || !recommendation) return;
     setSavingScenario(scenarioNum);
+    const isAlreadyAdopted = recommendation.current.selected_scenario_number === scenarioNum;
+    const targetScenarioNum = isAlreadyAdopted
+      ? recommendation.original.selected_scenario_number
+      : scenarioNum;
+
     try {
       const updated = await refineRecommendation(Number(decisionId), {
-        selected_scenario_number: scenarioNum,
-        feedback: `Reviewer selected Scenario ${scenarioNum} as the preferred institutional pathway.`,
+        selected_scenario_number: targetScenarioNum,
+        feedback: isAlreadyAdopted
+          ? `Reviewer removed preferred pathway adoption and restored baseline recommendation Scenario ${targetScenarioNum}.`
+          : `Reviewer selected Scenario ${scenarioNum} as the preferred institutional pathway.`,
       });
       setRecommendation(updated);
-      toast.success(
-        isAr
-          ? `تم اعتماد المسار ${scenarioNum} كخيار مفضل`
-          : `Scenario ${scenarioNum} saved as preferred pathway`,
-        {
-          description: isAr
-            ? "تُحفظ توصية التحليل الأصلية لأغراض التدقيق."
-            : "The baseline model recommendation remains preserved for audit compliance.",
-        }
-      );
+      if (isAlreadyAdopted) {
+        toast.info(
+          isAr
+            ? `تم إلغاء اعتماد المسار ${scenarioNum}، والعودة إلى مسار التوصية الأصلي (المسار ${targetScenarioNum})`
+            : `Adoption removed for Scenario ${scenarioNum}. Restored original pathway ${targetScenarioNum}`,
+        );
+      } else {
+        toast.success(
+          isAr
+            ? `تم اعتماد المسار ${scenarioNum} كخيار مفضل`
+            : `Scenario ${scenarioNum} saved as preferred pathway`,
+          {
+            description: isAr
+              ? "تُحفظ توصية التحليل الأصلية لأغراض التدقيق."
+              : "The baseline model recommendation remains preserved for audit compliance.",
+          }
+        );
+      }
     } catch (cause) {
-      toast.error(isAr ? "تعذر حفظ المسار المفضل" : "Could not save preferred scenario", {
+      toast.error(isAr ? "تعذر تعديل اعتماد المسار" : "Could not update preferred scenario", {
         description: cause instanceof Error ? cause.message : isAr ? "حاول مرة أخرى." : "Try again.",
       });
     } finally {
@@ -127,7 +142,7 @@ export default function ScenarioComparisonPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            {isAr ? "المرحلة 02 من تحليل القرار" : "Stage 02 of Decision Analysis"}
+            {isAr ? "المرحلة 01 · مسار الحل والسيناريوهات" : "Stage 01 · Solution Track & Scenarios"}
           </span>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
             {isAr ? "مصفوفة مقارنة السيناريوهات" : "Comparative Scenario Matrix"}
@@ -422,18 +437,28 @@ export default function ScenarioComparisonPage({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    disabled={savingScenario !== null || isWinner}
-                    onClick={() => handleSetPreferred(scenario.scenario_number)}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
+                    disabled={savingScenario !== null}
+                    onClick={() => handleTogglePreferred(scenario.scenario_number)}
+                    title={
                       isWinner
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                        ? isAr
+                          ? "اضغط لإلغاء الاعتماد واستعادة المسار الأساسي"
+                          : "Click to remove adoption and restore baseline"
+                        : isAr
+                        ? "اضغط لاعتماد هذا المسار كخيار مفضل"
+                        : "Click to adopt as preferred pathway"
+                    }
+                    className={`group flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
+                      isWinner
+                        ? "bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-700 dark:hover:bg-rose-950/60 dark:hover:text-rose-300"
                         : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500"
                     }`}
                   >
                     {isWinner ? (
                       <>
-                        <Check className="h-3.5 w-3.5" />
-                        <span>{isAr ? "الخيار النشط" : "Active Choice"}</span>
+                        <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 group-hover:hidden" />
+                        <span className="group-hover:hidden">{isAr ? "المسار المعتمد" : "Active Choice"}</span>
+                        <span className="hidden group-hover:inline">{isAr ? "إلغاء الاعتماد ✕" : "Remove Adoption ✕"}</span>
                       </>
                     ) : (
                       <span>{isAr ? "اعتماد كمسار مفضل" : "Adopt as Preferred"}</span>

@@ -230,7 +230,7 @@ export default function RiskRegisterPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            {isAr ? "المرحلة 04 من تحليل القرار" : "Stage 04 of Decision Analysis"}
+            {isAr ? "المرحلة 03 · سجل المخاطر ومسار الحل" : "Stage 03 · Institutional Risk Register & Solution Track"}
           </span>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
             {isAr ? "سجل المخاطر المؤسسية" : "Institutional Risk Register"}

@@ -152,7 +152,7 @@ export default function ConsequencesPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            {isAr ? "المرحلة 03 من تحليل القرار" : "Stage 03 of Decision Analysis"}
+            {isAr ? "المرحلة 02 · آثار أصحاب المصلحة ومسار الحل" : "Stage 02 · Stakeholder Ripples & Solution Track"}
           </span>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
             {isAr ? "آثار أصحاب المصلحة" : "Stakeholder Ripples & Impact"}

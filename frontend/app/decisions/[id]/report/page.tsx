@@ -193,7 +193,7 @@ export default function ReportPreviewPage({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              {isAr ? "المرحلة 6 · المخرجات والاعتماد" : "Stage 6 · Governance & Export"}
+              {isAr ? "المرحلة 05 · المذكرة التنفيذية واعتماد الحوكمة" : "Stage 05 · Executive Memorandum & Governance Sign-off"}
             </span>
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
