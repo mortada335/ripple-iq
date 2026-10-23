@@ -1147,7 +1147,7 @@ a:focus-visible {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm 12mm 12mm 12mm;
+    margin: 15mm 15mm 20mm 15mm; /* Official ISO A4 safe print margins / مناطق الأمان للطباعة */
   }
 
   html,
@@ -1155,7 +1155,7 @@ a:focus-visible {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #0f172a !important;
-    font-size: 10pt !important;
+    font-size: 9.5pt !important;
     line-height: 1.4 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -1179,19 +1179,28 @@ a:focus-visible {
   }
 
   /* Reset main container layout for pure printable document */
-  main {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-
+  main,
   main > div {
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
-    space-y: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Completely strip scrollbars and force visible overflow on all wrappers in print */
+  *,
+  *::before,
+  *::after {
+    overflow: visible !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
 
   /* Executive document sheet print overrides */
@@ -1203,11 +1212,18 @@ a:focus-visible {
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    border-radius: 0 !important;
     background: #ffffff !important;
     transform: none !important;
   }
 
-  /* Section break protection */
+  /* Ensure headers never become orphans at page bottoms */
+  h1, h2, h3, h4, header, .print-header-keep {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Atomic break protection for small executive blocks */
   .print-avoid-break {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
@@ -1218,13 +1234,23 @@ a:focus-visible {
     page-break-before: always !important;
   }
 
+  /* Tables: natural flowing pagination across pages */
   table {
     width: 100% !important;
     border-collapse: collapse !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    margin-bottom: 12pt !important;
   }
 
   thead {
     display: table-header-group !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  tbody {
+    display: table-row-group !important;
   }
 
   tr {
@@ -1234,9 +1260,26 @@ a:focus-visible {
 
   th,
   td {
-    padding: 6px 10px !important;
-    border: 1px solid #e2e8f0 !important;
-    font-size: 9.5pt !important;
+    padding: 6px 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.35 !important;
+    vertical-align: top !important;
+    word-break: break-word !important;
+  }
+
+  th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+  }
+
+  /* Overflow wrappers should never clip or scroll in print */
+  .overflow-x-auto,
+  div[class*="overflow"] {
+    overflow: visible !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 
   .print-only {

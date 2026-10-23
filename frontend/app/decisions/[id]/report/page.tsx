@@ -426,16 +426,18 @@ export default function ReportPreviewPage({
             </div>
           )}
 
-          {/* Hidden Print Anchor: Ensures that whenever window.print() is called, the executive document sheet is ALWAYS printed */}
-          <div className="hidden print:block">
-            <ExecutiveReportDocument
-              decision={decision}
-              simulation={simulation}
-              recommendation={recommendation}
-              report={report}
-              isAr={docLang === "ar"}
-            />
-          </div>
+          {/* Print Anchor: When not in DOCUMENT view, ensure the executive document sheet is still printed */}
+          {viewMode !== "DOCUMENT" && (
+            <div className="hidden print:block">
+              <ExecutiveReportDocument
+                decision={decision}
+                simulation={simulation}
+                recommendation={recommendation}
+                report={report}
+                isAr={docLang === "ar"}
+              />
+            </div>
+          )}
         </div>
 
         {/* Audit Metadata & Quick Governance Sidebar (Screen Only) */}

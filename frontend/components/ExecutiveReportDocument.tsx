@@ -250,7 +250,7 @@ export function ExecutiveReportDocument({
     <article
       id="report-document-sheet"
       dir={isAr ? "rtl" : "ltr"}
-      className={`mx-auto w-full max-w-4xl bg-white text-slate-900 p-8 sm:p-12 shadow-md border border-slate-200/90 rounded-2xl print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none transition-all ${className}`}
+      className={`mx-auto w-full max-w-[210mm] bg-white text-slate-900 p-8 sm:p-12 shadow-xl border border-slate-300 rounded-xl print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none print:rounded-none transition-all ${className}`}
       aria-label={isAr ? "مذكرة القرار المؤسسي التنفيذي" : "Executive Decision Memorandum"}
     >
       {/* 1. Official Institutional Letterhead & Classification Bar */}
@@ -463,8 +463,8 @@ export function ExecutiveReportDocument({
 
       {/* 5. Section 2: Comparative Scenario Matrix */}
       {effectiveScenarios.length > 0 && (
-        <section className="mb-6 space-y-3 print-avoid-break">
-          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5">
+        <section className="mb-6 space-y-3">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5 print:break-after-avoid">
             <Layers className="h-4 w-4 text-indigo-600" />
             <h2 className="text-base font-bold text-slate-900">
               {isAr
@@ -473,7 +473,7 @@ export function ExecutiveReportDocument({
             </h2>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 print:overflow-visible print:border-none print:rounded-none">
             <table className="w-full text-start text-xs">
               <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold">
                 <tr>
@@ -508,7 +508,7 @@ export function ExecutiveReportDocument({
                         <span className="font-mono font-bold text-slate-900">
                           {Math.round(sc.feasibility_score * 100)}%
                         </span>
-                        <div className="w-16 h-1.5 bg-slate-200 rounded-full mx-auto mt-1 overflow-hidden">
+                        <div className="w-16 h-1.5 bg-slate-200 rounded-full mx-auto mt-1 overflow-hidden print:hidden">
                           <div
                             className="h-full bg-indigo-600 rounded-full"
                             style={{ width: `${Math.round(sc.feasibility_score * 100)}%` }}
@@ -551,8 +551,8 @@ export function ExecutiveReportDocument({
 
       {/* 6. Section 3: Stakeholder Ripple Impact Matrix */}
       {effectiveImpacts.length > 0 && (
-        <section className="mb-6 space-y-3 print-avoid-break">
-          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5">
+        <section className="mb-6 space-y-3">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5 print:break-after-avoid">
             <Building2 className="h-4 w-4 text-indigo-600" />
             <h2 className="text-base font-bold text-slate-900">
               {isAr
@@ -561,7 +561,7 @@ export function ExecutiveReportDocument({
             </h2>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 print:overflow-visible print:border-none print:rounded-none">
             <table className="w-full text-start text-xs">
               <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold">
                 <tr>
@@ -619,8 +619,8 @@ export function ExecutiveReportDocument({
 
       {/* 7. Section 4: Institutional Risk Register & Actionable Mitigations */}
       {effectiveRisks.length > 0 && (
-        <section className="mb-6 space-y-3 print-avoid-break">
-          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5">
+        <section className="mb-6 space-y-3">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5 print:break-after-avoid">
             <ShieldCheck className="h-4 w-4 text-indigo-600" />
             <h2 className="text-base font-bold text-slate-900">
               {isAr
@@ -629,7 +629,7 @@ export function ExecutiveReportDocument({
             </h2>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 print:overflow-visible print:border-none print:rounded-none">
             <table className="w-full text-start text-xs">
               <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold">
                 <tr>
