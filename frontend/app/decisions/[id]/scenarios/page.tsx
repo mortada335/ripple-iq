@@ -7,11 +7,16 @@ import {
   ArrowRight,
   Sparkles,
   Check,
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  TrendingDown,
+  Eye,
+  Zap,
 } from "lucide-react";
 import { getRecommendation, getSimulationResult, refineRecommendation } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { RecommendationView, SimulationResult } from "@/types/decision";
-import { ComparisonBarChart } from "@/components/ComparisonBarChart";
 import { toast } from "sonner";
 import { useLocale } from "@/components/LocaleProvider";
 import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
@@ -23,7 +28,7 @@ export default function ScenarioComparisonPage({
 }) {
   const resolvedParams = use(params);
   const decisionId = resolvedParams.id;
-  const { locale, t } = useLocale();
+  const { locale } = useLocale();
   const isAr = locale === "ar";
 
   const [result, setResult] = useState<SimulationResult | null>(null);
@@ -31,6 +36,7 @@ export default function ScenarioComparisonPage({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [savingScenario, setSavingScenario] = useState<number | null>(null);
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
   const stakeholderMap = React.useMemo(() => {
     if (!result?.stakeholders) return new Map<string, string>();
@@ -67,12 +73,19 @@ export default function ScenarioComparisonPage({
         feedback: `Reviewer selected Scenario ${scenarioNum} as the preferred institutional pathway.`,
       });
       setRecommendation(updated);
-      toast.success(`Scenario ${scenarioNum} saved as preferred pathway`, {
-        description: "The baseline model recommendation remains preserved for audit compliance.",
-      });
+      toast.success(
+        isAr
+          ? `تم اعتماد المسار ${scenarioNum} كخيار مفضل`
+          : `Scenario ${scenarioNum} saved as preferred pathway`,
+        {
+          description: isAr
+            ? "تُحفظ توصية التحليل الأصلية لأغراض التدقيق."
+            : "The baseline model recommendation remains preserved for audit compliance.",
+        }
+      );
     } catch (cause) {
-      toast.error("Could not save preferred scenario", {
-        description: cause instanceof Error ? cause.message : "Try again.",
+      toast.error(isAr ? "تعذر حفظ المسار المفضل" : "Could not save preferred scenario", {
+        description: cause instanceof Error ? cause.message : isAr ? "حاول مرة أخرى." : "Try again.",
       });
     } finally {
       setSavingScenario(null);
@@ -92,14 +105,14 @@ export default function ScenarioComparisonPage({
           className="rounded-2xl border border-rose-200 bg-white p-6 text-center text-sm shadow-sm dark:border-rose-900 dark:bg-slate-900"
         >
           <p className="text-rose-700 dark:text-rose-300 font-semibold">
-            {loadError ?? "Analysis results are not available yet."}
+            {loadError ?? (isAr ? "نتائج التحليل غير متاحة بعد." : "Analysis results are not available yet.")}
           </p>
           <button
             type="button"
             onClick={() => void loadAnalysis()}
-            className="mt-3 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-500"
+            className="mt-3 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-500 cursor-pointer"
           >
-            Retry Loading Analysis
+            {isAr ? "إعادة المحاولة" : "Retry Loading Analysis"}
           </button>
         </div>
       </div>
@@ -107,23 +120,22 @@ export default function ScenarioComparisonPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <DecisionNavTabs decisionId={decisionId} />
 
-
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* ─── Compact Header ─── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
             {isAr ? "المرحلة 02 من تحليل القرار" : "Stage 02 of Decision Analysis"}
           </span>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
             {isAr ? "مصفوفة مقارنة السيناريوهات" : "Comparative Scenario Matrix"}
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
             {isAr
-              ? "تقييم المفاضلات جنباً إلى جنب. لا يفرض خياراً ثنائياً أبداً. قارن بين 3 مسارات سياسات متباينة تمت معايرتها وفق قيود مؤسستك."
-              : "Side-by-side trade-off evaluation. Never forces a binary yes/no. Compare 3 distinct policy pathways calibrated to your institutional constraints."}
+              ? "قارن بين المسارات الثلاثة جنباً إلى جنب. حدد المسار الأمثل لمؤسستك."
+              : "Compare all three pathways side-by-side. Select the optimal pathway for your institution."}
           </p>
         </div>
 
@@ -145,31 +157,77 @@ export default function ScenarioComparisonPage({
         </div>
       </div>
 
-      {/* Feasibility Comparison Bar Chart */}
-      <ComparisonBarChart
-        title={isAr ? "درجات الجدوى التشغيلية المقارنة" : "Comparative Heuristic Feasibility Scores"}
-        maxValue={100}
-        valueSuffix="%"
-        items={result.scenarios.map((scenario) => ({
-          label: isAr
-            ? `سيناريو 0${scenario.scenario_number}: ${scenario.title}`
-            : `Scenario 0${scenario.scenario_number}: ${scenario.title}`,
-          value: Math.round(scenario.feasibility_score * 100),
-          tone:
-            recommendation.current.selected_scenario_number === scenario.scenario_number
-              ? ("indigo" as const)
-              : ("emerald" as const),
-          detail:
-            recommendation.current.selected_scenario_number === scenario.scenario_number
-              ? isAr
-                ? "الخيار النشط المعتمد"
-                : "Active Preference"
-              : undefined,
-        }))}
-      />
+      {/* ─── Quick Feasibility Overview (Inline Compact) ─── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            {isAr ? "نظرة سريعة على الجدوى" : "Feasibility At a Glance"}
+          </h2>
+          <span className="text-[10px] text-slate-400">
+            {isAr ? "اضغط أي مسار للتفاصيل" : "Click any pathway for details"}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {result.scenarios.map((scenario) => {
+            const isWinner =
+              recommendation.current.selected_scenario_number === scenario.scenario_number;
+            const scorePercent = Math.round(scenario.feasibility_score * 100);
+            return (
+              <button
+                key={scenario.scenario_number}
+                type="button"
+                onClick={() =>
+                  setExpandedCard(
+                    expandedCard === scenario.scenario_number ? null : scenario.scenario_number
+                  )
+                }
+                className={`relative flex items-center gap-3 rounded-xl border p-3 text-start transition-all cursor-pointer ${
+                  isWinner
+                    ? "border-indigo-500/60 bg-indigo-50/50 dark:border-indigo-500/40 dark:bg-indigo-950/30"
+                    : "border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700"
+                }`}
+              >
+                {/* Score Circle */}
+                <div
+                  className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-[3px] ${
+                    scorePercent >= 85
+                      ? "border-emerald-500 text-emerald-700 dark:text-emerald-300"
+                      : scorePercent >= 70
+                      ? "border-indigo-500 text-indigo-700 dark:text-indigo-300"
+                      : "border-amber-500 text-amber-700 dark:text-amber-300"
+                  }`}
+                >
+                  <span className="text-sm font-extrabold font-mono">{scorePercent}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono font-bold text-slate-400">
+                      {isAr ? `مسار ${scenario.scenario_number}` : `P${scenario.scenario_number}`}
+                    </span>
+                    {isWinner && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-white">
+                        <Zap className="h-2 w-2" />
+                        {isAr ? "نشط" : "Active"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight line-clamp-1 mt-0.5">
+                    {scenario.title}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${
+                    expandedCard === scenario.scenario_number ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-      {/* 3-Column Responsive Scenarios Deck */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* ─── Detailed Scenario Cards ─── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {result.scenarios.map((scenario) => {
           const isWinner =
             recommendation.current.selected_scenario_number === scenario.scenario_number;
@@ -177,6 +235,7 @@ export default function ScenarioComparisonPage({
           const scenarioImpacts = result.impacts.filter(
             (impact) => impact.scenario_number === scenario.scenario_number
           );
+          const isExpanded = expandedCard === scenario.scenario_number;
 
           const stakeholderNames = (direction: "POSITIVE" | "NEGATIVE") =>
             Array.from(
@@ -196,46 +255,53 @@ export default function ScenarioComparisonPage({
           return (
             <div
               key={scenario.scenario_number}
-              className={`relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-300 ${
+              className={`group relative flex flex-col rounded-2xl border transition-all duration-300 ${
                 isWinner
-                  ? "border-indigo-600 bg-white shadow-xl ring-2 ring-indigo-600/30 dark:border-indigo-500 dark:bg-slate-900"
-                  : "border-slate-200 bg-white shadow-sm hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                  ? "border-indigo-500 bg-white shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/20 dark:border-indigo-500 dark:bg-slate-900"
+                  : "border-slate-200 bg-white shadow-sm hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
               }`}
             >
-              {/* Highlight Badge */}
+              {/* Winner Badge */}
               {isWinner && (
-                <div className="absolute -top-3 start-6 inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md">
+                <div className="absolute -top-3 start-5 inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md">
                   <Sparkles className="h-3 w-3" />
                   <span>
                     {recommendation.refinement
                       ? isAr
-                        ? "المسار المفضل المختار"
-                        : "Your Preferred Pathway"
+                        ? "المسار المفضل"
+                        : "Preferred Pathway"
                       : isAr
-                      ? "توصية القيادة التنفيذية"
+                      ? "توصية تنفيذية"
                       : "Executive Recommendation"}
                   </span>
                 </div>
               )}
 
-              <div className="space-y-4 pt-1">
-                {/* Header: Scenario Number & Score */}
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
+              {/* Card Header */}
+              <div className="p-5 pb-0 pt-5">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     {isAr ? `المسار 0${scenario.scenario_number}` : `Pathway 0${scenario.scenario_number}`}
                   </span>
-
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-slate-500">
-                      {isAr ? "الجدوى" : "Feasibility"}
+                  <div
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 ${
+                      scorePercent >= 85
+                        ? "bg-emerald-50 dark:bg-emerald-950/40"
+                        : scorePercent >= 70
+                        ? "bg-indigo-50 dark:bg-indigo-950/40"
+                        : "bg-amber-50 dark:bg-amber-950/40"
+                    }`}
+                  >
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                      {isAr ? "جدوى" : "Feasibility"}
                     </span>
                     <span
-                      className={`rounded-md px-2 py-0.5 font-mono text-xs font-extrabold ${
+                      className={`font-mono text-sm font-extrabold ${
                         scorePercent >= 85
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          ? "text-emerald-700 dark:text-emerald-300"
                           : scorePercent >= 70
-                          ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
-                          : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                          ? "text-indigo-700 dark:text-indigo-300"
+                          : "text-amber-700 dark:text-amber-300"
                       }`}
                     >
                       {scorePercent}%
@@ -244,111 +310,164 @@ export default function ScenarioComparisonPage({
                 </div>
 
                 {/* Title */}
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-snug">
-                    {scenario.title}
-                  </h3>
-                  {scenario.rationale && (
-                    <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-3">
-                      {scenario.rationale}
-                    </p>
-                  )}
-                </div>
+                <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-white leading-snug">
+                  {scenario.title}
+                </h3>
+              </div>
 
-                {/* Feasibility Meter */}
-                <div className="space-y-1">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        scorePercent >= 85
-                          ? "bg-emerald-500"
-                          : scorePercent >= 70
-                          ? "bg-indigo-600"
-                          : "bg-amber-500"
-                      }`}
-                      style={{ width: `${scorePercent}%` }}
-                    />
+              {/* Feasibility Bar */}
+              <div className="px-5 pt-3">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${
+                      scorePercent >= 85
+                        ? "bg-emerald-500"
+                        : scorePercent >= 70
+                        ? "bg-indigo-600"
+                        : "bg-amber-500"
+                    }`}
+                    style={{ width: `${scorePercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Rationale (always visible, compact) */}
+              {scenario.rationale && (
+                <p className="px-5 pt-3 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-2">
+                  {scenario.rationale}
+                </p>
+              )}
+
+              {/* Stakeholder Impact Summary */}
+              <div className="mx-5 mt-3 space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                {/* Beneficiaries Row */}
+                <div className="flex items-start gap-2">
+                  <TrendingUp className="h-3.5 w-3.5 mt-0.5 shrink-0 text-emerald-500" />
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    {beneficiaries.length > 0 ? (
+                      beneficiaries.map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                        >
+                          {name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[10px] text-slate-400 italic">
+                        {isAr ? "لا مستفيدين مباشرين" : "No direct beneficiaries"}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Beneficiaries & Disadvantaged Groups */}
-                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                      {isAr ? "الفئات المستفيدة إيجاباً" : "Positive Beneficiaries"}
-                    </span>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {beneficiaries.length > 0 ? (
-                        beneficiaries.map((name) => (
-                          <span
-                            key={name}
-                            className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                          >
-                            + {name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[10px] text-slate-400">
-                          {isAr ? "لم يُرصد مستفيدون" : "None detected"}
+                {/* Disadvantaged Row */}
+                <div className="flex items-start gap-2">
+                  <TrendingDown className="h-3.5 w-3.5 mt-0.5 shrink-0 text-rose-500" />
+                  <div className="flex flex-wrap gap-1 min-w-0">
+                    {disadvantaged.length > 0 ? (
+                      disadvantaged.map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-800 dark:bg-rose-950/50 dark:text-rose-300"
+                        >
+                          {name}
                         </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                      {isAr ? "الفئات المتأثرة سلباً" : "Disadvantaged Constituencies"}
-                    </span>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {disadvantaged.length > 0 ? (
-                        disadvantaged.map((name) => (
-                          <span
-                            key={name}
-                            className="rounded-md bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          >
-                            - {name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[10px] text-slate-400">
-                          {isAr ? "احتكاك طفيف جداً" : "Minimal friction"}
-                        </span>
-                      )}
-                    </div>
+                      ))
+                    ) : (
+                      <span className="text-[10px] text-slate-400 italic">
+                        {isAr ? "احتكاك طفيف" : "Minimal friction"}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Action: Set Preferred or View Breakdown */}
-              <div className="mt-6 flex flex-col gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
-                <button
-                  type="button"
-                  disabled={savingScenario !== null || isWinner}
-                  onClick={() => handleSetPreferred(scenario.scenario_number)}
-                  className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
-                    isWinner
-                      ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-                      : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500"
-                  }`}
-                >
-                  {isWinner ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>{isAr ? "الخيار المؤسسي النشط" : "Active Institutional Choice"}</span>
-                    </>
+              {/* Expanded: detailed impacts */}
+              {isExpanded && (
+                <div className="mx-5 mt-3 space-y-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    {isAr ? "تفاصيل الآثار" : "Impact Details"}
+                  </span>
+                  {scenarioImpacts.length > 0 ? (
+                    scenarioImpacts.slice(0, 5).map((impact, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex items-start gap-2 rounded-lg p-2 text-[11px] ${
+                          impact.direction === "POSITIVE"
+                            ? "bg-emerald-50/70 dark:bg-emerald-950/20"
+                            : "bg-rose-50/70 dark:bg-rose-950/20"
+                        }`}
+                      >
+                        {impact.direction === "POSITIVE" ? (
+                          <TrendingUp className="h-3 w-3 mt-0.5 shrink-0 text-emerald-500" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 mt-0.5 shrink-0 text-rose-500" />
+                        )}
+                        <span className="text-slate-700 dark:text-slate-300 leading-tight">
+                          {impact.description}
+                        </span>
+                      </div>
+                    ))
                   ) : (
-                    <span>{isAr ? "الاعتماد كمسار مفضل" : "Adopt as Preferred Pathway"}</span>
+                    <p className="text-[11px] text-slate-400">
+                      {isAr ? "لا توجد آثار محددة لهذا المسار." : "No specific impacts for this pathway."}
+                    </p>
                   )}
-                </button>
+                </div>
+              )}
+
+              {/* Card Footer Actions */}
+              <div className="mt-auto flex flex-col gap-2 border-t border-slate-100 p-4 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={savingScenario !== null || isWinner}
+                    onClick={() => handleSetPreferred(scenario.scenario_number)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
+                      isWinner
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                        : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                    }`}
+                  >
+                    {isWinner ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" />
+                        <span>{isAr ? "الخيار النشط" : "Active Choice"}</span>
+                      </>
+                    ) : (
+                      <span>{isAr ? "اعتماد كمسار مفضل" : "Adopt as Preferred"}</span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedCard(
+                        expandedCard === scenario.scenario_number
+                          ? null
+                          : scenario.scenario_number
+                      )
+                    }
+                    className="flex h-[38px] w-[38px] items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 transition cursor-pointer"
+                    title={isAr ? "عرض التفاصيل" : "Toggle details"}
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
 
                 <Link
                   href={`/decisions/${decisionId}/scenarios/${scenario.scenario_number}`}
-                  className="inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 py-1"
+                  className="inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 py-0.5 transition"
                 >
                   <span>
                     {isAr
-                      ? `فحص تفاصيل السيناريو 0${scenario.scenario_number}`
-                      : `Inspect Scenario 0${scenario.scenario_number} Breakdown`}
+                      ? `فحص تفاصيل المسار ${scenario.scenario_number}`
+                      : `Full Breakdown of Pathway ${scenario.scenario_number}`}
                   </span>
                   <ArrowRight className="h-3 w-3 rtl:rotate-180" />
                 </Link>

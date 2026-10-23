@@ -14,12 +14,12 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
+  BarChart3,
 } from "lucide-react";
 import { getSimulationResult } from "@/lib/api";
 import { DecisionNavTabs } from "@/components/DecisionNavTabs";
 import { useLocale } from "@/components/LocaleProvider";
 import { SimulationResult } from "@/types/decision";
-import { ComparisonBarChart } from "@/components/ComparisonBarChart";
 import { ApiLoadError } from "@/components/ApiLoadError";
 import { DecisionAnalysisSkeleton } from "@/components/LoadingSkeleton";
 
@@ -94,30 +94,18 @@ export default function ConsequencesPage({
     return originalName || result?.stakeholders.find((s) => s.key === key)?.name || key;
   };
 
-  const overviewChart = React.useMemo(() => {
-    if (!result) return { maxValue: 1, items: [] };
-    const countsByKey: Record<string, { pos: number; neg: number }> = {};
-    for (const impact of result.impacts) {
-      if (!countsByKey[impact.stakeholder_key]) {
-        countsByKey[impact.stakeholder_key] = { pos: 0, neg: 0 };
-      }
-      if (impact.direction === "POSITIVE") countsByKey[impact.stakeholder_key].pos++;
-      else countsByKey[impact.stakeholder_key].neg++;
-    }
-    const maxVals = result.stakeholders.map((s) => {
-      const c = countsByKey[s.key] ?? { pos: 0, neg: 0 };
-      return Math.max(c.pos, c.neg);
+  // Compact stakeholder summary with counts
+  const stakeholderSummary = React.useMemo(() => {
+    if (!result) return [];
+    return result.stakeholders.map((s) => {
+      const pos = result.impacts.filter(
+        (i) => i.stakeholder_key === s.key && i.direction === "POSITIVE"
+      ).length;
+      const neg = result.impacts.filter(
+        (i) => i.stakeholder_key === s.key && i.direction === "NEGATIVE"
+      ).length;
+      return { key: s.key, name: getStakeholderName(s.key, s.name), pos, neg, total: pos + neg };
     });
-    const maxValue = Math.max(1, ...maxVals);
-    const items = result.stakeholders.flatMap((stakeholder) => {
-      const counts = countsByKey[stakeholder.key] ?? { pos: 0, neg: 0 };
-      const name = getStakeholderName(stakeholder.key, stakeholder.name);
-      return [
-        { label: `${name} · ${isAr ? "إيجابي" : "Favorable"}`, value: counts.pos, tone: "emerald" as const },
-        { label: `${name} · ${isAr ? "سلبي" : "Adverse"}`, value: counts.neg, tone: "rose" as const },
-      ];
-    });
-    return { maxValue, items };
   }, [result, isAr]);
 
   if (loading) {
@@ -157,22 +145,22 @@ export default function ConsequencesPage({
   const totalNegative = result.impacts.filter((i) => i.direction === "NEGATIVE").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <DecisionNavTabs decisionId={decisionId} />
 
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* ─── Compact Header ─── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
             {isAr ? "المرحلة 03 من تحليل القرار" : "Stage 03 of Decision Analysis"}
           </span>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-            {isAr ? "آثار أصحاب المصلحة ومصفوفة التأثير" : "Stakeholder Ripples & Impact Matrix"}
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+            {isAr ? "آثار أصحاب المصلحة" : "Stakeholder Ripples & Impact"}
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
             {isAr
-              ? "تفصيل شامل لكيفية ارتداد السياسات وتأثيرها على مختلف أطراف المؤسسة. قم بالتصفية حسب الفئة واتجاه التأثير."
-              : "Detailed breakdown of how policies ripple across each campus constituency. Filter by constituent group and direction of impact."}
+              ? "كيف تنعكس السياسات على الأطراف المختلفة. صفّ حسب الفئة والاتجاه."
+              : "How policies ripple across each campus constituency. Filter by group and direction."}
           </p>
         </div>
 
@@ -189,58 +177,91 @@ export default function ConsequencesPage({
             className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 transition"
           >
             <Award className="h-3.5 w-3.5" />
-            <span>{isAr ? "التوصية التنفيذية" : "Recommendation"}</span>
+            <span>{isAr ? "التوصية" : "Recommendation"}</span>
           </Link>
         </div>
       </div>
 
-      {/* Ripple Distribution Chart */}
-      <ComparisonBarChart
-        title={isAr ? "توزيع الآثار الإيجابية والسلبية عبر فئات أصحاب المصلحة" : "Favorable vs Adverse Ripple Distribution across Constituencies"}
-        maxValue={overviewChart.maxValue}
-        items={overviewChart.items}
-      />
+      {/* ─── Stakeholder Summary Cards (replaces giant bar chart) ─── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {stakeholderSummary.map((s) => {
+          const isSelected = selectedStakeholder === s.key;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setSelectedStakeholder(isSelected ? "all" : s.key)}
+              className={`flex flex-col gap-2 rounded-2xl border p-3.5 text-start transition-all cursor-pointer ${
+                isSelected
+                  ? "border-indigo-500 bg-indigo-50/50 shadow-sm dark:border-indigo-500/50 dark:bg-indigo-950/30"
+                  : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500"}`}>
+                  {getStakeholderIcon(s.key)}
+                </span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  {s.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                    {s.pos}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <TrendingDown className="h-3 w-3 text-rose-500" />
+                  <span className="text-xs font-bold text-rose-700 dark:text-rose-300">
+                    {s.neg}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 ms-auto">
+                  {s.total} {isAr ? "أثر" : "total"}
+                </span>
+              </div>
+              {/* Mini bar */}
+              <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                {s.total > 0 && (
+                  <>
+                    <div
+                      className="h-full bg-emerald-500 transition-all"
+                      style={{ width: `${(s.pos / s.total) * 100}%` }}
+                    />
+                    <div
+                      className="h-full bg-rose-500 transition-all"
+                      style={{ width: `${(s.neg / s.total) * 100}%` }}
+                    />
+                  </>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
-      {/* Filter Toolbar: Stakeholder Selector & Direction Toggle */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {/* Stakeholder Filter Buttons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+      {/* ─── Direction Filter + Results Count ─── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setSelectedStakeholder("all")}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
               selectedStakeholder === "all"
                 ? "bg-slate-900 text-white dark:bg-indigo-600"
                 : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
             }`}
           >
-            <span>{isAr ? "جميع أصحاب المصلحة" : "All Stakeholders"}</span>
-            <span className="opacity-75 text-[10px]">({result.impacts.length})</span>
+            {isAr ? "الكل" : "All"} ({result.impacts.length})
           </button>
-
-          {result.stakeholders.map((s) => {
-            const count = result.impacts.filter((i) => i.stakeholder_key === s.key).length;
-            const isSelected = selectedStakeholder === s.key;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                onClick={() => setSelectedStakeholder(s.key)}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                  isSelected
-                    ? "bg-slate-900 text-white dark:bg-indigo-600 shadow-xs"
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                }`}
-              >
-                {getStakeholderIcon(s.key)}
-                <span>{getStakeholderName(s.key, s.name)}</span>
-                <span className="opacity-75 text-[10px]">({count})</span>
-              </button>
-            );
-          })}
+          <span className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-700" />
+          <span className="text-[10px] text-slate-400">
+            {isAr ? "تصفية الاتجاه:" : "Direction:"}
+          </span>
         </div>
 
-        {/* Direction Filter Buttons */}
         <div className="flex items-center gap-1 shrink-0 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
           <button
             type="button"
@@ -280,88 +301,94 @@ export default function ConsequencesPage({
         </div>
       </div>
 
-      {/* Ripple Cards Grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {filteredImpacts.map((impact, idx) => {
-          const isPos = impact.direction === "POSITIVE";
-          const isExpanded = Boolean(expandedImpacts[idx]);
+      {/* ─── Impact Cards ─── */}
+      {filteredImpacts.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+          <BarChart3 className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
+          <p className="mt-2 text-sm font-semibold text-slate-500">
+            {isAr ? "لا توجد آثار تطابق معايير التصفية الحالية." : "No impacts match the current filter criteria."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {filteredImpacts.map((impact, idx) => {
+            const isPos = impact.direction === "POSITIVE";
+            const isExpanded = Boolean(expandedImpacts[idx]);
 
-          return (
-            <div
-              key={idx}
-              className={`rounded-2xl border p-5 shadow-sm transition-all duration-200 ${
-                isPos
-                  ? "border-emerald-200/80 bg-white hover:border-emerald-400 dark:border-emerald-900/40 dark:bg-slate-900"
-                  : "border-rose-200/80 bg-white hover:border-rose-400 dark:border-rose-900/40 dark:bg-slate-900"
-              }`}
-            >
-              <div className="space-y-3">
-                {/* Card Top: Stakeholder Tag & Direction Badge */}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-800 dark:bg-slate-800 dark:text-slate-200">
-                    {getStakeholderIcon(impact.stakeholder_key)}
-                    <span>{getStakeholderName(impact.stakeholder_key)}</span>
+            return (
+              <div
+                key={idx}
+                className={`rounded-2xl border p-4 transition-all duration-200 ${
+                  isPos
+                    ? "border-emerald-200/80 bg-white hover:border-emerald-300 dark:border-emerald-900/40 dark:bg-slate-900"
+                    : "border-rose-200/80 bg-white hover:border-rose-300 dark:border-rose-900/40 dark:bg-slate-900"
+                }`}
+              >
+                {/* Card Top: Direction + Stakeholder + Magnitude */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      isPos
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                    }`}
+                  >
+                    {isPos ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                    {isAr ? (isPos ? "إيجابي" : "سلبي") : isPos ? "Favorable" : "Adverse"}
                   </span>
 
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        isPos
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                          : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                      }`}
-                    >
-                      {isPos ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      <span>{isAr ? (isPos ? "إيجابي" : "سلبي") : isPos ? "Favorable" : "Adverse"}</span>
-                    </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {getStakeholderIcon(impact.stakeholder_key)}
+                    {getStakeholderName(impact.stakeholder_key)}
+                  </span>
 
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                      {isAr ? `الشدة: ${impact.magnitude}` : `Mag: ${impact.magnitude}`}
-                    </span>
-                  </div>
+                  <span className="ms-auto rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    {isAr ? `شدة: ${impact.magnitude}` : `Mag: ${impact.magnitude}`}
+                  </span>
                 </div>
 
-                {/* Impact Description */}
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
-                    {impact.description}
-                  </h3>
-                  <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
-                    <span className="font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                      {isAr ? `التصنيف: ${impact.category}` : `Category: ${impact.category}`}
-                    </span>
-                    <span>·</span>
-                    <span>{isAr ? `المسار 0${impact.scenario_number}` : `Pathway 0${impact.scenario_number}`}</span>
-                  </div>
+                {/* Description */}
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                  {impact.description}
+                </h3>
+                <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
+                  <span className="font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                    {impact.category}
+                  </span>
+                  <span>·</span>
+                  <span>{isAr ? `المسار 0${impact.scenario_number}` : `Pathway 0${impact.scenario_number}`}</span>
                 </div>
 
-                {/* Metric Estimate / Detailed Notes */}
+                {/* Expandable Metric */}
                 {impact.metric_estimate && (
-                  <div>
+                  <div className="mt-2">
                     <button
                       type="button"
                       onClick={() => toggleExpand(idx)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 cursor-pointer pt-1"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
                     >
-                      <span>{isExpanded ? (isAr ? "إخفاء التقدير التحليلي" : "Hide analytical estimate") : (isAr ? "عرض التقدير التحليلي" : "View analytical estimate")}</span>
+                      <span>
+                        {isExpanded
+                          ? isAr ? "إخفاء التقدير" : "Hide estimate"
+                          : isAr ? "عرض التقدير" : "View estimate"}
+                      </span>
                       {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </button>
-
                     {isExpanded && (
-                      <div className="mt-2 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
-                        <span className="block font-bold text-[10px] uppercase tracking-wider text-slate-500">
-                          {isAr ? "التقدير الكمي والتشغيلي" : "Quantitative / Operational Estimate"}
+                      <div className="mt-1.5 rounded-lg bg-slate-50 p-2.5 text-[11px] leading-relaxed text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+                        <span className="block font-bold text-[9px] uppercase tracking-wider text-slate-400 mb-0.5">
+                          {isAr ? "التقدير الكمي" : "Quantitative Estimate"}
                         </span>
-                        <p>{impact.metric_estimate}</p>
+                        {impact.metric_estimate}
                       </div>
                     )}
                   </div>
                 )}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

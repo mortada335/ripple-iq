@@ -59,49 +59,32 @@ export function FirstTimeOrgModal() {
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
 
-  // Check if first-time popup should be shown
+  // Listen for manual trigger anywhere in the app (e.g. from Header or Dashboard "+ Create Organization")
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Listen for manual trigger anywhere in the app
     const handleOpen = () => {
       const current = readDemoOrganization(activeOrganizationId);
+      if (user && organizations.length > 0) {
+        const activeOrg = organizations.find((o) => o.id === activeOrganizationId);
+        if (activeOrg) {
+          current.name = activeOrg.name;
+          current.country = activeOrg.country ?? current.country;
+        }
+      } else if (user && organizations.length === 0) {
+        current.name = "";
+      }
       setProfile(current);
       setIsOpen(true);
       setStep(1);
     };
+
     window.addEventListener("rippleiq:open-onboarding-modal", handleOpen);
-
-    // Automatic trigger check: only if not seen yet OR user is logged in with no org
-    const seen = localStorage.getItem(MODAL_STORAGE_KEY);
-    const hasNoOrg = Boolean(user && organizations.length === 0);
-
-    if (!seen || hasNoOrg) {
-      const timer = setTimeout(() => {
-        const current = readDemoOrganization(activeOrganizationId);
-        if (hasNoOrg) {
-          current.name = "";
-        } else if (user && organizations.length > 0) {
-          const activeOrg = organizations.find((o) => o.id === activeOrganizationId);
-          if (activeOrg) {
-            current.name = activeOrg.name;
-            current.country = activeOrg.country ?? current.country;
-          }
-        }
-        setProfile(current);
-        setIsOpen(true);
-      }, 400);
-
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener("rippleiq:open-onboarding-modal", handleOpen);
-      };
-    }
 
     return () => {
       window.removeEventListener("rippleiq:open-onboarding-modal", handleOpen);
     };
-  }, [activeOrganizationId, organizations, user, isDemo]);
+  }, [activeOrganizationId, organizations, user]);
 
   if (!isOpen) return null;
 
