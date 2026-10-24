@@ -43,6 +43,27 @@ def create_organization(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"code": "INVALID_NAME", "message": "Organization name cannot be empty."},
         )
+    existing = db.query(Organization).filter(Organization.name == name_clean).first()
+    if existing:
+        existing_member = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.organization_id == existing.id, OrganizationMember.user_id == user.id)
+            .first()
+        )
+        if existing_member:
+            return OrganizationResponse(
+                id=existing.id,
+                name=existing.name,
+                slug=existing.slug,
+                country=existing.country,
+                role=existing_member.role,
+                created_at=existing.created_at,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ORGANIZATION_ALREADY_EXISTS", "message": "An organization with this name already exists."},
+        )
+
     slug = make_slug(name_clean, db=db)
     organization = Organization(name=name_clean, slug=slug, country=data.country)
     db.add(organization)
@@ -55,29 +76,6 @@ def create_organization(
         db.commit()
     except IntegrityError:
         db.rollback()
-        # If organization already exists, attach user to it or reuse
-        existing = db.query(Organization).filter(Organization.name == name_clean).first()
-        if existing:
-            existing_member = (
-                db.query(OrganizationMember)
-                .filter(OrganizationMember.organization_id == existing.id, OrganizationMember.user_id == user.id)
-                .first()
-            )
-            if not existing_member:
-                membership = OrganizationMember(organization=existing, user=user, role="owner")
-                db.add(membership)
-            if user.organization_id is None:
-                user.organization = existing
-            db.commit()
-            db.refresh(existing)
-            return OrganizationResponse(
-                id=existing.id,
-                name=existing.name,
-                slug=existing.slug,
-                country=existing.country,
-                role="owner",
-                created_at=existing.created_at,
-            )
         # If slug collided, retry with random unique uuid slug
         slug = f"org-{uuid.uuid4().hex[:12]}"
         organization = Organization(name=name_clean, slug=slug, country=data.country)

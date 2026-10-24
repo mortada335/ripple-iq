@@ -145,3 +145,39 @@ def test_viewer_cannot_run_or_refine_analysis(client, db_session):
     refinement = client.post(f"/api/v1/decisions/{decision_id}/refine", json={"feedback": "Consider a pilot."})
     assert simulation.status_code == 403
     assert refinement.status_code == 403
+
+
+def test_uninvited_user_cannot_take_over_existing_organization(client, db_session):
+    # User 1 creates an organization
+    created = client.post("/api/v1/organizations", json={"name": "Secure Institutional Trust"})
+    assert created.status_code == 201
+    org_id = created.json()["id"]
+
+    # User 2 registers and authenticates
+    reg_res = client.post(
+        "/api/v1/auth/register",
+        json={"email": "intruder@example.edu", "full_name": "Intruder User", "password": "secure-password-123"},
+    )
+    assert reg_res.status_code == 201
+    intruder_token = client.post(
+        "/api/v1/auth/login",
+        json={"email": "intruder@example.edu", "password": "secure-password-123"},
+    ).json()["access_token"]
+
+    # User 2 tries to create the same organization to hijack ownership
+    hijack_res = client.post(
+        "/api/v1/organizations",
+        json={"name": "Secure Institutional Trust"},
+        headers={"Authorization": f"Bearer {intruder_token}"},
+    )
+    assert hijack_res.status_code == 409
+    assert hijack_res.json()["error"]["code"] == "ORGANIZATION_ALREADY_EXISTS"
+
+    # Verify User 2 was NOT added to the organization members
+    intruder_user = db_session.query(User).filter_by(email="intruder@example.edu").one()
+    membership = (
+        db_session.query(OrganizationMember)
+        .filter_by(organization_id=org_id, user_id=intruder_user.id)
+        .first()
+    )
+    assert membership is None
