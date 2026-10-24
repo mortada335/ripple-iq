@@ -11,7 +11,7 @@ import json
 import logging
 import threading
 import time
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 logger = logging.getLogger("rippleiq.cache")
 

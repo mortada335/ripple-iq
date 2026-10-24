@@ -11,8 +11,8 @@ import logging
 import threading
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Callable
 
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse

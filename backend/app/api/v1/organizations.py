@@ -1,4 +1,5 @@
 import re
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -17,8 +18,6 @@ from app.schemas.schemas import (
 
 router = APIRouter(prefix="/api/v1/organizations", tags=["Organizations"])
 
-
-import uuid
 
 def make_slug(name: str, db: Session | None = None) -> str:
     clean = re.sub(r"[^a-z0-9]+", "-", name.casefold()).strip("-")[:80]
