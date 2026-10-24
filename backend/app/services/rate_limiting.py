@@ -36,13 +36,45 @@ class RateLimitRule:
     window_seconds: int
 
 
+def is_ip_in_networks(ip_str: str, networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network]) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip_str)
+        return any(addr in net for net in networks)
+    except ValueError:
+        return False
+
+
 def client_ip(request: Request) -> str:
-    """Return the direct ASGI peer only; forwarded headers are deliberately ignored."""
+    """
+    Return the client IP.
+    If TRUSTED_PROXIES is configured and the direct ASGI peer matches a trusted proxy,
+    the client IP is extracted from the rightmost untrusted address in X-Forwarded-For.
+    Otherwise, forwarded headers are strictly ignored and the direct ASGI peer is returned.
+    """
     raw_ip = request.client.host if request.client else "unknown"
     try:
-        return ipaddress.ip_address(raw_ip).compressed
+        peer_ip = ipaddress.ip_address(raw_ip).compressed
     except ValueError:
         return "unknown"
+
+    trusted_nets = settings.trusted_proxy_networks
+    if not trusted_nets or not is_ip_in_networks(peer_ip, trusted_nets):
+        return peer_ip
+
+    forwarded = request.headers.get("x-forwarded-for")
+    if not forwarded:
+        return peer_ip
+
+    parts = [p.strip() for p in forwarded.split(",") if p.strip()]
+    for part in reversed(parts):
+        try:
+            candidate = ipaddress.ip_address(part).compressed
+            if not is_ip_in_networks(candidate, trusted_nets):
+                return candidate
+        except ValueError:
+            continue
+
+    return peer_ip
 
 
 def enforce_limits(db: Session, rules: list[RateLimitRule]) -> None:
@@ -214,3 +246,9 @@ def _cleanup_if_due(db: Session, now: float) -> None:
         _last_cleanup_monotonic = monotonic_now
     finally:
         _cleanup_lock.release()
+
+
+def reset_rate_limits(db: Session) -> None:
+    """Reset all persisted rate limit buckets (used for test teardown)."""
+    db.execute(delete(RateLimitBucket))
+    db.commit()

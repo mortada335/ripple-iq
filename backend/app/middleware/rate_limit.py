@@ -1,12 +1,14 @@
 """
-High-Throughput In-Memory Rate Limiting Middleware
-==================================================
-Protects the API against denial-of-service, abusive request spikes, and brute force
-attempts using a thread-safe sliding-window counter. Returns standard X-RateLimit-*
-headers and an HTTP 429 response when limits are exceeded.
+Process-Local Sliding-Window Rate Limiting Middleware
+===================================================
+Provides process-local sliding-window rate limiting to smooth out burst traffic,
+mitigate denial-of-service, and protect sensitive auth and compute routes.
+
+NOTE: This in-memory limiter is process-local and is intended as a first-line burst
+filter per worker. Distributed, multi-worker / multi-instance rate limiting is enforced
+atomically at the database layer via PostgreSQL RateLimitBucket in app.services.rate_limiting.
 """
 
-import ipaddress
 import logging
 import threading
 import time
@@ -18,16 +20,14 @@ from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.services.rate_limiting import client_ip
+
 logger = logging.getLogger("rippleiq.rate_limit_middleware")
 
 
 def get_client_ip(request: Request) -> str:
-    """Extract client IP safely from ASGI scope."""
-    host = request.client.host if request.client else "127.0.0.1"
-    try:
-        return ipaddress.ip_address(host).compressed
-    except ValueError:
-        return host or "127.0.0.1"
+    """Extract client IP safely, respecting configured trusted proxies."""
+    return client_ip(request)
 
 
 class SlidingWindowRateLimiter:
@@ -38,6 +38,12 @@ class SlidingWindowRateLimiter:
         self._history: dict[str, list[float]] = defaultdict(list)
         self._lock = threading.Lock()
         self._last_cleanup = time.monotonic()
+
+    def reset(self) -> None:
+        """Reset all tracked request history (useful for test isolation)."""
+        with self._lock:
+            self._history.clear()
+
 
     def check_and_increment(
         self, key: str, max_requests: int, window_seconds: float

@@ -4,6 +4,7 @@ RippleIQ Application Configuration
 Loads settings from environment variables using Pydantic Settings.
 """
 
+import ipaddress
 from pathlib import Path
 
 from pydantic import Field, model_validator
@@ -22,6 +23,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days; override per deployment as needed.
     PORT: int = 8000
     API_V1_PREFIX: str = "/api/v1"
+
+    # Reverse proxy trust: comma-separated list of trusted proxy IPs or CIDR blocks
+    TRUSTED_PROXIES: str = ""
 
     # Database
     DATABASE_URL: str = "postgresql+psycopg2://localhost/ripple_iq_db"
@@ -79,6 +83,19 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+
+    @property
+    def trusted_proxy_networks(self) -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
+        networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+        for raw in self.TRUSTED_PROXIES.split(","):
+            item = raw.strip()
+            if not item:
+                continue
+            try:
+                networks.append(ipaddress.ip_network(item, strict=False))
+            except ValueError:
+                continue
+        return networks
 
     @property
     def sqlalchemy_database_url(self) -> str:

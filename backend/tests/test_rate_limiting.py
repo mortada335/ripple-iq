@@ -178,3 +178,116 @@ def test_retry_route_has_separate_policy(client, monkeypatch):
     assert first.status_code == 200
     second = client.post(f"/api/v1/decisions/{decision_id}/analysis/retry")
     assert second.status_code == 429
+
+
+def test_trusted_proxy_forwarded_ip_extraction(client, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "TRUSTED_PROXIES", "10.0.0.0/8, 172.16.0.1")
+    monkeypatch.setattr(settings, "RATE_LIMIT_REGISTER_IP_MAX", 1)
+    monkeypatch.setattr(settings, "RATE_LIMIT_REGISTER_WINDOW_SECONDS", 3600)
+
+    # Trusted proxy client: 172.16.0.1
+    with TestClient(client.app, client=("172.16.0.1", 45678)) as proxy_client:
+        # Request with forwarded IP 203.0.113.50 behind internal hop 10.0.0.2
+        res1 = proxy_client.post(
+            "/api/v1/auth/register",
+            json={"email": "proxy1@example.edu", "full_name": "Proxy 1", "password": "strong-password-123"},
+            headers={"X-Forwarded-For": "203.0.113.50, 10.0.0.2"},
+        )
+        assert res1.status_code == 201
+
+        # Same forwarded client should be rate limited
+        res2 = proxy_client.post(
+            "/api/v1/auth/register",
+            json={"email": "proxy2@example.edu", "full_name": "Proxy 2", "password": "strong-password-123"},
+            headers={"X-Forwarded-For": "203.0.113.50, 10.0.0.2"},
+        )
+        assert res2.status_code == 429
+
+        # Different forwarded client should succeed
+        res3 = proxy_client.post(
+            "/api/v1/auth/register",
+            json={"email": "proxy3@example.edu", "full_name": "Proxy 3", "password": "strong-password-123"},
+            headers={"X-Forwarded-For": "203.0.113.51, 10.0.0.2"},
+        )
+        assert res3.status_code == 201
+
+    # Untrusted client attempting to spoof X-Forwarded-For should be evaluated by its direct IP
+    with TestClient(client.app, client=("198.51.100.22", 45678)) as untrusted_client:
+        res_untrusted1 = untrusted_client.post(
+            "/api/v1/auth/register",
+            json={"email": "untrusted1@example.edu", "full_name": "Untrusted 1", "password": "strong-password-123"},
+            headers={"X-Forwarded-For": "192.0.2.99"},
+        )
+        assert res_untrusted1.status_code == 201
+
+        # Second request from same untrusted peer IP with different spoofed header is blocked
+        res_untrusted2 = untrusted_client.post(
+            "/api/v1/auth/register",
+            json={"email": "untrusted2@example.edu", "full_name": "Untrusted 2", "password": "strong-password-123"},
+            headers={"X-Forwarded-For": "192.0.2.100"},
+        )
+        assert res_untrusted2.status_code == 429
+
+
+def test_rate_limit_reset_state(client, db_session, monkeypatch):
+    from app.config import settings
+    from app.services.rate_limiting import reset_rate_limits
+
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_IP_MAX", 100)
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_ACCOUNT_IP_MAX", 1)
+
+    client.client = ("192.0.2.33", 5000)
+    res1 = client.post(
+        "/api/v1/auth/login",
+        json={"email": "owner@example.edu", "password": "wrong-password"},
+    )
+    assert res1.status_code == 401
+
+    res2 = client.post(
+        "/api/v1/auth/login",
+        json={"email": "owner@example.edu", "password": "wrong-password"},
+    )
+    assert res2.status_code == 429
+
+    # Reset rate limits in database
+    reset_rate_limits(db_session)
+
+    # After reset, the request is allowed through again
+    res3 = client.post(
+        "/api/v1/auth/login",
+        json={"email": "owner@example.edu", "password": "wrong-password"},
+    )
+    assert res3.status_code == 401
+
+
+def test_in_memory_limiter_reset_and_isolation():
+    from app.middleware.rate_limit import SlidingWindowRateLimiter
+
+    lim = SlidingWindowRateLimiter()
+
+    # Rule: 2 requests per 60s
+    allowed1, rem1, _ = lim.check_and_increment("key_a", 2, 60.0)
+    assert allowed1 is True
+    assert rem1 == 1
+
+    allowed2, rem2, _ = lim.check_and_increment("key_a", 2, 60.0)
+    assert allowed2 is True
+    assert rem2 == 0
+
+    allowed3, rem3, retry_after = lim.check_and_increment("key_a", 2, 60.0)
+    assert allowed3 is False
+    assert rem3 == 0
+    assert retry_after >= 1
+
+    # Key isolation: key_b is untouched
+    allowed_b, rem_b, _ = lim.check_and_increment("key_b", 2, 60.0)
+    assert allowed_b is True
+    assert rem_b == 1
+
+    # Reset cleans all keys
+    lim.reset()
+    allowed_after_reset, rem_after_reset, _ = lim.check_and_increment("key_a", 2, 60.0)
+    assert allowed_after_reset is True
+    assert rem_after_reset == 1
