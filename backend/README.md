@@ -63,8 +63,11 @@ backend/
 
 Interactive Swagger documentation is available at `/docs`.
 
-Sensitive route throttling uses atomic counters in the configured database.
-Apply migrations before starting updated instances and see
+Sensitive route throttling uses a two-tier architecture: process-local
+sliding-window filtering via `FastRateLimitMiddleware` to smooth bursts, and
+atomic counters in `RateLimitBucket` via PostgreSQL for distributed enforcement
+across workers and instances. Reverse proxy trust is configurable via
+`TRUSTED_PROXIES`. Apply migrations before starting updated instances and see
 [`docs/rate-limiting.md`](../docs/rate-limiting.md) for default policies,
 configuration, proxy assumptions, and failure behavior. Production instances
 must share PostgreSQL for consistent limits across workers.

@@ -55,9 +55,10 @@
 
 | المتغير | الوصف | مثال |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | رابط اتصال قاعدة بيانات PostgreSQL (نوصي بـ Neon أو Supabase) | `postgresql://user:pass@ep-xyz.neon.tech/rippleiq?sslmode=require` |
+| `DATABASE_URL` | رابط اتصال قاعدة بيانات PostgreSQL (نوصي بـ Neon أو Supabase؛ إلزامي لمزامنة حدود الاستدعاءات بين الدوال السحابية) | `postgresql://user:pass@ep-xyz.neon.tech/rippleiq?sslmode=require` |
 | `SECRET_KEY` | مفتاح تشفير عشوائي للجلسات والـ JWT | `9f3c7e8a1d2e5b6c...` (64 حرف hex) |
 | `ALLOWED_ORIGINS` | النطاقات المسموح لها بالاتصال (CORS) | `https://your-domain.vercel.app` أو `*` |
+| `TRUSTED_PROXIES` | عناوين بروكسي Vercel/Cloudflare الموثوقة لاستخراج عنوان الـ IP الحقيقي بأمان | `127.0.0.1, 10.0.0.0/8` |
 | `GEMINI_API_KEY_1` | مفتاح Google Gemini API لتشغيل محاكاة القرارات | `AIzaSy...` |
 | `NEXT_PUBLIC_API_URL` | رابط الباك إند (اختياري في النشر المدمج، إلزامي في حال الفصل) | `https://your-api.com` أو اتركه فارغاً للنشر المدمج |
 
